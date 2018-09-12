@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset=UTF-8>
+        <title>Notes</title>
+    </head>
+    <body>
+        <h1>{{ series.title }}</h1>
+        {% if series.desc %}
+            <p>{{ series.desc }}</p>
+        {% endif %}
+        {% if not has_draft %}
+            <div>
+                <a href="{% url 'notes:create' series_name=series.name %}">Create</a>
+            </div>
+        {% endif %}
+        <ul>
+            {% for note in note_list %}
+                <li class="h-entry">
+                    <p class="p-name e-content">{{ note.text }}</p>
+                    <small>
+                        {% include 'notes/parts/note_metadata.html' %}
+                    </small>
+                </li>
+            {% endfor %}
+        </ul>
+    </body>
+</html>

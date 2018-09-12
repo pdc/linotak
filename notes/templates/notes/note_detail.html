@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset=UTF-8>
+        <title>Note #{{ note.id }} - {{ series.title }}<</title>
+    </head>
+    <body>
+        <article class="h-entry">
+            <header>
+                <nav>
+                    <a href="{% url 'notes:list' series_name=series.name %}">{{ series.title }}</a>
+                </nav>
+            </header>
+
+            <p class="e-content">{{ note.text }}</p>
+            <small>
+                {% include 'notes/parts/note_metadata.html' %}
+            </small>
+        </article>
+    </body>
+</html>

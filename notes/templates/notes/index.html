@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset=UTF-8>
+        <title>Notes<</title>
+    </head>
+    <body>
+        <ul>
+            {% for note in note_list %}
+                <li class="h-entry">
+                    <p>{{ note.text }}</p>
+                    <small>
+                        {% include 'notes/parts/note_metadata.html' %}
+                    </small>
+                </li>
+            {% endfor %}
+        </ul>
+    </body>
+</html>
