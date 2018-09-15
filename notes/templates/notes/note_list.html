@@ -1,28 +1,35 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset=UTF-8>
-        <title>Notes</title>
-    </head>
-    <body>
-        <h1>{{ series.title }}</h1>
+{% extends 'notes/base.html' %}
+
+{% block title %}{{ series.title }}{% endblock %}
+
+{% block styles %}
+        <style>
+            {% include 'notes/note_list.css' %}
+        </style>
+{% endblock %}
+
+{% block content %}
+        <header class="note-list-header">
+            <h1>{{ series.title }}</h1>
+            {% if not has_draft %}
+                <div class="action-bar">
+                    <a href="{% url 'notes:create' series_name=series.name %}" class="action-btn">Create</a>
+                </div>
+            {% endif %}
+        </header>
+
         {% if series.desc %}
             <p>{{ series.desc }}</p>
         {% endif %}
-        {% if not has_draft %}
-            <div>
-                <a href="{% url 'notes:create' series_name=series.name %}">Create</a>
-            </div>
-        {% endif %}
-        <ul>
+        <ul class="note-list">
             {% for note in note_list %}
-                <li class="h-entry">
-                    <p class="p-name e-content">{{ note.text }}</p>
-                    <small>
+                <li class="h-entry note">
+                    <p class="p-name e-content note-text">{{ note.text }}</p>
+                    <small class="note-metadata">
                         {% include 'notes/parts/note_metadata.html' %}
                     </small>
                 </li>
             {% endfor %}
         </ul>
-    </body>
-</html>
+
+{% endblock %}

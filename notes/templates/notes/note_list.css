@@ -1,0 +1,39 @@
+
+
+.action-bar {
+    padding: 0 10px;
+
+    display: flex;
+    flex-flow: row wrap;
+}
+
+.action-btn {
+    padding: 0 10px;
+    line-height: 2;
+
+    font-weight: 600;
+    text-decoration: none;    color: #FFF;
+    background-color: #999;
+    border-radius: 4px;
+}
+
+.note-list {
+    margin: 0;
+    padding: 0;
+}
+
+.note {
+    margin: 10px 0;
+    border-top: 1px dotted rgba(0, 0, 0, 0.3);
+}
+
+.note-text {
+    margin: 10px 10px 5px;
+}
+
+.note-metadata {
+    margin: 0 10px;
+    font-size: 13px;
+    line-height: 1.25;
+    color: rgba(0, 0, 0, 0.5);
+}

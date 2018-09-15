@@ -1,19 +1,32 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset=UTF-8>
-        <title>Notes<</title>
-    </head>
-    <body>
-        <ul>
+{% extends 'notes/base.html' %}
+
+{% block title %}Notes{% endblock %}
+
+{% block styles %}
+        <style>
+            {% include 'notes/note_list.css' %}
+        </style>
+{% endblock %}
+
+{% block content %}
+        <header class="note-list-header">
+            <h1>Notes</h1>
+            <div class="action-bar">
+                {% for series in user.series_set.all %}
+                    <a href="{% url 'notes:create' series_name=series.name %}" class="action-btn">Create in {{ series.title }}</a>
+                {% endfor %}
+            </div>
+        </header>
+
+        <ul class="note-list">
             {% for note in note_list %}
-                <li class="h-entry">
-                    <p>{{ note.text }}</p>
-                    <small>
+                <li class="h-entry note">
+                    <p class="p-name e-content note-text">{{ note.text }}</p>
+                    <small class="note-metadata">
                         {% include 'notes/parts/note_metadata.html' %}
                     </small>
                 </li>
             {% endfor %}
         </ul>
-    </body>
-</html>
+
+{% endblock %}

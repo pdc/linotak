@@ -25,7 +25,10 @@ SECRET_KEY = 'rey_cp8izv)u&s821q&79ve^8$(6=!%m2$v12sx!5cs)s=1@qk'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'mustardseed.local',
+    'localhost',
+]
 
 
 # Application definition
