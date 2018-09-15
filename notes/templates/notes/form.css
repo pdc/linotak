@@ -1,0 +1,67 @@
+p {
+    margin: 10px;
+}
+
+form {
+    padding: 10px 0;
+    background-color: #F7F7F7;
+}
+
+.form-item-list {
+    margin: 0;
+    padding: 0;
+}
+
+.form-item-list li {
+    padding: 5px 10px;
+    list-style-type: none;
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+label {
+    margin: 0 0 5px;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+input[type=text],
+input[type=password],
+textarea {
+    margin: 0;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 5px;
+
+    font-size: 1rem;
+    border: 1px inset #DDD;
+}
+
+.helptext {
+    margin: 5px 0 0;
+
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.form-action-bar {
+    margin: 5px 10px;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.form-action {
+    box-sizing: border-box;  /* Cannot unset this on some browsers */
+    padding: 0.4em 10px;
+
+    font-size: 1rem;
+    line-height: normal;  /* Cannot unset this on some browsers */
+    background-color: #DDD;
+    border: 2px groove #DDD;
+    border-radius: 4px;
+}
+
+.form-action + .form-action  {
+    margin-left: 10px;
+}

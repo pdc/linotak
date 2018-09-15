@@ -11,9 +11,10 @@
     padding: 0 10px;
     line-height: 2;
 
-    font-weight: 600;
-    text-decoration: none;    color: #FFF;
-    background-color: #999;
+    text-decoration: none;
+    color: rgba(0, 0, 0, 0.85);
+    background-color: #EEE;
+    border: 2px groove #EEE;
     border-radius: 4px;
 }
 
