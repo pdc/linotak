@@ -41,6 +41,7 @@ SECRET_KEY = 'secret-key-value' if DEBUG else env('SECRET_KEY')
 ALLOWED_HOSTS = [
     'mustardseed.local',
     'localhost',
+    'ooble.uk',
 ]
 
 
