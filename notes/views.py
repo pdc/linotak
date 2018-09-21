@@ -41,6 +41,7 @@ class SeriesMixin(NotesQuerysetMixin):
         """Add the seriies to the context."""
         context = super().get_context_data(**kwargs)
         context['series'] = self.series
+        context['is_editor'] = self.request.user in self.series.editors.all()
         return context
 
 

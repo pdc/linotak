@@ -11,7 +11,7 @@
 {% block content %}
         <header class="note-list-header">
             <h1>{{ series.title }}</h1>
-            {% if not has_draft %}
+            {% if is_editor and not has_draft %}
                 <div class="action-bar">
                     <a href="{% url 'notes:create' series_name=series.name %}" class="action-btn">Create</a>
                 </div>
