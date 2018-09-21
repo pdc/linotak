@@ -18,6 +18,12 @@
     border-radius: 4px;
 }
 
+.series-desc {
+    margin: 10px;
+
+    color: rgba(0, 0. 0, 0.7);
+}
+
 .note-list {
     margin: 0;
     padding: 0;
