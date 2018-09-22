@@ -1,4 +1,5 @@
 {% extends 'notes/base.html' %}
+{% load static %}
 
 {% block title %}Notes{% endblock %}
 
@@ -6,6 +7,7 @@
         <style>
             {% include 'notes/note_list.css' %}
         </style>
+        <link rel=stylesheet href="{% static 'notes/note_list.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -20,12 +22,7 @@
 
         <ul class="note-list">
             {% for note in note_list %}
-                <li class="h-entry note">
-                    <p class="p-name e-content note-text">{{ note.text }}</p>
-                    <small class="note-metadata">
-                        {% include 'notes/parts/note_metadata.html' %}
-                    </small>
-                </li>
+                {% include 'notes/parts/note_item.html' %}
             {% endfor %}
         </ul>
 

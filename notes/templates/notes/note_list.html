@@ -1,4 +1,5 @@
 {% extends 'notes/base.html' %}
+{% load static %}
 
 {% block title %}{{ series.title }}{% endblock %}
 
@@ -6,12 +7,13 @@
         <style>
             {% include 'notes/note_list.css' %}
         </style>
+        <link rel=stylesheet href="{% static 'notes/note_list.css' %}">
 {% endblock %}
 
 {% block content %}
         <header class="note-list-header">
             <h1>{{ series.title }}</h1>
-            {% if is_editor and not has_draft %}
+            {% if is_editor %}
                 <div class="action-bar">
                     <a href="{% url 'notes:create' series_name=series.name %}" class="action-btn">Create</a>
                 </div>
@@ -21,14 +23,10 @@
         {% if series.desc %}
             <p class="series-desc">{{ series.desc }}</p>
         {% endif %}
+
         <ul class="note-list">
             {% for note in note_list %}
-                <li class="h-entry note">
-                    <p class="p-name e-content note-text">{{ note.text }}</p>
-                    <small class="note-metadata">
-                        {% include 'notes/parts/note_metadata.html' %}
-                    </small>
-                </li>
+                {% include 'notes/parts/note_item.html' %}
             {% endfor %}
         </ul>
 

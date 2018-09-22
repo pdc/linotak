@@ -1,0 +1,7 @@
+
+                <li class="h-entry note{% if not note.published %} note-unpublished{% endif %}">
+                    <p class="p-name e-content note-text">{{ note.text }}</p>
+                    <small class="note-metadata">
+                        {% include 'notes/parts/note_metadata.html' %}
+                    </small>
+                </li>
