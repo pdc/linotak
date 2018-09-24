@@ -42,6 +42,13 @@
         <link href="https://fonts.googleapis.com/css?family=Abril+Fatface|Fira+Sans:400,600" rel="stylesheet">
     </head>
     <body>
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
         {% block content %}
         {% endblock %}
     </body>
