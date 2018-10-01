@@ -56,6 +56,7 @@ class Locator(models.Model):
 
     url = models.URLField(
         max_length=1000,
+        unique=True,
     )
     title = models.CharField(
         max_length=250,
@@ -133,6 +134,14 @@ class Note(models.Model):
 
     class Meta:
         ordering = ['-published', '-created']
+
+    def add_subject(self, url, **kwargs):
+        """Add a subject locator."""
+        locator, is_new = Locator.objects.get_or_create(url=url, defaults=kwargs)
+        NoteSubject.objects.get_or_create(note=self, locator=locator, defaults={
+            'sequence': 1 + len(self.subjects.all()),
+        })
+        return locator
 
     def __str__(self):
         if not self.text:
