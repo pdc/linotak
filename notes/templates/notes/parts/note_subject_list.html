@@ -1,0 +1,26 @@
+
+                    {% if note.subjects %}
+                    <ul class="loc-list note-subjects">
+                        {% for locator in note.subjects.all %}
+                        <li class="note-subject-item loc-item">
+                            <a class="note-subject loc" href="{{ locator.url }}">
+                                {% if locator.title %}
+                                <span class="loc-hdg">
+                                    <b class="loc-title">{{ locator.title }}</b>
+                                </span>
+                                {% elif locator.author %}
+                                <span class="loc-hdg">
+                                    <b class="loc-title">{{ locator.author.native_name }}</b>
+                                    {% for profile in locator.author.profiles.all|slice:":1" %}
+                                        <small class="loc-profile">{{ profile.label }}</small>
+                                    {% endfor %}
+                                </span>
+                                {% endif %}
+                                {% if locator.text %}
+                                <span class="loc-text">{{ locator.text }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}

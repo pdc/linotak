@@ -64,6 +64,7 @@
 
         <article class="h-entry note-detail">
             <p class="e-content p-name note-text">{{ note.text }}</p>
+            {% include 'notes/parts/note_subject_list.html' %}
             <small class="note-metadata">
                 {% include 'notes/parts/note_metadata.html' %}
             </small>
