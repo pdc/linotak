@@ -42,6 +42,7 @@ def deploy():
         run('git pull')
         with prefix('. /home/%s/virtualenvs/%s/bin/activate' % (env.site_name, env.virtualenv)):
             run('pip install -r requirements.txt')
+            run('envdir /service/%s/env ./manage.py migrate' % (env.site_name,))
             run('envdir /service/%s/env ./manage.py collectstatic --noinput' % (env.site_name,))
 
 
