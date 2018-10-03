@@ -20,6 +20,14 @@
                 {{ form.as_ul }}
             </ul>
 
+            {{ form.subjects_formset.management_form }}
+
+            {% for subform in form.subjects_formset %}
+            <ul class="form-item-list">
+                {{ subform.as_ul }}
+            </ul>
+            {% endfor %}
+
             <div class="form-action-bar">
                 <input class="form-action" type="submit" value="Save">
                 <input class="form-action" type="submit" name="publish_now" value="Publish">

@@ -5,13 +5,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, F
 from django.http import HttpResponse,  HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, render
-from django.views import generic
-from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.utils.functional import cached_property
+from django.views import generic
+from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
-from .forms import NoteForm
-from .models import Series, Note
+from .forms import NoteForm, LocatorFormset
+from .models import Series, Note, Locator
 
 
 class NotesQuerysetMixin:
@@ -22,7 +23,9 @@ class NotesQuerysetMixin:
         q = Q(published__isnull=False)
         if not self.request.user.is_anonymous:
             q = q | Q(series__in=self.request.user.series_set.all())
-        return notes.filter(q).order_by(F('published').desc(nulls_first=True))
+        return notes.filter(q).order_by(
+            F('published').desc(nulls_first=True),
+            F('created').desc())
 
     def get_context_data(self, **kwargs):
         """Add flag saying whether there is a draft note already."""
@@ -33,8 +36,13 @@ class NotesQuerysetMixin:
 
 class SeriesMixin(NotesQuerysetMixin):
     """Mixin for view classes for when the URL includes the series name."""
+
+    @cached_property
+    def series(self):
+        """The series of notes this page relates to."""
+        return get_object_or_404(Series, name=self.kwargs['series_name'])
+
     def get_queryset(self, **kwargs):
-        self.series = get_object_or_404(Series, name=self.kwargs['series_name'])
         return super().get_queryset().filter(series=self.series)
 
     def get_context_data(self, **kwargs):
@@ -61,8 +69,14 @@ class NoteFormMixin:
     model = Note
     form_class = NoteForm
 
+    def get_initial(self, **kwargs):
+        initial = super().get_initial(**kwargs)
+        initial['author'] = self.request.user
+        initial['series'] = self.series
+        return initial
 
-class NoteCreateView(LoginRequiredMixin, NoteFormMixin, CreateView):
+
+class NoteCreateView(LoginRequiredMixin, SeriesMixin, NoteFormMixin, CreateView):
     def form_valid(self, form):
         self.series = get_object_or_404(Series, name=self.kwargs['series_name'])
         form.instance.series = self.series
@@ -70,7 +84,7 @@ class NoteCreateView(LoginRequiredMixin, NoteFormMixin, CreateView):
         return super().form_valid(form)
 
 
-class NoteUpdateView(LoginRequiredMixin, NoteFormMixin, UpdateView):
+class NoteUpdateView(LoginRequiredMixin, SeriesMixin, NoteFormMixin, UpdateView):
     def dispatch(self, *args, **kwargs):
         if self.get_object().published:
             messages.info(self.request, 'This note has already been published and cannot be edited.')
