@@ -19,6 +19,9 @@
                                 {% if locator.text %}
                                 <span class="loc-text">{{ locator.text }}</span>
                                 {% endif %}
+                                {% if not locator.text and not locator.title %}
+                                <span class="loc-url">{{ locator.url }}</span>
+                                {% endif %}
                             </a>
                         </li>
                         {% endfor %}

@@ -1,0 +1,56 @@
+
+
+.loc-list {
+    margin: 10px 0;
+    padding: 0;
+
+    font-weight: 300;
+}
+
+.loc-item {
+    margin: 5px 10px;
+    padding: 0;
+    list-style-type: none;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+.loc {
+    color: inherit;
+    text-decoration: inherit;
+
+    display: block;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.loc:hover,
+.loc:active {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.loc-hdg {
+    margin: 5px 10px;
+    display: block;
+}
+
+.loc-title {
+    font-weight: 500;
+}
+
+.loc:hover .loc-title,
+.loc:active .loc-title {
+    text-decoration: underline;
+}
+
+.loc-text {
+    margin: 5px 10px;
+    display: block;
+}
+
+.loc-url {
+    margin: 5px 10px;
+    display: block;
+
+    font-size: 13px;
+}
