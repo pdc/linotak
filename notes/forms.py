@@ -47,10 +47,9 @@ class NoteForm(ModelForm):
         instance = super().save(**kwargs)
 
         subject_forms = (
-            self.subjects_formset.initial_forms
+            sorted(self.subjects_formset.initial_forms, key=lambda f: int(f.cleaned_data['ORDER']))
             + [f for f in self.subjects_formset.extra_forms if f.has_changed()])
         subject_forms = [f for f in subject_forms if not f.cleaned_data['DELETE']]
-        subject_forms.sort(key=lambda f: f.cleaned_data['ORDER'])
         for i, locator in enumerate(x.save(**kwargs) for x in subject_forms):
             arc, is_new = NoteSubject.objects.get_or_create(note=instance, locator=locator, defaults={'sequence': i})
             if not is_new and arc.sequence != i:

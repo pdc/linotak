@@ -134,19 +134,23 @@ class TestNoteForm(TestCase):
         self.assertEqual(result.subjects.all()[0].title, 'Title of subject')
         self.assertEqual(result.subjects.all()[0].text, 'Text of subject')
 
-    def test_note_form_respects_order(self):
+    def test_adds_extra_links_at_the_end(self):
         post_data = {
             'text': 'Text of note',
             'series': str(self.series.pk),
             'author': str(self.alice.pk),
-            'subj-TOTAL_FORMS': '2',
-            'subj-INITIAL_FORMS': '1',
+            'subj-TOTAL_FORMS': '4',
+            'subj-INITIAL_FORMS': '2',
             'subj-MIN_NUM_FORMS': '0',
             'subj-MAX_NUM_FORMS': '1000',
             'subj-0-url': 'http://examnple.com/p',
             'subj-0-ORDER': '2',
             'subj-1-url': 'http://examnple.com/q',
             'subj-1-ORDER': '1',
+            'subj-2-url': 'http://examnple.com/r',
+            'subj-2-ORDER': '',  # This is what happens with the extra form at the end.
+            'subj-3-url': 'http://examnple.com/s',
+            'subj-3-ORDER': '',
         }
         form = NoteForm(initial={'series': self.series, 'author': self.alice}, data=post_data)
 
@@ -154,9 +158,12 @@ class TestNoteForm(TestCase):
         result = form.save()
 
         self.assertTrue(result)
-        self.assertEqual(len(result.subjects.all()), 2)
-        self.assertEqual(result.subjects.all()[0].url, 'http://examnple.com/q')
-        self.assertEqual(result.subjects.all()[1].url, 'http://examnple.com/p')
+        self.assertEqual([x.url for x in result.subjects.all()], [
+            'http://examnple.com/q',
+            'http://examnple.com/p',
+            'http://examnple.com/r',
+            'http://examnple.com/s',
+        ])
 
     def test_note_form_can_delete(self):
         post_data = {
