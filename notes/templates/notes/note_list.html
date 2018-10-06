@@ -1,15 +1,12 @@
 {% extends 'notes/base.html' %}
-{% load static %}
 
 {% block title %}{{ series.title }}{% endblock %}
 
 {% block styles %}
         <style>
-            {% include 'notes/note_list.css' %}
-            {% include 'notes/subject_list.css' %}
+            {% include 'notes/inline-styles/note_list.css' %}
+            {% include 'notes/inline-styles/subject_list.css' %}
         </style>
-        <link rel=stylesheet href="{% static 'notes/note_list.css' %}">
-
 {% endblock %}
 
 {% block content %}

@@ -1,0 +1,32 @@
+
+.note-detail-header {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+    align-items:  center;
+}
+
+.trail {
+    margin: 10px;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+}
+
+.trail-link {
+    position: relative;
+    padding: 0 10px 0 5px;
+
+    text-decoration: none;
+    line-height: 2;
+}
+
+.note-text {
+    margin: 10px;
+}
+
+.note-metadata {
+    margin: 0 10px;
+    font-size: 13px;
+    line-height: 1.25;
+}

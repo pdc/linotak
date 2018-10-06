@@ -4,7 +4,6 @@ p {
 
 form {
     padding: 10px 0;
-    background-color: #F7F7F7;
 }
 
 .form-item-list {
@@ -21,10 +20,10 @@ form {
 
 label {
     margin: 0 0 5px;
-    color: rgba(0, 0, 0, 0.5);
 }
 
 input[type=text],
+input[type=url],
 input[type=password],
 textarea {
     margin: 0;
@@ -33,14 +32,13 @@ textarea {
     padding: 5px;
 
     font-size: 1rem;
-    border: 1px inset #DDD;
+    border-width: 1px;
 }
 
 .helptext {
     margin: 5px 0 0;
 
     font-size: 13px;
-    color: rgba(0, 0, 0, 0.5);
 }
 
 .form-action-bar {
@@ -57,9 +55,7 @@ textarea {
 
     font-size: 1rem;
     line-height: normal;  /* Cannot unset this on some browsers */
-    background-color: #DDD;
-    border: 2px groove #DDD;
-    border-radius: 4px;
+    border: 2px groove;
 }
 
 .form-action + .form-action  {

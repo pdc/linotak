@@ -4,55 +4,8 @@
 
 {% block styles %}
         <style>
-            .note-detail-header {
-                display: flex;
-                flex-flow: row wrap;
-                justify-content: space-between;
-                align-items:  center;
-            }
-
-            .trail {
-                margin: 10px;
-                display: flex;
-                flex-flow: row nowrap;
-                align-items: center;
-            }
-
-            .trail-link {
-                position: relative;
-                padding: 0 10px 0 5px;
-
-                text-decoration: none;
-                line-height: 2;
-                background-color: #DDD;
-                border-top-right-radius: 4px;
-                border-bottom-right-radius: 4px;
-            }
-
-            .trail-link:before {
-                content: "<";
-                position: absolute;
-                right: 100%;
-                width: 0;
-                height: 0;
-                overflow: hidden;
-                border-top: 1em solid transparent;
-                border-right: 0.5em solid #DDD;
-                border-bottom: 1em solid transparent;
-            }
-
-            .note-text {
-                margin: 10px;
-            }
-
-            .note-metadata {
-                margin: 0 10px;
-                font-size: 13px;
-                line-height: 1.25;
-                color: rgba(0, 0, 0, 0.5);
-            }
-
-            {% include 'notes/subject_list.css' %}
+            {% include 'notes/inline-styles/note_detail.css' %}
+            {% include 'notes/inline-styles/subject_list.css' %}
         </style>
 {% endblock %}
 
