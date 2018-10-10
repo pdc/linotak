@@ -20,6 +20,23 @@ html {
     background-color: var(--paper);
 }
 
+
+    html {
+        --paper: #1f001c;
+        --ink: rgba(255, 255, 255, 0.85);
+        --muted: rgba(255, 255, 255, 0.6);
+        --faint: rgba(255, 255, 255, .3);
+        --hdg: #AB0;
+        --ui: #4da6ff;
+        --ui2: #007fff;
+        --ui-dark: rgb(0, 127, 255);
+        --ui-bg: rgba(153, 204, 255, 0.25);
+        --hl-paper: rgba(255, 238, 68, 0.10);
+        --link: rgba(204, 229, 255, 0.84);
+        --visited: rgba(204, 229, 255, 0.84);
+    }
+
+
 h1 {
     font-family: "Abril Fatface", serif;
     color: rgba(187, 0, 170, 0.48);
@@ -28,6 +45,7 @@ h1 {
 
 form {
     background-color: #F7F7F7;
+    background-color: var(--ui-bg);
 }
 
 label {
@@ -39,8 +57,11 @@ input[type=text],
 input[type=url],
 input[type=password],
 textarea {
+    color: var(--ink);
+    background-color: var(--paper);
     border-style: inset;
     border-color: #DDD;
+    border-color: var(--ui-bg);
 }
 
 .helptext {
