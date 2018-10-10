@@ -50,7 +50,9 @@ class SeriesMixin(NotesQuerysetMixin):
         """Add the seriies to the context."""
         context = super().get_context_data(**kwargs)
         context['series'] = self.series
-        context['is_editor'] = self.request.user in self.series.editors.all()
+        context['can_edit_as'] = (
+            self.request.user.is_authenticated
+            and self.series.editors.filter(login=self.request.user))
         return context
 
 
@@ -72,7 +74,7 @@ class NoteFormMixin:
 
     def get_initial(self, **kwargs):
         initial = super().get_initial(**kwargs)
-        initial['author'] = self.request.user.person
+        initial['author'] = self.request.user.person_set.all()[0]
         initial['series'] = self.series
         return initial
 

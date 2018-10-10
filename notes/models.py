@@ -5,9 +5,13 @@ from django.utils import timezone
 
 
 class Person(models.Model):
-    """A person referred to as the author of some resource."""
+    """A person referred to as the author of some resource.
 
-    login = models.OneToOneField(
+    May be associated with a login (for notes on this sytem),
+    or a person whose profiles are all elsewhere.
+    """
+
+    login = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         models.SET_NULL,
         null=True,

@@ -24,15 +24,14 @@ class NoteForm(ModelForm):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        subjects_kwargs = {
-            'prefix': 'subj',
-            'data': kwargs.get('data'),
-            'initial': [
+        self.subjects_formset = LocatorFormset(
+            prefix='subj',
+            data=kwargs.get('data'),
+            initial=[
                 {'url': x.url, 'title': x.title, 'text': x.text, 'published': x.published}
                 for x in self.instance.subjects.order_by('notesubject__sequence')
             ] if self.instance and self.instance.pk else [],
-        }
-        self.subjects_formset = LocatorFormset(**subjects_kwargs)
+        )
 
     def clean(self):
         """Validate the subjects as well."""
@@ -99,4 +98,4 @@ class LocatorForm(Form):
         }
 
 
-LocatorFormset = formset_factory(LocatorForm, can_order=True, can_delete=True)
+LocatorFormset = formset_factory(LocatorForm, extra=0, can_order=True, can_delete=True)

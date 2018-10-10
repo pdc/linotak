@@ -1,6 +1,6 @@
 {% if note.published %}
                 Noted by
-                <span class="p-author">{{ note.author.get_full_name }}</span>
+                <span class="p-author">{{ note.author.native_name }}</span>
                 <time class="dt-published" datetime="{{ note.published|date:"c" }}" title="{{ note.published|date:'P l j F Y e' }}">{{ note.published|timesince }} ago</time>.
                 <a class="u-uri u-uid" href="{{ note.get_absolute_url }}">Permalink</a>
 {% else %}

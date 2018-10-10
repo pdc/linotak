@@ -23,23 +23,36 @@ class TestNoteList(TestCase):
         author = PersonFactory.create()
         note1 = series.note_set.create(text='note1', author=author)
         note2 = series.note_set.create(text='note2', author=author, published=timezone.now())
-
         self.client.logout()
+
         r = self.client.get('/notes/bar/')
 
         self.assertEqual(list(r.context['note_list']), [note2])
         self.assertFalse(r.context.get('has_draft'))
+        self.assertFalse(r.context['can_edit_as'])
+
+    def test_includes_create_button_if_editor(self):
+        author = PersonFactory.create()
+        series = SeriesFactory.create(name='bar', editors=[author])
+        self.given_logged_in_as(author)
+
+        r = self.client.get('/notes/bar/')
+
+        self.assertEqual(list(r.context['can_edit_as']), [author])
 
     def test_includes_unpublished_notes_if_editor(self):
         author = PersonFactory.create()
         series = SeriesFactory.create(name='bar', editors=[author])
         note = NoteFactory.create(author=author, series=series, text='text of note')
+        self.given_logged_in_as(author)
 
-        self.client.login(username=author.login.username, password='secret')
         r = self.client.get('/notes/bar/')
 
         self.assertEqual(list(r.context['note_list']), [note])
         self.assertTrue(r.context['has_draft'])
+
+    def given_logged_in_as(self, person):
+        self.client.login(username=person.login.username, password='secret')
 
 
 class TestNoteUpdateView(TestCase):

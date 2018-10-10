@@ -12,9 +12,11 @@
 {% block content %}
         <header class="note-list-header">
             <h1>{{ series.title }}</h1>
-            {% if is_editor %}
+            {% if can_edit_as %}
                 <div class="action-bar">
-                    <a href="{% url 'notes:create' series_name=series.name %}" class="action-btn">Create</a>
+                    {% for person in can_edit_as %}
+                    <a href="{% url 'notes:create' series_name=series.name %}" class="action-btn" title="Create a new note as {{ person.native_name }}">Create</a>
+                    {% endfor %}
                 </div>
             {% endif %}
         </header>

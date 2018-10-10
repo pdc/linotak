@@ -85,12 +85,11 @@ class TestNoteForm(TestCase):
         self.alice = PersonFactory.create(native_name='Alice')
         self.series = SeriesFactory.create(editors=[self.alice])
 
-    def test_new_form_has_empty_formset(self):
+    def test_new_form_has_no_empty_formset(self):
         form = NoteForm(initial={'series': self.series, 'author': self.alice})
 
         self.assertTrue(form.subjects_formset)
-        self.assertEqual(len(form.subjects_formset), 1)
-        self.assertFalse(form.subjects_formset[0].initial)
+        self.assertEqual(len(form.subjects_formset), 0)
 
     def test_edit_form_has_filled_formset(self):
         note = self.series.note_set.create(text='Foo', author=self.alice)
@@ -99,9 +98,8 @@ class TestNoteForm(TestCase):
         form = NoteForm(instance=note)
 
         self.assertTrue(form.subjects_formset)
-        self.assertEqual(len(form.subjects_formset), 2)
+        self.assertEqual(len(form.subjects_formset), 1)
         self.assertEqual(form.subjects_formset[0].initial['url'], 'http://example.com/1')
-        self.assertFalse(form.subjects_formset[1].initial)
 
     def test_subject_locators_are_updated_from_post(self):
         post_data = {
