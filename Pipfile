@@ -9,6 +9,7 @@ django-environ = "*"
 
 [dev-packages]
 tblib = "*"
+factory-boy = "*"
 
 [requires]
 python_version = "3.6"

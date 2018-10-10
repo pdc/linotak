@@ -79,8 +79,8 @@ class Locator(models.Model):
 
 
 class Series(models.Model):
-    editors = models.ManyToManyField(
-        settings.AUTH_USER_MODEL,
+    editors = models.ManyToManyField(  # Links to persons (who have logins) who can create & update notes
+        Person,
     )
     name = models.SlugField(
         max_length=63,
@@ -114,7 +114,7 @@ class Note(models.Model):
         models.CASCADE,
     )
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        Person,
         models.CASCADE,
     )
     subjects = models.ManyToManyField(
@@ -145,6 +145,8 @@ class Note(models.Model):
 
     def __str__(self):
         if not self.text:
+            if not self.id:
+                return '(blank)'
             return '#%d' % self.id
         if len(self.text) <= 30:
             return self.text

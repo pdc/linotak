@@ -22,7 +22,8 @@ class NotesQuerysetMixin:
         notes = Note.objects
         q = Q(published__isnull=False)
         if not self.request.user.is_anonymous:
-            q = q | Q(series__in=self.request.user.series_set.all())
+            series = Series.objects.filter(editors__login=self.request.user)
+            q = q | Q(series__in=series)
         return notes.filter(q).order_by(
             F('published').desc(nulls_first=True),
             F('created').desc())
@@ -71,16 +72,13 @@ class NoteFormMixin:
 
     def get_initial(self, **kwargs):
         initial = super().get_initial(**kwargs)
-        initial['author'] = self.request.user
+        initial['author'] = self.request.user.person
         initial['series'] = self.series
         return initial
 
 
 class NoteCreateView(LoginRequiredMixin, SeriesMixin, NoteFormMixin, CreateView):
     def form_valid(self, form):
-        self.series = get_object_or_404(Series, name=self.kwargs['series_name'])
-        form.instance.series = self.series
-        form.instance.author = self.request.user
         return super().form_valid(form)
 
 

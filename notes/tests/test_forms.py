@@ -7,6 +7,7 @@ from django.utils import timezone
 from customuser.models import Login
 from ..forms import NoteForm, LocatorForm, LocatorFormset
 from ..models import Series, Locator, NoteSubject
+from .factories import PersonFactory, SeriesFactory
 
 
 THEN = datetime(2018, 9, 29, 18, 54, 32, tzinfo=timezone.utc)
@@ -81,10 +82,8 @@ class TestNoteForm(TestCase):
     """Tests for note form including subjects formset."""
 
     def setUp(self):
-        self.series = Series.objects.create(title='Foo', name='bar')
-        self.alice = Login.objects.create_user(username='alice', password='secret')
-        self.series.editors.add(self.alice)
-        self.series.save()
+        self.alice = PersonFactory.create(native_name='Alice')
+        self.series = SeriesFactory.create(editors=[self.alice])
 
     def test_new_form_has_empty_formset(self):
         form = NoteForm(initial={'series': self.series, 'author': self.alice})

@@ -44,7 +44,8 @@ class NoteForm(ModelForm):
 
     def save(self, **kwargs):
         """Ensure subject locators are copied to the form."""
-        instance = super().save(**kwargs)
+        instance = super().save(
+            **kwargs)
 
         subject_forms = (
             sorted(self.subjects_formset.initial_forms, key=lambda f: int(f.cleaned_data['ORDER']))
