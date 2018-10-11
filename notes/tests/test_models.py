@@ -73,6 +73,26 @@ class TestNoteExtractSubjects(TestCase):
         self.assertEqual(note.text, 'Many!')
         self.assertEqual([x.url for x in note.subjects.all()], ['http://example.com/1', 'https://example.com/2'])
 
+    def test_matches_with_empty_path(self):
+        note = NoteFactory.create(text='Yo! http://example.com/')
+
+        result = note.extract_subject()
+
+        self.assertTrue(result)
+        self.assertEqual(note.text, 'Yo!')
+        self.assertEqual([x.url for x in note.subjects.all()], ['http://example.com/'])
+
+
+    def test_matches_URL_sans_path(self):
+        note = NoteFactory.create(text='Yo! http://example.com')
+
+        result = note.extract_subject()
+
+        self.assertTrue(result)
+        self.assertEqual(note.text, 'Yo!')
+        self.assertEqual([x.url for x in note.subjects.all()], ['http://example.com/'])
+
+
     def test_returns_false_if_no_urls(self):
         note = NoteFactory.create(text='Banana frappé')
 

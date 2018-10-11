@@ -167,7 +167,7 @@ class Note(models.Model):
                 \s*
                 https?://
                 [\w.-]+(?: :\d+)?
-                (?: /\S+ )?
+                (?: /\S* )?
             )+
         )
         \s* $
@@ -179,6 +179,8 @@ class Note(models.Model):
         if m:
             urls, self.text = m.group(1).split(), self.text[:m.start(0)]
             for url in urls:
+                if not '/' in url[8:]:
+                    url += '/'
                 self.add_subject(url)
             return urls
 
