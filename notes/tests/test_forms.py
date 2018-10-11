@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from customuser.models import Login
 from ..forms import NoteForm, LocatorForm, LocatorFormset
-from ..models import Series, Locator, NoteSubject
+from ..models import Series, Locator, Note, NoteSubject
 from .factories import PersonFactory, SeriesFactory
 
 
@@ -85,7 +85,7 @@ class TestNoteForm(TestCase):
         self.alice = PersonFactory.create(native_name='Alice')
         self.series = SeriesFactory.create(editors=[self.alice])
 
-    def test_new_form_has_no_empty_formset(self):
+    def test_new_form_has_empty_formset(self):
         form = NoteForm(initial={'series': self.series, 'author': self.alice})
 
         self.assertTrue(form.subjects_formset)
@@ -185,6 +185,28 @@ class TestNoteForm(TestCase):
         self.assertTrue(result)
         self.assertEqual(len(result.subjects.all()), 1)
         self.assertEqual(result.subjects.all()[0].url, 'http://examnple.com/q')
+
+
+    def test_extracts_subjects_from_text_of_note(self):
+        post_data = {
+            'text': 'Text of note https://example.com/1',
+            'series': str(self.series.pk),
+            'author': str(self.alice.pk),
+            'subj-TOTAL_FORMS': '0',
+            'subj-INITIAL_FORMS': '0',
+            'subj-MIN_NUM_FORMS': '0',
+            'subj-MAX_NUM_FORMS': '1000',
+        }
+        form = NoteForm(initial={'series': self.series, 'author': self.alice}, data=post_data)
+
+        self.assertValid(form)
+        result = form.save()
+
+        self.assertTrue(result)
+        self.assertEqual(result.text, 'Text of note')
+        self.assertEqual(len(result.subjects.all()), 1)
+        self.assertEqual(result.subjects.all()[0].url, 'https://example.com/1')
+        self.assertEqual(Note.objects.get(pk=result.pk).text, 'Text of note')
 
     def assertValid(self, form):
         """Check this form is valid in a way that hopefully exposes helpful error messages."""

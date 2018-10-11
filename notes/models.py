@@ -1,3 +1,5 @@
+import re
+
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
@@ -158,6 +160,27 @@ class Note(models.Model):
 
     def get_absolute_url(self):
         return reverse('notes:detail', kwargs={'series_name': self.series.name, 'pk': self.id})
+
+    subject_re = re.compile(r"""
+        (
+            (?:
+                \s*
+                https?://
+                [\w.-]+(?: :\d+)?
+                (?: /\S+ )?
+            )+
+        )
+        \s* $
+        """, re.VERBOSE)
+
+    def extract_subject(self):
+        """Anlyse the text of the note for URLs of subject(s) of the note."""
+        m = Note.subject_re.search(self.text)
+        if m:
+            urls, self.text = m.group(1).split(), self.text[:m.start(0)]
+            for url in urls:
+                self.add_subject(url)
+            return urls
 
 
 class NoteSubject(models.Model):

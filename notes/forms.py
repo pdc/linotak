@@ -55,6 +55,8 @@ class NoteForm(ModelForm):
             if not is_new and arc.sequence != i:
                 arc.sequence = i
                 arc.save()
+        if instance.extract_subject():
+            instance.save()
         return instance
 
 
