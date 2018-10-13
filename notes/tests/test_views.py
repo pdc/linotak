@@ -40,7 +40,7 @@ class TestNoteList(TestCase):
 
         self.assertEqual(list(r.context['can_edit_as']), [author])
 
-    def test_includes_unpublished_notes_if_editor(self):
+    def test_includes_drafts_if_editor(self):
         author = PersonFactory.create()
         series = SeriesFactory.create(name='bar', editors=[author])
         note = NoteFactory.create(author=author, series=series, text='text of note')
@@ -48,8 +48,8 @@ class TestNoteList(TestCase):
 
         r = self.client.get('/notes/bar/')
 
-        self.assertEqual(list(r.context['note_list']), [note])
-        self.assertTrue(r.context['has_draft'])
+        self.assertEqual(list(r.context['note_list']), [])
+        self.assertEqual(list(r.context['draft_list']), [note])
 
     def given_logged_in_as(self, person):
         self.client.login(username=person.login.username, password='secret')

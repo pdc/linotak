@@ -17,21 +17,22 @@ from .models import Series, Note, Locator
 
 class NotesQuerysetMixin:
     """Get notes as the main query set with correct visibility and ordering."""
+
     def get_queryset(self, **kwargs):
         """Acquire the relevant series and return the notes in that series."""
-        notes = Note.objects
-        q = Q(published__isnull=False)
-        if not self.request.user.is_anonymous:
-            series = Series.objects.filter(editors__login=self.request.user)
-            q = q | Q(series__in=series)
-        return notes.filter(q).order_by(
-            F('published').desc(nulls_first=True),
+        return Note.objects.order_by(
+            F('published').desc(),
             F('created').desc())
 
     def get_context_data(self, **kwargs):
-        """Add flag saying whether there is a draft note already."""
+        """If user is editor and there is a note list then partition the list in to published & unpublished."""
         context = super().get_context_data(**kwargs)
-        context['has_draft'] = self.get_queryset().filter(published__isnull=True).exists()
+        notes = context.get('note_list')
+        if notes:
+            context['note_list'] = notes.filter(published__isnull=False)
+            if self.request.user.is_authenticated:
+                series = Series.objects.filter(editors__login=self.request.user)
+                context['draft_list'] = notes.filter(published__isnull=True, series__in=series)
         return context
 
 

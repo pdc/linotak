@@ -25,10 +25,20 @@
             <p class="series-desc">{{ series.desc }}</p>
         {% endif %}
 
-        <ul class="note-list">
-            {% for note in note_list %}
-                {% include 'notes/parts/note_item.html' %}
-            {% endfor %}
-        </ul>
+        <div class="notes-wrapper">
+            {% if draft_list %}
+                <ul class="note-list draft-note-list">
+                    {% for note in draft_list %}
+                        {% include 'notes/parts/note_item.html' %}
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            <ul class="note-list">
+                {% for note in note_list %}
+                    {% include 'notes/parts/note_item.html' %}
+                {% endfor %}
+            </ul>
+        </div>
 
 {% endblock %}
