@@ -14,7 +14,7 @@ class TestNoteList(TestCase):
     def test_includes_series(self):
         series = SeriesFactory.create(name='bar')
 
-        r = self.client.get('/notes/bar/')
+        r = self.client.get('/bar/')
 
         self.assertEqual(r.context['series'], series)
 
@@ -25,7 +25,7 @@ class TestNoteList(TestCase):
         note2 = series.note_set.create(text='note2', author=author, published=timezone.now())
         self.client.logout()
 
-        r = self.client.get('/notes/bar/')
+        r = self.client.get('/bar/')
 
         self.assertEqual(list(r.context['note_list']), [note2])
         self.assertFalse(r.context.get('has_draft'))
@@ -36,7 +36,7 @@ class TestNoteList(TestCase):
         series = SeriesFactory.create(name='bar', editors=[author])
         self.given_logged_in_as(author)
 
-        r = self.client.get('/notes/bar/')
+        r = self.client.get('/bar/')
 
         self.assertEqual(list(r.context['can_edit_as']), [author])
 
@@ -46,7 +46,7 @@ class TestNoteList(TestCase):
         note = NoteFactory.create(author=author, series=series, text='text of note')
         self.given_logged_in_as(author)
 
-        r = self.client.get('/notes/bar/')
+        r = self.client.get('/bar/')
 
         self.assertEqual(list(r.context['note_list']), [])
         self.assertEqual(list(r.context['draft_list']), [note])
@@ -66,21 +66,21 @@ class TestNoteUpdateView(TestCase):
         note = NoteFactory.create(author=self.author, series=self.series, published=timezone.now())
         self.assertTrue(note.pk)
 
-        r = self.client.get('/notes/bar/%d/edit' % (note.pk,), follow=True)
+        r = self.client.get('/bar/%d/edit' % (note.pk,), follow=True)
 
-        self.assertEqual(r.redirect_chain, [('/notes/bar/%d' % (note.pk,), 301)])
+        self.assertEqual(r.redirect_chain, [('/bar/%d' % (note.pk,), 301)])
 
     def test_passes_series_and_author(self):
         Locator.objects.create(url='http://example.com/1')
         Locator.objects.create(url='http://example.com/2')
 
-        r = self.client.get('/notes/bar/new')
+        r = self.client.get('/bar/new')
 
         self.assertEqual(r.context['form'].initial['series'], self.series)
         self.assertEqual(r.context['form'].initial['author'], self.author)
 
     def test_creates_note_on_post(self):
-        r = self.client.post('/notes/bar/new', {
+        r = self.client.post('/bar/new', {
             'series': str(self.series.pk),  # From intitial
             'author': str(self.author.pk),
             'text': 'NOTE TEXT',

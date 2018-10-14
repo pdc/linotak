@@ -1,6 +1,6 @@
 {% extends 'notes/base.html' %}
 
-{% block title %}Please log in{% endblock %}
+{% block title %}{% if form.instance.pk %}Edit note{% else %}New note{% endif %}{% endblock %}
 
 {% block styles %}
         <style>
