@@ -10,7 +10,8 @@
     line-height: 2;
 
     text-decoration: none;
-    border: 2px groove;
+    border-width: 2px;
+    border-style: groove;
 }
 
 .series-desc {
@@ -23,6 +24,11 @@
         flex-flow: row nowrap;
         justify-content: center;
     }
+}
+
+.notes-wrapper {
+    border-top-width: 1px;
+    border-top-style: dotted;
 }
 
 .note-list {
@@ -45,8 +51,12 @@
 .note {
     display: block;
     margin: 0;
-    padding: 5px 0;
-    border-top: 1px dotted;
+    padding: 5px 0 25px;
+}
+
+.note + .note {
+    border-top-width: 1px;
+    border-top-style: dotted;
 }
 
 .note-text {
