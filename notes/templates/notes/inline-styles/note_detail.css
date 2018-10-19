@@ -26,7 +26,8 @@
 }
 
 .note-metadata {
-    margin: 0 10px;
+    display: block;
+    margin: 5px 10px;
     font-size: 13px;
     line-height: 1.25;
 }
