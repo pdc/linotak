@@ -17,7 +17,7 @@ class TestLinotakScanCommand(TestCase):
 
     def test_sets_base_uri(self):
         text = self.call_command('simple.html', '--base', 'http://example.com/foo/bar')
-        self.assertTrue("Link({'webmention'}, 'http://example.com/webention', None, None, None, [], None)" in text)
+        self.assertTrue("Link({'webmention'}, 'http://example.com/webention')" in text)
 
     def call_command(self, file_name, *args, **kwargs):
         file_path = os.path.join(os.path.dirname(__file__), 'data', file_name)
