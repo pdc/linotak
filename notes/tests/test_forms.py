@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from customuser.models import Login
 from ..forms import NoteForm, LocatorForm, LocatorFormset
+from .. import forms  # for mocking
 from ..models import Series, Locator, Note, NoteSubject
 from .factories import PersonFactory, SeriesFactory
 
