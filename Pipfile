@@ -9,6 +9,7 @@ django-environ = "*"
 celery = "*"
 httpretty = "*"
 requests = "*"
+"psycopg2" = "*"
 
 [dev-packages]
 tblib = "*"
