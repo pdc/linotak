@@ -14,6 +14,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import sys
 
 import environ
 
@@ -21,6 +22,8 @@ env = environ.Env(
     DEBUG=(bool, False),
     STATIC_ROOT=(str, None),
     STATIC_URL=(str, None),
+    CELERY_BROKER_URL=(str, 'pyamqp://localhost/'),
+    NOTES_FETCH_LOCATORS=(bool, False),
 )
 environ.Env.read_env()
 
@@ -34,6 +37,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
+
+# Used to avoid making network requests from tests.
+TEST = 'test' in sys.argv
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'secret-key-value' if DEBUG else env('SECRET_KEY')
@@ -54,8 +60,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'customuser',
-    'notes',
+    'customuser.apps.CustomuserConfig',
+    'notes.apps.NotesConfig',
 ]
 
 MIDDLEWARE = [
@@ -145,3 +151,13 @@ if env('STATIC_ROOT'):
         STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 else:
     STATIC_URL = '/static/'
+
+
+# Suppress Celery dispatch during tests.
+CELERY_BROKER_URL = not TEST and env('CELERY_BROKER_URL')
+
+
+# Whether we fetch pages for subjects when they are added to the database.
+# Suppressed during most tests to avoid network traffic during testing.
+NOTES_FETCH_LOCATORS = not TEST and env('NOTES_FETCH_LOCATORS')
+

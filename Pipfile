@@ -6,6 +6,9 @@ name = "pypi"
 [packages]
 django = "*"
 django-environ = "*"
+celery = "*"
+httpretty = "*"
+requests = "*"
 
 [dev-packages]
 tblib = "*"

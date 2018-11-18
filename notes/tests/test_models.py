@@ -1,10 +1,12 @@
 from datetime import datetime
+from unittest.mock import patch
 
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from ..models import Note
+from ..models import Note, Locator
+from .. import signals
 from .factories import NoteFactory, SeriesFactory
 
 
@@ -101,3 +103,31 @@ class TestNoteExtractSubjects(TestCase):
         self.assertFalse(result)
         self.assertEqual(note.text, 'Banana frappé')
         self.assertEqual([x.url for x in note.subjects.all()], [])
+
+
+
+class TestLocatorFetchPageUpdate(TestCase):
+    """Test locator_fetch_page_update."""
+
+    def test_queues_fetch_when_locator_created(self):
+        """Test locator_fetch_page_update queues fetch when locator created."""
+        with self.settings(NOTES_FETCH_LOCATORS=True), patch.object(signals, 'fetch_locator_page') as fetch_locator_page:
+            locator = Locator.objects.create(url='https://example.com/1')
+
+            fetch_locator_page.delay.assert_called_once_with(locator.pk)
+
+    def test_doesnt_queue_if_settings_not_set(self):
+        """Test locator_fetch_page_update doesnt queue if settings not set."""
+        with self.settings(NOTES_FETCH_LOCATORS=False), patch.object(signals, 'fetch_locator_page') as fetch_locator_page:
+            locator = Locator.objects.create(url='https://example.com/1')
+
+            self.assertFalse(fetch_locator_page.delay.called)
+
+    def test_doesnt_queue_if_not_newly_created(self):
+        """Test locator_fetch_page_update queues fetch when locator created."""
+        with self.settings(NOTES_FETCH_LOCATORS=True), patch.object(signals, 'fetch_locator_page') as fetch_locator_page:
+            locator = Locator.objects.create(url='https://example.com/1')
+            locator.title = 'FOO'
+            locator.save()
+
+            fetch_locator_page.delay.assert_called_once_with(locator.pk)

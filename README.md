@@ -11,11 +11,13 @@ Stack:
 
   * Python 3
   * Django
+  * Celery
 
 Use Pipenv:
 
     pipenv run ./manage.py test
-    pipenv run ./manage.py runserver 8004
+    pipenv run celery -A linotak.celery worker --loglevel=info
+    pipenv run ./manage.py runserver 0:8004
 
   [rel-syndication]: http://microformats.org/wiki/rel-syndication
   [Mastodon API]: https://github.com/tootsuite/documentation/blob/master/Using-the-API/API.md
