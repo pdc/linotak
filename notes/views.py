@@ -74,10 +74,15 @@ class NoteFormMixin:
     form_class = NoteForm
 
     def get_initial(self, **kwargs):
+        """Ensure series is propagated down in to the form."""
         initial = super().get_initial(**kwargs)
-        initial['author'] = self.request.user.person_set.all()[0]
         initial['series'] = self.series
         return initial
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['login'] = self.request.user
+        return kwargs
 
 
 class NoteCreateView(LoginRequiredMixin, SeriesMixin, NoteFormMixin, CreateView):

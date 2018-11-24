@@ -2,7 +2,7 @@
 
 from django.forms import (
     Form, ModelForm, formset_factory,
-    CharField, DateTimeField, URLField,
+    CharField, DateTimeField, ModelChoiceField, URLField,
     HiddenInput, Textarea,
 )
 
@@ -19,11 +19,23 @@ class NoteForm(ModelForm):
         widgets = {
             'text': Textarea(attrs={'cols': 80, 'rows': 3}),
             'series': HiddenInput(),
-            'author': HiddenInput(),
         }
 
-    def __init__(self, **kwargs):
+    def __init__(self, login, **kwargs):
+        # Want to cnstrain author choices to editors of series of note.
+        # Must have series in the initial data or else.
+        initial = kwargs.get('initial')
+        series = initial and initial.get('series')
+        if series:
+            queryset = series.editors.filter(login=login)
+            if not initial.get('author'):
+                initial['author'] = queryset[0]
+
         super().__init__(**kwargs)
+
+        if series:
+            self.fields['author'].queryset = queryset
+
         self.subjects_formset = LocatorFormset(
             prefix='subj',
             data=kwargs.get('data'),
