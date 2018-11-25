@@ -87,7 +87,7 @@ class TestNoteForm(TestCase):
         self.series = SeriesFactory.create(editors=[self.alice])
 
     def test_new_form_has_empty_formset(self):
-        form = NoteForm(initial={'series': self.series, 'author': self.alice})
+        form = NoteForm(self.alice.login, initial={'series': self.series, 'author': self.alice})
 
         self.assertTrue(form.subjects_formset)
         self.assertEqual(len(form.subjects_formset), 0)
@@ -96,7 +96,7 @@ class TestNoteForm(TestCase):
         note = self.series.note_set.create(text='Foo', author=self.alice)
         NoteSubject.objects.create(note=note, locator=Locator.objects.create(url='http://example.com/1'))
 
-        form = NoteForm(instance=note)
+        form = NoteForm(self.alice.login, instance=note)
 
         self.assertTrue(form.subjects_formset)
         self.assertEqual(len(form.subjects_formset), 1)
@@ -118,7 +118,7 @@ class TestNoteForm(TestCase):
             'subj-0-ORDER': '',
             'subj-0-id': '',
         }
-        form = NoteForm(initial={'series': self.series, 'author': self.alice}, data=post_data)
+        form = NoteForm(self.alice.login, initial={'series': self.series, 'author': self.alice}, data=post_data)
 
         self.assertValid(form)
         result = form.save()
@@ -150,7 +150,7 @@ class TestNoteForm(TestCase):
             'subj-3-url': 'http://examnple.com/s',
             'subj-3-ORDER': '',
         }
-        form = NoteForm(initial={'series': self.series, 'author': self.alice}, data=post_data)
+        form = NoteForm(self.alice.login, initial={'series': self.series, 'author': self.alice}, data=post_data)
 
         self.assertValid(form)
         result = form.save()
@@ -178,7 +178,7 @@ class TestNoteForm(TestCase):
             'subj-1-ORDER': '1',
             'subj-0-DELETE': True,
         }
-        form = NoteForm(initial={'series': self.series, 'author': self.alice}, data=post_data)
+        form = NoteForm(self.alice.login, initial={'series': self.series, 'author': self.alice}, data=post_data)
 
         self.assertValid(form)
         result = form.save()
@@ -198,7 +198,7 @@ class TestNoteForm(TestCase):
             'subj-MIN_NUM_FORMS': '0',
             'subj-MAX_NUM_FORMS': '1000',
         }
-        form = NoteForm(initial={'series': self.series, 'author': self.alice}, data=post_data)
+        form = NoteForm(self.alice.login, initial={'series': self.series, 'author': self.alice}, data=post_data)
 
         self.assertValid(form)
         result = form.save()
