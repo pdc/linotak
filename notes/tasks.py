@@ -11,17 +11,7 @@ logger = get_task_logger(__name__)
 
 
 @shared_task
-def fetch_locator_page(pk):
+def fetch_locator_page(pk, if_not_scanned_since):
     locator = Locator.objects.get(pk=pk)
-    fetch_page_update_locator(locator)
-    # logger.info('Updated locator %s', locator)
+    fetch_page_update_locator(locator, if_not_scanned_since=if_not_scanned_since)
 
-
-@shared_task
-def mul(x, y):
-    return x * y
-
-
-@shared_task
-def xsum(numbers):
-    return sum(numbers)

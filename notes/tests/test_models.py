@@ -114,7 +114,7 @@ class TestLocatorFetchPageUpdate(TestCase):
         with self.settings(NOTES_FETCH_LOCATORS=True), patch.object(signals, 'fetch_locator_page') as fetch_locator_page:
             locator = Locator.objects.create(url='https://example.com/1')
 
-            fetch_locator_page.delay.assert_called_once_with(locator.pk)
+            fetch_locator_page.delay.assert_called_once_with(locator.pk, if_not_scanned_since=None)
 
     def test_doesnt_queue_if_settings_not_set(self):
         """Test locator_fetch_page_update doesnt queue if settings not set."""
@@ -124,10 +124,10 @@ class TestLocatorFetchPageUpdate(TestCase):
             self.assertFalse(fetch_locator_page.delay.called)
 
     def test_doesnt_queue_if_not_newly_created(self):
-        """Test locator_fetch_page_update queues fetch when locator created."""
+        """Test locator_fetch_page_update doesnt queue if not newly created"""
         with self.settings(NOTES_FETCH_LOCATORS=True), patch.object(signals, 'fetch_locator_page') as fetch_locator_page:
             locator = Locator.objects.create(url='https://example.com/1')
             locator.title = 'FOO'
             locator.save()
 
-            fetch_locator_page.delay.assert_called_once_with(locator.pk)
+            fetch_locator_page.delay.assert_called_once_with(locator.pk, if_not_scanned_since=None)

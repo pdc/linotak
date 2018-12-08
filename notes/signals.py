@@ -7,4 +7,4 @@ from .tasks import fetch_locator_page
 
 def on_locator_post_save(sender, instance, created, **kwargs):
     if created and settings.NOTES_FETCH_LOCATORS:
-        fetch_locator_page.delay(instance.pk)
+        fetch_locator_page.delay(instance.pk, if_not_scanned_since=instance.scanned)
