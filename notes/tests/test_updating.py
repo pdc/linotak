@@ -10,7 +10,7 @@ from ..scanner import Title, HCard, HEntry
 from .. import updating
 
 
-@httpretty.activate
+@httpretty.activate(allow_net_connect=False)
 class TestFetchPageUpdateLocator(TestCase):
     """Test fetch_page_update_locator."""
 
@@ -22,7 +22,7 @@ class TestFetchPageUpdateLocator(TestCase):
                 httpretty.GET, 'https://example.com/1',
                 body='CONTENT OF PAGE',
             )
-            cls.return_value.stuff = ['**STUFF**']
+            page_scanner.stuff = ['**STUFF**']
 
             fetch_page_update_locator(locator)
 
@@ -31,6 +31,8 @@ class TestFetchPageUpdateLocator(TestCase):
             page_scanner.close.assert_called_with()
 
             mock_update.assert_called_once_with(locator, ['**STUFF**'])
+            updated = Locator.objects.get(pk=locator.pk)
+            self.assertTrue(updated.scanned)
 
 
 class TestUpdateLocatorWithStuff(TestCase):
@@ -41,8 +43,7 @@ class TestUpdateLocatorWithStuff(TestCase):
 
         update_locator_with_stuff(locator, [Title('TITLE OF PAGE')])
 
-        updated = Locator.objects.get(pk=locator.pk)
-        self.assertEqual(updated.title, 'TITLE OF PAGE')
+        self.assertEqual(locator.title, 'TITLE OF PAGE')
 
     def test_uses_hentry(self):
         locator = Locator.objects.create(url='https://example.com/1')
@@ -54,9 +55,8 @@ class TestUpdateLocatorWithStuff(TestCase):
             ),
         ])
 
-        updated = Locator.objects.get(pk=locator.pk)
-        self.assertEqual(updated.title, 'NAME')
-        self.assertEqual(updated.text, 'SUMMARY')
+        self.assertEqual(locator.title, 'NAME')
+        self.assertEqual(locator.text, 'SUMMARY')
 
     def test_uses_hentry_over_title(self):
         locator = Locator.objects.create(url='https://example.com/1')
@@ -69,8 +69,7 @@ class TestUpdateLocatorWithStuff(TestCase):
             Title('OTHER TITLE'),
         ])
 
-        updated = Locator.objects.get(pk=locator.pk)
-        self.assertEqual(updated.title, 'NAME')
+        self.assertEqual(locator.title, 'NAME')
 
     def xtest_uses_hcard(self):
         locator = Locator.objects.create(url='https://example.com/1')
@@ -81,7 +80,6 @@ class TestUpdateLocatorWithStuff(TestCase):
                 HCard('AUTHOR', 'https://example.com/author')),
             ])
 
-        updated = Locator.objects.get(pk=locator.pk)
-        self.assertEqual(updated.author.native_name, 'AUTHOR')
-        self.assertEqual(updated.author.profile.url, 'https://example.com/author')
+        self.assertEqual(locator.author.native_name, 'AUTHOR')
+        self.assertEqual(locator.author.profile.url, 'https://example.com/author')
 

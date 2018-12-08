@@ -76,6 +76,10 @@ class Locator(models.Model):
         null=True,
         blank=True,
     )  # As claimed by the resource.
+    scanned = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
 
     created = models.DateTimeField(default=timezone.now)
     modified = models.DateTimeField(auto_now=True)
