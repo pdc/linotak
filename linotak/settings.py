@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'customuser.apps.CustomuserConfig',
     'notes.apps.NotesConfig',
+    'tanolin.images.apps.ImagesConfig',
 ]
 
 MIDDLEWARE = [
@@ -151,6 +152,12 @@ if env('STATIC_ROOT'):
         STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 else:
     STATIC_URL = '/static/'
+
+
+if DEBUG and env('MEDIA_ROOT'):
+    # Uploaded files go in a file-system directory.
+    MEDIA_ROOT = env('MEDIA_ROOT')
+    MEDIA_URL = '/media/'
 
 
 # Suppress Celery dispatch during tests.
