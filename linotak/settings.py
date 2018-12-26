@@ -167,4 +167,5 @@ CELERY_BROKER_URL = not TEST and env('CELERY_BROKER_URL')
 # Whether we fetch pages for subjects when they are added to the database.
 # Suppressed during most tests to avoid network traffic during testing.
 NOTES_FETCH_LOCATORS = not TEST and env('NOTES_FETCH_LOCATORS')
+IMAGES_FETCH_DATA = not TEST and env('IMAGES_FETCH_DATA')
 

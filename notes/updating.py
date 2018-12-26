@@ -5,8 +5,7 @@ import requests
 from django.db import transaction
 from django.utils import timezone
 
-from .models import Locator
-from .scanner import PageScanner, Title, HCard, HEntry
+from .scanner import PageScanner, Title, HEntry
 
 @transaction.atomic
 def fetch_page_update_locator(locator, if_not_scanned_since):

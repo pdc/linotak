@@ -5,8 +5,11 @@ from django.test import TestCase
 from django.utils import timezone
 import httpretty
 import os
+from unittest.mock import patch
 
 from .models import Image
+from . import signals
+from . import tasks
 
 
 # How we obtain real test files:
@@ -118,31 +121,23 @@ class TestImageRetrieve(TestCase):
             actual = f.read()
         self.assertEqual(actual, self.data)
 
-# class TestTasks(TestCase):
 
+class TestSignalHandler(TestCase):
+    """Test the signal handler."""
 
-# class TestImageCreationTriggersRetrieve(TestCase):
-#     """Test locator_fetch_page_update."""
+    # The retireval of image data is suppressed during testing,
+    # so in these tests we need to explictly enable it.
 
-#     def test_queues_fetch_when_locator_created(self):
-#         """Test locator_fetch_page_update queues fetch when locator created."""
-#         with self.settings(NOTES_FETCH_LOCATORS=True), patch.object(signals, 'fetch_locator_page') as fetch_locator_page:
-#             locator = Image.objects.create(data_url='https://example.com/1')
+    def test_queues_retrieve_when_image_created(self):
+        """Test signal handler queues retrieve when image created."""
+        with self.settings(IMAGES_FETCH_DATA=True), patch.object(signals, 'retrieve_image_data') as retrieve_image_data:
+            self.image = Image.objects.create(data_url='https://example.com/1')
 
-#             fetch_locator_page.delay.assert_called_once_with(locator.pk, if_not_scanned_since=None)
+        retrieve_image_data.delay.assert_called_with(self.image.pk, if_not_retrieved_since=None)
 
-#     def test_doesnt_queue_if_settings_not_set(self):
-#         """Test locator_fetch_page_update doesnt queue if settings not set."""
-#         with self.settings(NOTES_FETCH_LOCATORS=False), patch.object(signals, 'fetch_locator_page') as fetch_locator_page:
-#             Image.objects.create(data_url='https://example.com/1')
+    def test_doesnt_queue_retrieve_when_retrieved_is_set(self):
+        """Test signal handler doesnt queue retrieve when retrieved is set."""
+        with self.settings(IMAGES_FETCH_DATA=True), patch.object(signals, 'retrieve_image_data') as retrieve_image_data:
+            self.image = Image.objects.create(data_url='https://example.com/1', retrieved=timezone.now())
 
-#             self.assertFalse(fetch_locator_page.delay.called)
-
-#     def test_doesnt_queue_if_not_newly_created(self):
-#         """Test locator_fetch_page_update doesnt queue if not newly created"""
-#         with self.settings(NOTES_FETCH_LOCATORS=True), patch.object(signals, 'fetch_locator_page') as fetch_locator_page:
-#             locator = Image.objects.create(data_url='https://example.com/1')
-#             locator.title = 'FOO'
-#             locator.save()
-
-#             fetch_locator_page.delay.assert_called_once_with(locator.pk, if_not_scanned_since=None)
+        self.assertFalse(retrieve_image_data.delay.called)

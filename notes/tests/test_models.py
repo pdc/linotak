@@ -84,7 +84,6 @@ class TestNoteExtractSubjects(TestCase):
         self.assertEqual(note.text, 'Yo!')
         self.assertEqual([x.url for x in note.subjects.all()], ['http://example.com/'])
 
-
     def test_matches_URL_sans_path(self):
         note = NoteFactory.create(text='Yo! http://example.com')
 
@@ -94,7 +93,6 @@ class TestNoteExtractSubjects(TestCase):
         self.assertEqual(note.text, 'Yo!')
         self.assertEqual([x.url for x in note.subjects.all()], ['http://example.com/'])
 
-
     def test_returns_false_if_no_urls(self):
         note = NoteFactory.create(text='Banana frappé')
 
@@ -103,7 +101,6 @@ class TestNoteExtractSubjects(TestCase):
         self.assertFalse(result)
         self.assertEqual(note.text, 'Banana frappé')
         self.assertEqual([x.url for x in note.subjects.all()], [])
-
 
 
 class TestLocatorFetchPageUpdate(TestCase):
@@ -119,7 +116,7 @@ class TestLocatorFetchPageUpdate(TestCase):
     def test_doesnt_queue_if_settings_not_set(self):
         """Test locator_fetch_page_update doesnt queue if settings not set."""
         with self.settings(NOTES_FETCH_LOCATORS=False), patch.object(signals, 'fetch_locator_page') as fetch_locator_page:
-            locator = Locator.objects.create(url='https://example.com/1')
+            Locator.objects.create(url='https://example.com/1')
 
             self.assertFalse(fetch_locator_page.delay.called)
 
