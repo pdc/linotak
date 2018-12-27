@@ -1,9 +1,7 @@
 from django.test import Client, TestCase
-from django.urls import reverse
 from django.utils import timezone
 
-from customuser.models import Login
-from ..models import Series, Locator
+from ..models import Locator
 from .factories import SeriesFactory, PersonFactory, NoteFactory
 
 
@@ -21,7 +19,7 @@ class TestNoteList(TestCase):
     def test_excludes_unpublished_notes(self):
         series = SeriesFactory.create(name='bar')
         author = PersonFactory.create()
-        note1 = series.note_set.create(text='note1', author=author)
+        series.note_set.create(text='note1', author=author)
         note2 = series.note_set.create(text='note2', author=author, published=timezone.now())
         self.client.logout()
 
@@ -33,7 +31,7 @@ class TestNoteList(TestCase):
 
     def test_includes_create_button_if_editor(self):
         author = PersonFactory.create()
-        series = SeriesFactory.create(name='bar', editors=[author])
+        SeriesFactory.create(name='bar', editors=[author])
         self.given_logged_in_as(author)
 
         r = self.client.get('/bar/')

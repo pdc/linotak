@@ -2,7 +2,7 @@
 
 from django.forms import (
     Form, ModelForm, formset_factory,
-    CharField, DateTimeField, ModelChoiceField, URLField,
+    CharField, DateTimeField, URLField,
     HiddenInput, Textarea,
 )
 

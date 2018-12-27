@@ -1,13 +1,10 @@
 from datetime import datetime
 
-from django.test import Client, TestCase
-from django.urls import reverse
+from django.test import TestCase
 from django.utils import timezone
 
-from customuser.models import Login
-from ..forms import NoteForm, LocatorForm, LocatorFormset
-from .. import forms  # for mocking
-from ..models import Series, Locator, Note, NoteSubject
+from ..forms import NoteForm, LocatorForm
+from ..models import Locator, Note, NoteSubject
 from .factories import PersonFactory, SeriesFactory
 
 
@@ -186,7 +183,6 @@ class TestNoteForm(TestCase):
         self.assertTrue(result)
         self.assertEqual(len(result.subjects.all()), 1)
         self.assertEqual(result.subjects.all()[0].url, 'http://examnple.com/q')
-
 
     def test_extracts_subjects_from_text_of_note(self):
         post_data = {

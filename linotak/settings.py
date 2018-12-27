@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'customuser.apps.CustomuserConfig',
-    'notes.apps.NotesConfig',
+    'tanolin.notes.apps.NotesConfig',
     'tanolin.images.apps.ImagesConfig',
 ]
 

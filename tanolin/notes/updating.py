@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from .scanner import PageScanner, Title, HEntry
 
+
 @transaction.atomic
 def fetch_page_update_locator(locator, if_not_scanned_since):
     """Download and scan the web page thus locator references and update it."
@@ -54,4 +55,3 @@ def update_locator_with_stuff(locator, stuff):
     _, title = max((s, v) for s, v in titles if v)
     if title:
         locator.title = title
-

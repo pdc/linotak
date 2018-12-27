@@ -22,5 +22,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('', include('notes.urls'), name='notes-index'),
+    path('', include('tanolin.notes.urls'), name='notes-index'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

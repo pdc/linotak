@@ -4,7 +4,7 @@ from datetime import timedelta
 from django.test import TestCase
 from django.utils import timezone
 import httpretty
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from ..models import Locator
 from ..updating import fetch_page_update_locator, update_locator_with_stuff
@@ -114,4 +114,3 @@ class TestUpdateLocatorWithStuff(TestCase):
 
         self.assertEqual(locator.author.native_name, 'AUTHOR')
         self.assertEqual(locator.author.profile.url, 'https://example.com/author')
-

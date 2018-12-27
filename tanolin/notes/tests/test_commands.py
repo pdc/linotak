@@ -1,11 +1,8 @@
 import io
 import os
-from unittest.mock import patch
 
 from django.core.management import call_command
 from django.test import TestCase
-
-from notes import scanner
 
 
 class TestLinotakScanCommand(TestCase):
@@ -24,4 +21,3 @@ class TestLinotakScanCommand(TestCase):
         output = io.StringIO()
         call_command('linotakscan', file_path, *args, stdout=output, **kwargs)
         return output.getvalue()
-

@@ -1,11 +1,8 @@
-from datetime import datetime
 from unittest.mock import patch
 
-from django.test import Client, TestCase
-from django.urls import reverse
-from django.utils import timezone
+from django.test import TestCase
 
-from ..models import Note, Locator
+from ..models import Locator
 from .. import signals
 from .factories import NoteFactory, SeriesFactory
 

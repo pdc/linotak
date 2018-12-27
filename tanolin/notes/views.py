@@ -1,18 +1,17 @@
+"""Views fro notes."""
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q, F
-from django.http import HttpResponse,  HttpResponsePermanentRedirect
-from django.shortcuts import get_object_or_404, render
-from django.urls import reverse_lazy
+from django.db.models import F
+from django.http import HttpResponsePermanentRedirect
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.functional import cached_property
 from django.views import generic
-from django.views.generic.edit import CreateView, DeleteView, UpdateView
+from django.views.generic.edit import CreateView, UpdateView
 
-from .forms import NoteForm, LocatorFormset
-from .models import Series, Note, Locator
+from .forms import NoteForm
+from .models import Series, Note
 
 
 class NotesQuerysetMixin:
