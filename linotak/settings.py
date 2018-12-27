@@ -24,6 +24,7 @@ env = environ.Env(
     STATIC_URL=(str, None),
     CELERY_BROKER_URL=(str, 'pyamqp://localhost/'),
     NOTES_FETCH_LOCATORS=(bool, False),
+    IMAGES_FETCH_DATA=(bool, False),
 )
 environ.Env.read_env()
 
