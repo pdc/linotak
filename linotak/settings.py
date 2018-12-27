@@ -155,11 +155,15 @@ else:
     STATIC_URL = '/static/'
 
 
-if DEBUG and env('MEDIA_ROOT'):
-    # Uploaded files go in a file-system directory.
+if env('MEDIA_ROOT'):
+    # Uploaded and generated files are saved to local disk.
     MEDIA_ROOT = env('MEDIA_ROOT')
-    MEDIA_URL = '/media/'
 
+if DEBUG and env('MEDIA_ROOT'):
+    # Uploaded files are served from local disk.
+    MEDIA_URL = '/media/'
+else:
+    MEDIA_URL = env('MEDIA_URL')
 
 # Suppress Celery dispatch during tests.
 CELERY_BROKER_URL = not TEST and env('CELERY_BROKER_URL')
