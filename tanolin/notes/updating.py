@@ -5,7 +5,8 @@ import requests
 from django.db import transaction
 from django.utils import timezone
 
-from .scanner import PageScanner, Title, HEntry
+from ..images.models import Image
+from .scanner import PageScanner, Title, HEntry, Img
 
 
 @transaction.atomic
@@ -44,14 +45,20 @@ def update_locator_with_stuff(locator, stuff):
 
     Does not save the locator.
     """
-    titles = []
+    titles = []  # List of candidate titles with weight. Pairs (WEIGHT, TITLE) where WEIGHT is a positive integer and TITLE is nonemoty.
     for thing in stuff:
         if isinstance(thing, Title):
-            titles.append((1, thing.text))
+            if thing.text:
+                titles.append((1, thing.text))
         elif isinstance(thing, HEntry):
-            titles.append((2, thing.name))
+            if thing.name:
+                titles.append((2, thing.name))
             if thing.summary:
                 locator.text = thing.summary
-    _, title = max((s, v) for s, v in titles if v)
-    if title:
-        locator.title = title
+        elif isinstance(thing, Img):
+            image, is_new = Image.objects.get_or_create(data_url=thing.src, media_type=thing.type)
+            locator.images.add(image)
+    if titles:
+        _, title = max(titles)
+        if title:
+            locator.title = title

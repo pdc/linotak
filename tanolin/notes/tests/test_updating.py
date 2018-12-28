@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from ..models import Locator
 from ..updating import fetch_page_update_locator, update_locator_with_stuff
-from ..scanner import Title, HCard, HEntry
+from ..scanner import Title, HCard, HEntry, Img
 from .. import updating
 
 
@@ -70,30 +70,28 @@ class TestFetchPageUpdateLocator(TestCase):
 class TestUpdateLocatorWithStuff(TestCase):
     """Test update_locator_with_stuff."""
 
+    @classmethod
+    def setUpTestData(cls):
+        cls.locator = Locator.objects.create(url='https://example.com/1')
+
     def test_uses_title(self):
-        locator = Locator.objects.create(url='https://example.com/1')
+        update_locator_with_stuff(self.locator, [Title('TITLE OF PAGE')])
 
-        update_locator_with_stuff(locator, [Title('TITLE OF PAGE')])
-
-        self.assertEqual(locator.title, 'TITLE OF PAGE')
+        self.assertEqual(self.locator.title, 'TITLE OF PAGE')
 
     def test_uses_hentry(self):
-        locator = Locator.objects.create(url='https://example.com/1')
-
-        update_locator_with_stuff(locator, [
+        update_locator_with_stuff(self.locator, [
             HEntry(
                 'https://example.com/1', 'NAME', 'SUMMARY',
                 HCard('AUTHOR', 'https://example.com/author'),
             ),
         ])
 
-        self.assertEqual(locator.title, 'NAME')
-        self.assertEqual(locator.text, 'SUMMARY')
+        self.assertEqual(self.locator.title, 'NAME')
+        self.assertEqual(self.locator.text, 'SUMMARY')
 
     def test_uses_hentry_over_title(self):
-        locator = Locator.objects.create(url='https://example.com/1')
-
-        update_locator_with_stuff(locator, [
+        update_locator_with_stuff(self.locator, [
             HEntry(
                 'https://example.com/1', 'NAME', 'SUMMARY',
                 HCard('AUTHOR', 'https://example.com/author'),
@@ -101,16 +99,21 @@ class TestUpdateLocatorWithStuff(TestCase):
             Title('OTHER TITLE'),
         ])
 
-        self.assertEqual(locator.title, 'NAME')
+        self.assertEqual(self.locator.title, 'NAME')
+
+    def test_uses_toplevel_images(self):
+        update_locator_with_stuff(self.locator, [
+            Img('https://images.example.com/42'),
+        ])
+
+        self.assertEqual(self.locator.images.all()[0].data_url, 'https://images.example.com/42')
 
     def xtest_uses_hcard(self):
-        locator = Locator.objects.create(url='https://example.com/1')
-
-        update_locator_with_stuff(locator, [
+        update_locator_with_stuff(self.locator, [
             HEntry(
                 'https://example.com/1', 'NAME', 'SUMMARY',
                 HCard('AUTHOR', 'https://example.com/author')),
             ])
 
-        self.assertEqual(locator.author.native_name, 'AUTHOR')
-        self.assertEqual(locator.author.profile.url, 'https://example.com/author')
+        self.assertEqual(self.locator.author.native_name, 'AUTHOR')
+        self.assertEqual(self.locator.author.profile.url, 'https://example.com/author')

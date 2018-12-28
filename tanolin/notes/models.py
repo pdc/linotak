@@ -5,6 +5,8 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 
+from ..images.models import Image
+
 
 class Person(models.Model):
     """A person referred to as the author of some resource.
@@ -58,6 +60,9 @@ class Locator(models.Model):
         models.SET_NULL,
         null=True,
         blank=True,
+    )
+    images = models.ManyToManyField(
+        Image,
     )
 
     url = models.URLField(
