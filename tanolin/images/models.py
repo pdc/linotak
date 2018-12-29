@@ -79,19 +79,38 @@ class Image(models.Model):
             total_size += len(chunk)
             buf.write(chunk)
             hasher.update(chunk)
-        buf.seek(0)
-        self.cached_data.save(urlsafe_b64encode(hasher.digest()).decode('ascii'), File(buf))
-        self.sniff(save=save)
+        self.etag = hasher.digest()
+
+        self._sniff(input=buf.getvalue())  # Needed to get file type for file name.
+        file_name = urlsafe_b64encode(self.etag).decode('ascii') + suffix_from_media_type(self.media_type)
+        self.cached_data.save(file_name, File(buf), save=save)
 
     def sniff(self, save=False):
         """Presuming already has image data, guess width, height, and media_type."""
         with self.cached_data.open() as f:
-            cmd = ['identify', '-']
-            output = subprocess.run(cmd, check=True, stdin=f.file, stdout=subprocess.PIPE).stdout
+            self._sniff(stdin=f.file)
+
+    def _sniff(self, **kwargs):
+        """Given a file-like object, guess width, height, and media_type.
+
+        Arguments --
+            kwargs -- how to get the inout. Either stdin=REALFILE or input=BYTES
+        """
+        cmd = ['identify', '-']
+        output = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, **kwargs).stdout
         _, type, size, *rest = output.split()
-        self.media_type = 'image/%s' % type.decode('UTF-8').lower()
+        self.media_type = media_type_from_imagemagick_type(type)
         w, h = size.split(b'x')
         self.width = int(w)
         self.height = int(h)
-        if save:
-            self.save()
+
+
+def media_type_from_imagemagick_type(type):
+    """Given the type of image as reported by ImageMagick, return MIME type."""
+    return 'image/%s' % type.decode('UTF-8').lower()
+
+
+def suffix_from_media_type(media_type):
+    """Given an image MIME type, return file-name suffix."""
+    return '.' + media_type.split('/', 1)[1]
+
