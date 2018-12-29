@@ -1,8 +1,8 @@
 # -*-coding: UTF-8 -*-
 # Run these commands with fab
 
-from datetime import date, datetime
-from fabric.api import local, settings, abort, run, cd, env, sudo, prefix
+from datetime import date
+from fabric.api import local, settings, abort, run, cd, env, prefix
 from fabric.contrib.console import confirm
 from fabric.contrib.files import exists
 
@@ -11,7 +11,6 @@ env.package_name = 'linotak'
 env.hosts = ['{0}@spreadsite.org'.format(env.site_name)]
 env.virtualenv = env.site_name
 env.settings_subdir = env.site_name
-env.django_apps = ['notes', 'customuser']
 
 
 def update_requirements():
@@ -20,7 +19,7 @@ def update_requirements():
 
 def test():
     with settings(warn_only=True):
-        result = local('pipenv run python manage.py test {0} --keep --fail'.format(' '.join(env.django_apps)), capture=True)
+        result = local('pipenv run python manage.py test --keep --fail', capture=True)
     if result.failed and not confirm("Tests failed. Continue anyway?"):
         abort("Aborting at user request.")
 
