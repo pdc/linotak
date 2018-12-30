@@ -19,7 +19,7 @@ import io
 import requests
 import subprocess
 
-from .signals import wants_image_data, wants_square_representation
+from .signals import wants_data, wants_square_representation
 
 
 class Image(models.Model):
@@ -134,9 +134,9 @@ class Image(models.Model):
             wants_square_representation.send(self.__class__, instance=self, size=size)
         return result
 
-    def want_size(self):
+    def wants_size(self):
         """Indicates size is wanted and not available."""
-        wants_image_data.send(self.__class__, instance=self)
+        wants_data.send(self.__class__, instance=self)
 
 
 def _sniff(**kwargs):

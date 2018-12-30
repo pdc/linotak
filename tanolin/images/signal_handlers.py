@@ -11,7 +11,7 @@ def on_image_post_save(sender, instance, created, **kwargs):
         retrieve_image_data.delay(instance.pk, if_not_retrieved_since=None)
 
 
-def on_image_wants_image_data(sender, instance, **kwargs):
+def on_image_wants_data(sender, instance, **kwargs):
     if instance.cached_data:
         sniff_image_data.delay(instance.pk)
     if not instance.cached_data and not instance.retrieved and getattr(settings, 'IMAGES_FETCH_DATA', False):

@@ -297,7 +297,7 @@ class TestImageFindSquareRepresentation(ImageTestMixin, TestCase):
         self.assertFalse(result)
         create_image_square_representation.delay.assert_called_with(self.image.pk, 150)
 
-    def test_queues_retrieval_if_nbo_cached_data(self):
+    def test_queues_retrieval_if_no_cached_data(self):
         self.image = Image.objects.create(data_url='http://example.com/69')  # No data
 
         with self.settings(IMAGES_FETCH_DATA=True), \
@@ -311,3 +311,15 @@ class TestImageFindSquareRepresentation(ImageTestMixin, TestCase):
             retrieve_image_data.s(self.image.pk, if_not_retrieved_since=None),
             create_image_square_representation.si(self.image.pk, 150))
         chain.return_value.delay.assert_called_with()
+
+
+class TestImageWantsSIze(TestCase):
+
+    def test_queues_retrieve_if_no_cached_data(self):
+        image = Image.objects.create(data_url='https://example.com/images/1.jpeg')
+
+        with self.settings(IMAGES_FETCH_DATA=True), \
+                patch.object(signal_handlers, 'retrieve_image_data') as retrieve_image_data:
+            image.wants_size()
+
+        retrieve_image_data.delay.assert_called_with(image.pk, if_not_retrieved_since=None)

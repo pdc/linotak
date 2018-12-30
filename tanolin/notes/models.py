@@ -96,7 +96,7 @@ class Locator(models.Model):
     def main_image(self):
         """Return the image with the largest source dimensions."""
         for image in self.images.filter(Q(width__isnull=True) | Q(height__isnull=True)):
-            image.want_size()
+            image.wants_size()
         candidates = list(self.images.filter(width__isnull=False, height__isnull=False).order_by((F('width') * F('height')).desc())[:1])
         return candidates[0] if candidates else None
 

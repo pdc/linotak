@@ -2,7 +2,7 @@ from unittest.mock import patch, ANY
 
 from django.test import TestCase
 
-from ...images.models import Image, wants_image_data
+from ...images.models import Image, wants_data
 from ..models import Locator
 from .. import signals
 from .factories import NoteFactory, SeriesFactory
@@ -147,9 +147,9 @@ class TestLocatorMainImage(TestCase):
         locator.images.add(image)
         locator.images.add(Image.objects.create(data_url='https://example.com/50', width=60, height=60))
 
-        with patch.object(wants_image_data, 'send') as wants_image_data_send:
+        with patch.object(wants_data, 'send') as wants_data_send:
             result = locator.main_image()
 
         self.assertEqual(result.data_url, 'https://example.com/100')
-        wants_image_data_send.assert_called_once_with(Image, instance=image)
+        wants_data_send.assert_called_once_with(Image, instance=image)
 
