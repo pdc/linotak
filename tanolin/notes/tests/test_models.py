@@ -1,7 +1,8 @@
-from unittest.mock import patch
+from unittest.mock import patch, ANY
 
 from django.test import TestCase
 
+from ...images.models import Image, wants_image_data
 from ..models import Locator
 from .. import signals
 from .factories import NoteFactory, SeriesFactory
@@ -125,3 +126,30 @@ class TestLocatorFetchPageUpdate(TestCase):
             locator.save()
 
             fetch_locator_page.delay.assert_called_once_with(locator.pk, if_not_scanned_since=None)
+
+
+class TestLocatorMainImage(TestCase):
+
+    def test_returns_largest_image(self):
+        locator = Locator.objects.create(url='https://example.com/1')
+        locator.images.add(Image.objects.create(data_url='https://example.com/100', width=100, height=50))
+        locator.images.add(Image.objects.create(data_url='https://example.com/500', width=500, height=400))
+        locator.images.add(Image.objects.create(data_url='https://example.com/50', width=60, height=60))
+
+        result = locator.main_image()
+
+        self.assertEqual(result.data_url, 'https://example.com/500')
+
+    def test_queues_retrieval_of_unsized_images(self):
+        locator = Locator.objects.create(url='https://example.com/1')
+        locator.images.add(Image.objects.create(data_url='https://example.com/100', width=100, height=50))
+        image = Image.objects.create(data_url='https://example.com/500')
+        locator.images.add(image)
+        locator.images.add(Image.objects.create(data_url='https://example.com/50', width=60, height=60))
+
+        with patch.object(wants_image_data, 'send') as wants_image_data_send:
+            result = locator.main_image()
+
+        self.assertEqual(result.data_url, 'https://example.com/100')
+        wants_image_data_send.assert_called_once_with(Image, instance=image)
+

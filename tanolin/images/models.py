@@ -12,11 +12,14 @@ from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.validators import RegexValidator
 from django.db import models, transaction
+from django.db.models import F
 from django.utils import timezone
 from hashlib import md5
 import io
 import requests
 import subprocess
+
+from .signals import wants_image_data, wants_square_representation
 
 
 class Image(models.Model):
@@ -99,8 +102,15 @@ class Image(models.Model):
         """
         self.media_type, self.width, self.height = _sniff(**kwargs)
 
+    @transaction.atomic
     def create_square_representation(self, size):
         """Create a representation (probably cropped) of this image."""
+        if self.width <= size and self.height <= size:
+            # Do not enlarge to fit!
+            return
+        if self.representations.filter(width=size, height=size).exists():
+            return
+
         cmd = ['convert', '-', '-resize', '^%dx%d>' % (size, size), '-']
         scale = max(size / self.width, size / self.height)
         is_cropped = round(scale * self.width) != round(scale * self.height)
@@ -113,9 +123,24 @@ class Image(models.Model):
             rep = self.representations.create(media_type=self.media_type, width=size, height=size, is_cropped=is_cropped, etag=etag)
             rep.content.save(file_name_from_etag(rep.etag, rep.media_type), ContentFile(output))
 
+    def find_square_representation(self, size):
+        """Return the best match for a square area of this size.
+
+        If there is no exact match, fires signal.
+        """
+        results = list(self.representations.filter(width__lte=size, height__lte=size).order_by((F('width') * F('height')).desc())[:1])
+        result = results[0] if results else None
+        if not result or result.width != size or result.height != size:
+            wants_square_representation.send(self.__class__, instance=self, size=size)
+        return result
+
+    def want_size(self):
+        """Indicates size is wanted and not available."""
+        wants_image_data.send(self.__class__, instance=self)
+
 
 def _sniff(**kwargs):
-    """Given a file-like object, guess width, height, and media_type.
+    """Given a file-like object, guess media_type, width, and height.
 
     Arguments --
         kwargs -- how to get the input. Either stdin=REALFILE or input=BYTES
@@ -155,7 +180,7 @@ class Representation(models.Model):
     )
 
     content = models.FileField(
-        upload_to='img',
+        upload_to='i',
         null=True,
         blank=True,
         help_text='Content of the image representation.',

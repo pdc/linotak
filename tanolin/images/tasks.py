@@ -20,3 +20,8 @@ def retrieve_image_data(pk, if_not_retrieved_since):
 def sniff_image_data(pk):
     with transaction.atomic():
         Image.objects.get(pk=pk).sniff(save=True)
+
+
+@shared_task
+def create_image_square_representation(pk, size):
+    Image.objects.get(pk=pk).create_image_square_representation(size)

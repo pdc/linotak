@@ -9,7 +9,7 @@ import struct
 from unittest.mock import patch
 
 from .models import Image, _sniff
-from . import signals
+from . import signal_handlers  # For mocking
 
 
 # How we obtain real test files:
@@ -130,20 +130,20 @@ class TestSignalHandler(TestCase):
 
     def test_queues_retrieve_when_image_created(self):
         """Test signal handler queues retrieve when image created."""
-        with self.settings(IMAGES_FETCH_DATA=True), patch.object(signals, 'retrieve_image_data') as retrieve_image_data:
+        with self.settings(IMAGES_FETCH_DATA=True), patch.object(signal_handlers, 'retrieve_image_data') as retrieve_image_data:
             self.image = Image.objects.create(data_url='https://example.com/1')
 
         retrieve_image_data.delay.assert_called_with(self.image.pk, if_not_retrieved_since=None)
 
     def test_doesnt_queue_retrieve_when_retrieved_is_set(self):
         """Test signal handler doesnt queue retrieve when retrieved is set."""
-        with self.settings(IMAGES_FETCH_DATA=True), patch.object(signals, 'retrieve_image_data') as retrieve_image_data:
+        with self.settings(IMAGES_FETCH_DATA=True), patch.object(signal_handlers, 'retrieve_image_data') as retrieve_image_data:
             self.image = Image.objects.create(data_url='https://example.com/1', retrieved=timezone.now())
 
         self.assertFalse(retrieve_image_data.delay.called)
 
 
-class TestImageCreateSquareRepresentation(TestCase):
+class ImageTestMixin:
 
     image = None
 
@@ -153,10 +153,20 @@ class TestImageCreateSquareRepresentation(TestCase):
                 rep.content.delete()
             self.image.cached_data.delete()
 
+    def given_image_with_data(self, file_name, **kwargs):
+        with open(os.path.join(data_dir, file_name), 'rb') as input:
+            self.data = input.read()
+        self.image = Image.objects.create(data_url='http://example.com/69', **kwargs)
+        self.image.cached_data.save('test.png', ContentFile(self.data))
+        self.image.sniff()
+        self.image.save()
+
+
+class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
+
     def test_can_create_square_from_rect(self):
         self.given_image_with_data('im.png')
 
-        # with patch('subprocess.call') as mock_call:
         self.image.create_square_representation(32)
 
         # convert - -resize '^32x32>' -gravity center -extent 32x32 - < tanolin/images/test-data/im.png > tanolin/images/test-data/im-32sq.png
@@ -168,7 +178,6 @@ class TestImageCreateSquareRepresentation(TestCase):
     def test_doesnt_tag_square_from_square_as_cropped(self):
         self.given_image_with_data('frost-100x101.jpeg')
 
-        # with patch('subprocess.call') as mock_call:
         self.image.create_square_representation(32)
 
         self.assertEqual(self.image.representations.count(), 1)
@@ -176,18 +185,21 @@ class TestImageCreateSquareRepresentation(TestCase):
         self.assert_representation(rep, 'image/jpeg', 32, 32, is_cropped=False)
 
     def test_doesnt_scale_too_small_image(self):
-        pass
+        self.given_image_with_data('frost-100x101.jpeg')
+
+        with patch('subprocess.run') as mock_run:
+            self.image.create_square_representation(256)
+
+        self.assertFalse(mock_run.called)
 
     def test_is_idempotent(self):
-        pass
+        self.given_image_with_data('frost-100x101.jpeg')
+        self.image.create_square_representation(32)
 
-    def given_image_with_data(self, file_name, **kwargs):
-        with open(os.path.join(data_dir, file_name), 'rb') as input:
-            self.data = input.read()
-        self.image = Image.objects.create(data_url='http://example.com/69', **kwargs)
-        self.image.cached_data.save('test.png', ContentFile(self.data))
-        self.image.sniff()
-        self.image.save()
+        with patch('subprocess.run') as mock_run:
+            self.image.create_square_representation(32)
+
+        self.assertFalse(mock_run.called)
 
     def assert_representation(self, rep, media_type, width, height, is_cropped):
         # Check we have recorded image metadata correctly.
@@ -199,7 +211,7 @@ class TestImageCreateSquareRepresentation(TestCase):
         else:
             self.assertFalse(rep.is_cropped, 'Expected not is_cropped')
 
-        # Check the content actually mayches the metadata.
+        # Check the content actually maches the metadata.
         with rep.content.open() as f:
             actual_media_type, actual_width, actual_height = _sniff(stdin=f.file)
         self.assertEqual(actual_media_type, media_type)
@@ -249,3 +261,53 @@ def _iter_PNG_chunks(data):
         yield chunk_type, chunk_data, chunk_crc
     if pos != len(data):
         raise ValueError('Bad chunk(s) in PNG data')
+
+
+class TestImageFindSquareRepresentation(ImageTestMixin, TestCase):
+
+    def test_returns_exact_match_if_exists(self):
+        self.given_image_with_data('im.png')
+        rep = self.image.representations.create(width=100, height=100, is_cropped=True)
+        self.image.representations.create(width=200, height=200, is_cropped=True)
+        self.image.representations.create(width=128, height=77, is_cropped=False)
+
+        result = self.image.find_square_representation(100)
+
+        self.assertEqual(result, rep)
+
+    def test_returns_nearest_smaller_match_and_queues_creation(self):
+        self.given_image_with_data('im.png')
+        rep = self.image.representations.create(width=100, height=100, is_cropped=True)
+        self.image.representations.create(width=200, height=200, is_cropped=True)
+        self.image.representations.create(width=128, height=77, is_cropped=False)
+
+        with patch.object(signal_handlers, 'create_image_square_representation') as create_image_square_representation:
+            result = self.image.find_square_representation(150)
+
+        self.assertEqual(result, rep)
+        create_image_square_representation.delay.assert_called_with(self.image.pk, 150)
+
+    def test_returns_nothing_if_none_suitable(self):
+        self.given_image_with_data('im.png')
+        self.image.representations.create(width=640, height=384, is_cropped=True)
+
+        with patch.object(signal_handlers, 'create_image_square_representation') as create_image_square_representation:
+            result = self.image.find_square_representation(150)
+
+        self.assertFalse(result)
+        create_image_square_representation.delay.assert_called_with(self.image.pk, 150)
+
+    def test_queues_retrieval_if_nbo_cached_data(self):
+        self.image = Image.objects.create(data_url='http://example.com/69')  # No data
+
+        with self.settings(IMAGES_FETCH_DATA=True), \
+                patch.object(signal_handlers, 'create_image_square_representation') as create_image_square_representation, \
+                patch.object(signal_handlers, 'retrieve_image_data') as retrieve_image_data, \
+                patch.object(signal_handlers, 'chain') as chain:
+            result = self.image.find_square_representation(150)
+
+        self.assertFalse(result)
+        chain.assert_called_with(
+            retrieve_image_data.s(self.image.pk, if_not_retrieved_since=None),
+            create_image_square_representation.si(self.image.pk, 150))
+        chain.return_value.delay.assert_called_with()

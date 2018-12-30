@@ -1,10 +1,11 @@
-"""Signals that may be set."""
+"""Signals that may be sent by models in this app."""
 
-from django.conf import settings
-
-from .tasks import retrieve_image_data,  sniff_image_data
+import django.dispatch
 
 
-def on_image_post_save(sender, instance, created, **kwargs):
-    if created and not instance.retrieved and getattr(settings, 'IMAGES_FETCH_DATA', False):
-        retrieve_image_data.delay(instance.pk, if_not_retrieved_since=None)
+# Called when Image.widt and height needed and not available.
+wants_image_data = django.dispatch.Signal(providing_args=["instance"])
+
+
+# Called when Image.find_square_representation cannot find an exact match.
+wants_square_representation = django.dispatch.Signal(providing_args=["instance", "size"])
