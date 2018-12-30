@@ -5,11 +5,11 @@ from django.test import TestCase
 from django.utils import timezone
 import httpretty
 import os
+import struct
 from unittest.mock import patch
 
-from .models import Image
+from .models import Image, _sniff
 from . import signals
-from . import tasks
 
 
 # How we obtain real test files:
@@ -141,3 +141,111 @@ class TestSignalHandler(TestCase):
             self.image = Image.objects.create(data_url='https://example.com/1', retrieved=timezone.now())
 
         self.assertFalse(retrieve_image_data.delay.called)
+
+
+class TestImageCreateSquareRepresentation(TestCase):
+
+    image = None
+
+    def tearDown(self):
+        if self.image and self.image.cached_data:
+            for rep in self.image.representations.all():
+                rep.content.delete()
+            self.image.cached_data.delete()
+
+    def test_can_create_square_from_rect(self):
+        self.given_image_with_data('im.png')
+
+        # with patch('subprocess.call') as mock_call:
+        self.image.create_square_representation(32)
+
+        # convert - -resize '^32x32>' -gravity center -extent 32x32 - < tanolin/images/test-data/im.png > tanolin/images/test-data/im-32sq.png
+        self.assertEqual(self.image.representations.count(), 1)
+        rep = self.image.representations.all()[0]
+        self.assert_representation(rep, 'image/png', 32, 32, is_cropped=True)
+        self.assert_same_PNG_as_file(rep, 'im-32sq.png')
+
+    def test_doesnt_tag_square_from_square_as_cropped(self):
+        self.given_image_with_data('frost-100x101.jpeg')
+
+        # with patch('subprocess.call') as mock_call:
+        self.image.create_square_representation(32)
+
+        self.assertEqual(self.image.representations.count(), 1)
+        rep = self.image.representations.all()[0]
+        self.assert_representation(rep, 'image/jpeg', 32, 32, is_cropped=False)
+
+    def test_doesnt_scale_too_small_image(self):
+        pass
+
+    def test_is_idempotent(self):
+        pass
+
+    def given_image_with_data(self, file_name, **kwargs):
+        with open(os.path.join(data_dir, file_name), 'rb') as input:
+            self.data = input.read()
+        self.image = Image.objects.create(data_url='http://example.com/69', **kwargs)
+        self.image.cached_data.save('test.png', ContentFile(self.data))
+        self.image.sniff()
+        self.image.save()
+
+    def assert_representation(self, rep, media_type, width, height, is_cropped):
+        # Check we have recorded image metadata correctly.
+        self.assertEqual(rep.media_type, media_type)
+        self.assertEqual(rep.width, width)
+        self.assertEqual(rep.height, height)
+        if is_cropped:
+            self.assertTrue(rep.is_cropped, 'Expected is_cropped')
+        else:
+            self.assertFalse(rep.is_cropped, 'Expected not is_cropped')
+
+        # Check the content actually mayches the metadata.
+        with rep.content.open() as f:
+            actual_media_type, actual_width, actual_height = _sniff(stdin=f.file)
+        self.assertEqual(actual_media_type, media_type)
+        self.assertEqual(actual_width, width)
+        self.assertEqual(actual_height, height)
+
+    def assert_same_PNG_as_file(self, rep, file_name):
+        with open(os.path.join(data_dir, file_name), 'rb') as input:
+            expected = input.read()
+        with rep.content.open() as f:
+            actual = f.read()
+        self.asset_same_PNG_data(actual, expected)
+
+    def asset_same_PNG_data(self, a, b, ignore_chunks=None):
+        """Check these are essentially the same PNG data.
+
+        Arguments --
+            a, b -- bytes objects containing PNG data.
+            ignore_chunks -- optional set of chunk types to disregard when comparing.
+                By default ignores time and text chunks since they
+                vary eacy time PNG is generated.
+
+        This test is still stricter than it should be:
+        it expects the same sequence of IDAT chunks,
+        instead of smushing them together.
+        This will need changing if we want to generate control
+        files using a different PNG library from ImageMagick.
+        """
+        if ignore_chunks is None:
+            ignore_chunks = {b'tIME', b'tEXt'}
+        chunks_a = [(t, d, c) for t, d, c in _iter_PNG_chunks(a) if t not in ignore_chunks]
+        chunks_b = [(t, d, c) for t, d, c in _iter_PNG_chunks(b) if t not in ignore_chunks]
+        self.assertEqual(chunks_a, chunks_b)
+
+
+PNG_SIGNATURE = bytes([137, 80, 78, 71, 13, 10, 26, 10])
+
+
+def _iter_PNG_chunks(data):
+    if data[:8] != PNG_SIGNATURE:
+        raise ValueError('Data did not start with PNG signature')
+    pos = 8
+    while pos < len(data):
+        (chunk_size, chunk_type), pos = struct.unpack('!L4s', data[pos:pos + 8]), pos + 8
+        chunk_data, pos = data[pos:pos + chunk_size], pos + chunk_size
+        chunk_crc, pos = struct.unpack('!L', data[pos:pos + 4]), pos + 4
+        yield chunk_type, chunk_data, chunk_crc
+    if pos != len(data):
+        raise ValueError('Bad chunk(s) in PNG data')

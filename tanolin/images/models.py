@@ -9,8 +9,9 @@ Images have two main classes:
 
 from base64 import urlsafe_b64encode
 from django.core.files import File
+from django.core.files.base import ContentFile
 from django.core.validators import RegexValidator
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from hashlib import md5
 import io
@@ -65,7 +66,7 @@ class Image(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.data_url
+        return self.data_url.rsplit('/', 1)[-1]
 
     def retrieve_data(self, if_not_retrieved_since=None, save=False):
         """Download the image data if available."""
@@ -82,7 +83,7 @@ class Image(models.Model):
         self.etag = hasher.digest()
 
         self._sniff(input=buf.getvalue())  # Needed to get file type for file name.
-        file_name = urlsafe_b64encode(self.etag).decode('ascii') + suffix_from_media_type(self.media_type)
+        file_name = file_name_from_etag(self.etag, self.media_type)
         self.cached_data.save(file_name, File(buf), save=save)
 
     def sniff(self, save=False):
@@ -94,15 +95,39 @@ class Image(models.Model):
         """Given a file-like object, guess width, height, and media_type.
 
         Arguments --
-            kwargs -- how to get the inout. Either stdin=REALFILE or input=BYTES
+            kwargs -- how to get the input. Either stdin=REALFILE or input=BYTES
         """
-        cmd = ['identify', '-']
-        output = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, **kwargs).stdout
-        _, type, size, *rest = output.split()
-        self.media_type = media_type_from_imagemagick_type(type)
-        w, h = size.split(b'x')
-        self.width = int(w)
-        self.height = int(h)
+        self.media_type, self.width, self.height = _sniff(**kwargs)
+
+    def create_square_representation(self, size):
+        """Create a representation (probably cropped) of this image."""
+        cmd = ['convert', '-', '-resize', '^%dx%d>' % (size, size), '-']
+        scale = max(size / self.width, size / self.height)
+        is_cropped = round(scale * self.width) != round(scale * self.height)
+        if is_cropped:
+            cmd[-1:-1] = ['-gravity', 'center', '-extent', '%dx%d' % (size, size)]
+        with self.cached_data.open() as f:
+            output = subprocess.run(cmd, check=True, stdin=f.file, stdout=subprocess.PIPE).stdout
+        etag = md5(output).digest()
+        with transaction.atomic():
+            rep = self.representations.create(media_type=self.media_type, width=size, height=size, is_cropped=is_cropped, etag=etag)
+            rep.content.save(file_name_from_etag(rep.etag, rep.media_type), ContentFile(output))
+
+
+def _sniff(**kwargs):
+    """Given a file-like object, guess width, height, and media_type.
+
+    Arguments --
+        kwargs -- how to get the input. Either stdin=REALFILE or input=BYTES
+
+    Returns --
+        MEDIA_TYPE, WIDTH, HEIGHT
+    """
+    cmd = ['identify', '-']
+    output = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, **kwargs).stdout
+    _, type, size, *rest = output.split()
+    w, h = size.split(b'x')
+    return media_type_from_imagemagick_type(type), int(w), int(h)
 
 
 def media_type_from_imagemagick_type(type):
@@ -113,4 +138,51 @@ def media_type_from_imagemagick_type(type):
 def suffix_from_media_type(media_type):
     """Given an image MIME type, return file-name suffix."""
     return '.' + media_type.split('/', 1)[1]
+
+
+def file_name_from_etag(etag, media_type):
+    return urlsafe_b64encode(etag).decode('ascii') + suffix_from_media_type(media_type)
+
+
+class Representation(models.Model):
+    """A representation of an image at a given size."""
+
+    image = models.ForeignKey(
+        Image,
+        models.CASCADE,
+        related_name='representations',
+        related_query_name='representation',
+    )
+
+    content = models.FileField(
+        upload_to='img',
+        null=True,
+        blank=True,
+        help_text='Content of the image representation.',
+    )
+    media_type = models.CharField(
+        max_length=200,
+        validators=[
+            RegexValidator(r'^(image|application)/\w+(;\s*\w+=.*)?$'),
+        ],
+    )
+    width = models.PositiveIntegerField()
+    height = models.PositiveIntegerField()
+    is_cropped = models.BooleanField()
+    etag = models.BinaryField(
+        max_length=16,
+        editable=False,
+        help_text='Hash of the image data when generated.',
+    )
+
+    created = models.DateTimeField(default=timezone.now)
+    modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [
+            ('image', 'width', 'is_cropped'),
+        ]
+
+    def __str__(self):
+        return '%s (%dx%d)' % (self.image, self.width, self.height)
 
