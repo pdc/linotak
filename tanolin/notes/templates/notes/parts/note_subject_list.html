@@ -1,9 +1,11 @@
+{% load image_representations %}
 
                     {% if note.subjects %}
                     <ul class="loc-list note-subjects">
                         {% for locator in note.subjects.all %}
                         <li class="note-subject-item loc-item">
                             <a class="note-subject loc" href="{{ locator.url }}">
+                                {{ locator.main_image|with_class:"loc-img"|square_representation:75 }}
                                 {% if locator.title %}
                                 <span class="loc-hdg">
                                     <b class="loc-title">{{ locator.title }}</b>

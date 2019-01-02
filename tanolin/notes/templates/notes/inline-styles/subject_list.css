@@ -14,16 +14,23 @@
 }
 
 .loc {
+    min-height: 75px;
     color: inherit;
     text-decoration: inherit;
 
     display: block;
-    padding-top: 5px;
-    padding-bottom: 5px;
+}
+
+.loc-img {
+    float: left;
+    margin: 0 4px 0 0;
+    padding: 0;
+    border: none;
 }
 
 .loc-hdg {
-    margin: 5px 10px;
+    margin: 0 10px;
+    padding-top: 10px;
     display: block;
 }
 
@@ -37,7 +44,7 @@
 }
 
 .loc-text {
-    margin: 5px 10px;
+    padding: 5px 10px 10px;
     display: block;
 }
 
