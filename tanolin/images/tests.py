@@ -1,3 +1,5 @@
+"""Tests for the Images app."""
+
 from datetime import timedelta
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
@@ -8,8 +10,8 @@ import os
 import struct
 from unittest.mock import patch
 
-from .models import Image, _sniff
-from . import signal_handlers  # For mocking
+from .models import Image, _sniff, CannotSniff
+from . import models, signal_handlers  # For mocking
 
 
 # How we obtain real test files:
@@ -17,25 +19,27 @@ data_dir = os.path.join(os.path.dirname(__file__), 'test-data')
 data_storage = FileSystemStorage(location=data_dir)
 
 
-class TestImageSniff(TestCase):
-    """Test Image.sniff."""
+class ImageTestMixin:
 
-    def setUp(self):
-        self.images_to_delete = []
+    image = None
 
     def tearDown(self):
-        for image in self.images_to_delete:
-            image.cached_data.delete()
+        if self.image and self.image.cached_data:
+            for rep in self.image.representations.all():
+                rep.content.delete()
+            self.image.cached_data.delete()
 
-    def create_image_with_data(self, file_name):
-        """Create an image and remember to delete it."""
+    def given_image_with_data(self, file_name, **kwargs):
         with open(os.path.join(data_dir, file_name), 'rb') as input:
-            data = input.read()
-        self.image = Image.objects.create(data_url='https://example.org/1')
-        self.image.cached_data.save('test_file', ContentFile(data), save=True)
-        # Intentionally don’t give it a ‘.png’ extension.
-        self.images_to_delete.append(self.image)
-        return self.image
+            self.data = input.read()
+        self.image = Image.objects.create(data_url='http://example.com/69', **kwargs)
+        self.image.cached_data.save('test.png', ContentFile(self.data))
+        self.image.sniff()
+        self.image.save()
+
+
+class TestImageSniff(ImageTestMixin, TestCase):
+    """Test Image.sniff."""
 
     def test_can_get_width_and_height_of_png(self):
         image = self.create_image_with_data('im.png')
@@ -55,15 +59,29 @@ class TestImageSniff(TestCase):
         self.assertEqual(image.width, 37)
         self.assertEqual(image.height, 57)
 
+    def test_doesnt_explode_if_not_image(self):
+        image = Image.objects.create(data_url='https://example.org/1')
+        image.cached_data.save('test_file', ContentFile(b'Nope.'), save=True)
 
-class TestImageRetrieve(TestCase):
+        with self.assertRaises(CannotSniff):
+            image.sniff()
+
+        self.assertIsNone(image.media_type)
+        self.assertIsNone(image.width)
+        self.assertIsNone(image.height)
+
+    def create_image_with_data(self, file_name):
+        """Create an image and remember to delete it."""
+        with open(os.path.join(data_dir, file_name), 'rb') as input:
+            data = input.read()
+        self.image = Image.objects.create(data_url='https://example.org/1')
+        self.image.cached_data.save('test_file', ContentFile(data), save=True)
+        # Intentionally don’t give it a ‘.png’ extension.
+        return self.image
+
+
+class TestImageRetrieve(ImageTestMixin, TestCase):
     """Test Image.retrieve."""
-
-    image = None  # Overridden in most tests.
-
-    def tearDown(self):
-        if self.image and self.image.cached_data:
-            self.image.cached_data.delete()
 
     @httpretty.activate(allow_net_connect=False)
     def test_can_retrive_image_and_sniff(self):
@@ -79,7 +97,6 @@ class TestImageRetrieve(TestCase):
         self.image = Image.objects.create(data_url='https://example.com/1', retrieved=then)
 
         self.image.retrieve_data(if_not_retrieved_since=None)
-
         # Attempting to download will cause HTTPretty to complain.
 
     @httpretty.activate(allow_net_connect=False)
@@ -98,25 +115,39 @@ class TestImageRetrieve(TestCase):
         self.image = Image.objects.create(data_url='https://example.com/1', retrieved=then)
 
         self.image.retrieve_data(if_not_retrieved_since=earlier)
-
         # Attempting to download will cause HTTPretty to complain.
 
-    def given_image_with_data(self, **kwargs):
+    @httpretty.activate(allow_net_connect=False)
+    def test_does_not_explode_if_data_isnt_image(self):
+        self.given_image_with_data(b'LOLWAT', media_type='text/plain')
+
+        with patch.object(models, 'logger') as logger:
+            self.image.retrieve_data(if_not_retrieved_since=None)
+
+        self.then_retrieved_and_sniffed('text/plain', None, None)
+        self.assertTrue(logger.warning.called)
+
+    def given_image_with_data(self, data=None, media_type='image/png', **kwargs):
+        if data is None:
+            # Use default.
+            with open(os.path.join(data_dir, 'im.png'), 'rb') as input:
+                self.data = input.read()
+        else:
+            self.data = data
         img_src = 'http://example.com/2'
-        with open(os.path.join(data_dir, 'im.png'), 'rb') as input:
-            self.data = input.read()
         self.image = Image.objects.create(data_url=img_src, **kwargs)
         httpretty.register_uri(
             httpretty.GET, 'http://example.com/2',
             body=self.data,
             add_headers={
-                'Content-Type': 'image/png'
+                'Content-Type': media_type,
             },
         )
 
-    def then_retrieved_and_sniffed(self):
-        self.assertEqual(self.image.width, 69)
-        self.assertEqual(self.image.height, 42)
+    def then_retrieved_and_sniffed(self, media_type='image/png', width=69, height=42):
+        self.assertEqual(self.image.media_type.split(';', 1)[0], media_type)
+        self.assertEqual(self.image.width, width)
+        self.assertEqual(self.image.height, height)
         with self.image.cached_data.open() as f:
             actual = f.read()
         self.assertEqual(actual, self.data)
@@ -141,25 +172,6 @@ class TestSignalHandler(TestCase):
             self.image = Image.objects.create(data_url='https://example.com/1', retrieved=timezone.now())
 
         self.assertFalse(retrieve_image_data.delay.called)
-
-
-class ImageTestMixin:
-
-    image = None
-
-    def tearDown(self):
-        if self.image and self.image.cached_data:
-            for rep in self.image.representations.all():
-                rep.content.delete()
-            self.image.cached_data.delete()
-
-    def given_image_with_data(self, file_name, **kwargs):
-        with open(os.path.join(data_dir, file_name), 'rb') as input:
-            self.data = input.read()
-        self.image = Image.objects.create(data_url='http://example.com/69', **kwargs)
-        self.image.cached_data.save('test.png', ContentFile(self.data))
-        self.image.sniff()
-        self.image.save()
 
 
 class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):

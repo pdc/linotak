@@ -56,7 +56,19 @@ def update_locator_with_stuff(locator, stuff):
             if thing.summary:
                 locator.text = thing.summary
         elif isinstance(thing, Img):
-            image, is_new = Image.objects.get_or_create(data_url=thing.src, media_type=thing.type)
+            image, is_new = Image.objects.get_or_create(data_url=thing.src, defaults={
+                'media_type': thing.type,
+                'width': thing.width,
+                'height': thing.height,
+            })
+            if not is_new and thing.type or thing.width or thing.height:
+                if thing.type:
+                    image.media_type = thing.type
+                if thing.width:
+                    image.width = thing.width
+                if thing.height:
+                    image.height = thing.height
+                image.save()
             locator.images.add(image)
     if titles:
         _, title = max(titles)

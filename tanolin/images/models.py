@@ -16,14 +16,33 @@ from django.db.models import F
 from django.utils import timezone
 from hashlib import md5
 import io
+import logging
 import requests
 import subprocess
 
 from .signals import wants_data, wants_square_representation
 
 
+logger = logging.getLogger(__name__)
+
+
+class CannotSniff(Exception):
+    """Raised if cannot sniff. Args are returncode & message from ImageMagick."""
+
+    def __str__(self):
+        returncode, message = self.args
+        return 'ImageMagick identify returned status %d: %r' % (returncode, message)
+
+
 class Image(models.Model):
     """The source data fro an image displayed in a note."""
+
+    class NotSniffable(CannotSniff):
+        """Raised if cannot sniff. Args are file_name and returncode & message from ImageMagick."""
+
+        def __str__(self):
+            file_name, returncode, message = self.args
+            return 'Could not identify %s: ImageMagick identify returned status %d: %r' % (file_name, returncode, message)
 
     MAX_DATA = 10 * 1024 * 1024
 
@@ -76,6 +95,9 @@ class Image(models.Model):
         if self.retrieved and (not if_not_retrieved_since or if_not_retrieved_since < self.retrieved):
             return
         r = requests.get(self.data_url)
+        media_type = r.headers['Content-Type']
+        if media_type:
+            self.media_type = media_type
         buf = io.BytesIO()
         total_size = 0
         hasher = md5()
@@ -85,13 +107,26 @@ class Image(models.Model):
             hasher.update(chunk)
         self.etag = hasher.digest()
 
-        self._sniff(input=buf.getvalue())  # Needed to get file type for file name.
-        file_name = file_name_from_etag(self.etag, self.media_type)
+        try:
+            self._sniff(input=buf.getvalue())  # Needed to get file type for file name.
+            file_name = file_name_from_etag(self.etag, self.media_type)
+        except Image.NotSniffable as e:
+            file_name = file_name_from_etag(self.etag, None)
+            logger.warning(e)
         self.cached_data.save(file_name, File(buf), save=save)
 
     def sniff(self, save=False):
         """Presuming already has image data, guess width, height, and media_type."""
         with self.cached_data.open() as f:
+            if not self.etag:
+                # GHappens if cached data is set outside of retrieve_data.
+                hasher = md5()
+                chunk = f.read(10_240)
+                while chunk:
+                    hasher.update(chunk)
+                    chunk = f.read(10_240)
+                self.etag = hasher.digest()
+                f.seek(0)
             self._sniff(stdin=f.file)
 
     def _sniff(self, **kwargs):
@@ -100,11 +135,18 @@ class Image(models.Model):
         Arguments --
             kwargs -- how to get the input. Either stdin=REALFILE or input=BYTES
         """
-        self.media_type, self.width, self.height = _sniff(**kwargs)
+        try:
+            self.media_type, self.width, self.height = _sniff(**kwargs)
+        except CannotSniff as e:
+            rc, msg = e.args
+            raise Image.NotSniffable(file_name_from_etag(self.etag, None), rc, msg)
 
     @transaction.atomic
     def create_square_representation(self, size):
         """Create a representation (probably cropped) of this image."""
+        if not self.width or not self.height:
+            # Image size not known, so probably not actually an image.
+            return
         if self.width <= size and self.height <= size:
             # Do not enlarge to fit!
             return
@@ -147,9 +189,16 @@ def _sniff(**kwargs):
 
     Returns --
         MEDIA_TYPE, WIDTH, HEIGHT
+
+    Throws --
+        CannotSniff when cannot sniff
     """
     cmd = ['identify', '-']
-    output = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, **kwargs).stdout
+    result = subprocess.run(cmd, check=False, stderr=subprocess.PIPE, stdout=subprocess.PIPE, **kwargs)
+    if result.returncode:
+        # Command failed.
+        raise CannotSniff(result.returncode, result.stderr or result.stdout)
+    output = result.stdout
     _, type, size, *rest = output.split()
     w, h = size.split(b'x')
     return media_type_from_imagemagick_type(type), int(w), int(h)
@@ -162,11 +211,11 @@ def media_type_from_imagemagick_type(type):
 
 def suffix_from_media_type(media_type):
     """Given an image MIME type, return file-name suffix."""
-    return '.' + media_type.split('/', 1)[1]
+    return '.' + media_type.split('/', 1)[1] if media_type else '.data'
 
 
 def file_name_from_etag(etag, media_type):
-    return urlsafe_b64encode(etag).decode('ascii') + suffix_from_media_type(media_type)
+    return urlsafe_b64encode(etag).decode('ascii').rstrip('=') + suffix_from_media_type(media_type)
 
 
 class Representation(models.Model):

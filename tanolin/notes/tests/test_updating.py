@@ -6,6 +6,7 @@ from django.utils import timezone
 import httpretty
 from unittest.mock import patch
 
+from ...images.models import Image
 from ..models import Locator
 from ..updating import fetch_page_update_locator, update_locator_with_stuff
 from ..scanner import Title, HCard, HEntry, Img
@@ -107,6 +108,29 @@ class TestUpdateLocatorWithStuff(TestCase):
         ])
 
         self.assertEqual(self.locator.images.all()[0].data_url, 'https://images.example.com/42')
+
+    def test_copies_media_type_and_size(self):
+        update_locator_with_stuff(self.locator, [
+            Img('https://images.example.com/42', type='image/jpeg', width=1001, height=997),
+        ])
+
+        self.assertEqual(self.locator.images.all().count(), 1)
+        actual = self.locator.images.all()[0]
+        self.assertEqual(actual.data_url, 'https://images.example.com/42')
+        self.assertEqual(actual.media_type, 'image/jpeg')
+        self.assertEqual(actual.width, 1001)
+        self.assertEqual(actual.height, 997)
+
+    def test_doesnt_clobber_existing_metadata(self):
+        self.locator.images.add(Image.objects.create(data_url='https://images.example.com/69', media_type='application/octet-stream', width=1280, height=960))
+        update_locator_with_stuff(self.locator, [
+            Img('https://images.example.com/69', type='image/jpeg'),
+        ])
+
+        actual = self.locator.images.all()[0]
+        self.assertEqual(actual.media_type, 'image/jpeg')
+        self.assertEqual(actual.width, 1280)
+        self.assertEqual(actual.height, 960)
 
     def xtest_uses_hcard(self):
         update_locator_with_stuff(self.locator, [
