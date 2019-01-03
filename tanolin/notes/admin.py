@@ -23,14 +23,14 @@ class NoteAdmin(admin.ModelAdmin):
 def queue_fetch(model_admin, request, queryset):
     """Queue the images to be retrieved."""
     for locator in queryset:
-        fetch_locator_page.delay(locator.pk, if_not_scanned_since=locator.scanned)
+        locator.queue_fetch()
 
 
 queue_fetch.short_description = 'Queue fetch'
 
 
 class LocatorAdmin(admin.ModelAdmin):
-    search_fields = ['uri', 'title']
+    search_fields = ['url', 'title']
     actions = [queue_fetch]
 
 

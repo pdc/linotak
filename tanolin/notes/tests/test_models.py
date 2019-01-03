@@ -1,10 +1,11 @@
-from unittest.mock import patch, ANY
-
 from django.test import TestCase
+from django.utils import timezone
+from unittest.mock import patch
 
+from ...utils import datetime_of_timestamp
 from ...images.models import Image, wants_data
 from ..models import Locator
-from .. import signals
+from .. import signals, tasks
 from .factories import NoteFactory, SeriesFactory
 
 
@@ -106,26 +107,63 @@ class TestLocatorFetchPageUpdate(TestCase):
 
     def test_queues_fetch_when_locator_created(self):
         """Test locator_fetch_page_update queues fetch when locator created."""
-        with self.settings(NOTES_FETCH_LOCATORS=True), patch.object(signals, 'fetch_locator_page') as fetch_locator_page:
+        with self.settings(NOTES_FETCH_LOCATORS=True), patch.object(tasks, 'fetch_locator_page') as fetch_locator_page:
             locator = Locator.objects.create(url='https://example.com/1')
 
             fetch_locator_page.delay.assert_called_once_with(locator.pk, if_not_scanned_since=None)
 
     def test_doesnt_queue_if_settings_not_set(self):
         """Test locator_fetch_page_update doesnt queue if settings not set."""
-        with self.settings(NOTES_FETCH_LOCATORS=False), patch.object(signals, 'fetch_locator_page') as fetch_locator_page:
+        with self.settings(NOTES_FETCH_LOCATORS=False), patch.object(tasks, 'fetch_locator_page') as fetch_locator_page:
             Locator.objects.create(url='https://example.com/1')
 
             self.assertFalse(fetch_locator_page.delay.called)
 
     def test_doesnt_queue_if_not_newly_created(self):
         """Test locator_fetch_page_update doesnt queue if not newly created"""
-        with self.settings(NOTES_FETCH_LOCATORS=True), patch.object(signals, 'fetch_locator_page') as fetch_locator_page:
+        with self.settings(NOTES_FETCH_LOCATORS=True), patch.object(tasks, 'fetch_locator_page') as fetch_locator_page:
             locator = Locator.objects.create(url='https://example.com/1')
             locator.title = 'FOO'
             locator.save()
 
             fetch_locator_page.delay.assert_called_once_with(locator.pk, if_not_scanned_since=None)
+
+
+class LocatorQueueFetch(TestCase):
+
+    def test_passes_none_if_never_scanned(self):
+        locator = Locator.objects.create(url='https://example.com/1')
+
+        with patch.object(tasks, 'fetch_locator_page') as fetch_locator_page:
+            locator.queue_fetch()
+
+        fetch_locator_page.delay.assert_called_once_with(locator.pk, if_not_scanned_since=None)
+
+    def test_value_that_can_return_original_datetime(self):
+        locator = Locator.objects.create(url='https://example.com/1', scanned=timezone.now())
+
+        with patch.object(tasks, 'fetch_locator_page') as fetch_locator_page:
+            locator.queue_fetch()
+
+        fetch_locator_page.delay.assert_called_once_with(locator.pk, if_not_scanned_since=DateTimeTimestampMatcher(locator.scanned))
+        fetch_locator_page.call_list
+
+
+class DateTimeTimestampMatcher:
+    """Helper for comparing mock argument lists to a timestamp.
+
+    We want a timestamp (seconds since 1970-01-01)
+    that when translated to a datetime instance matches the
+    datetime we first thought of.
+    """
+
+    def __init__(self, expected):
+        self.expected = expected
+
+    def __eq__(self, other):
+        """Check this value will be translated to the same datetime as expected."""
+        actual = datetime_of_timestamp(other)
+        return actual == self.expected
 
 
 class TestLocatorMainImage(TestCase):

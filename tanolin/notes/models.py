@@ -93,6 +93,12 @@ class Locator(models.Model):
     def __str__(self):
         return self.url
 
+    def queue_fetch(self):
+        """Arrange to have this locator’s page fetched and scanned."""
+        from . import tasks
+
+        tasks.fetch_locator_page.delay(self.pk, if_not_scanned_since=(self.scanned.timestamp() if self.scanned else None))
+
     def main_image(self):
         """Return the image with the largest source dimensions."""
         for image in self.images.filter(Q(width__isnull=True) | Q(height__isnull=True)):

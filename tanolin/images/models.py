@@ -90,6 +90,18 @@ class Image(models.Model):
     def __str__(self):
         return self.data_url.rsplit('/', 1)[-1]
 
+    def retrieve_data_task(self):
+        """How to arrange fir asynchroinous download of this image."""
+        from . import tasks
+
+        return tasks.retrieve_image_data.s(self.pk, if_not_retrieved_since=(self.retrieved.timesamp() if self.retrieved else None))
+
+    def queue_retrieve_data(self):
+        """Arrange fir asynchroinous download of this image."""
+        from . import tasks
+
+        return tasks.retrieve_image_data.delay(self.pk, if_not_retrieved_since=(self.retrieved.timesamp() if self.retrieved else None))
+
     def retrieve_data(self, if_not_retrieved_since=None, save=False):
         """Download the image data if available."""
         if self.retrieved and (not if_not_retrieved_since or if_not_retrieved_since < self.retrieved):

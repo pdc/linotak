@@ -11,7 +11,7 @@ import struct
 from unittest.mock import patch
 
 from .models import Image, _sniff, CannotSniff
-from . import models, signal_handlers  # For mocking
+from . import models, signal_handlers, tasks  # For mocking
 
 
 # How we obtain real test files:
@@ -161,14 +161,14 @@ class TestSignalHandler(TestCase):
 
     def test_queues_retrieve_when_image_created(self):
         """Test signal handler queues retrieve when image created."""
-        with self.settings(IMAGES_FETCH_DATA=True), patch.object(signal_handlers, 'retrieve_image_data') as retrieve_image_data:
+        with self.settings(IMAGES_FETCH_DATA=True), patch.object(tasks, 'retrieve_image_data') as retrieve_image_data:
             self.image = Image.objects.create(data_url='https://example.com/1')
 
         retrieve_image_data.delay.assert_called_with(self.image.pk, if_not_retrieved_since=None)
 
     def test_doesnt_queue_retrieve_when_retrieved_is_set(self):
         """Test signal handler doesnt queue retrieve when retrieved is set."""
-        with self.settings(IMAGES_FETCH_DATA=True), patch.object(signal_handlers, 'retrieve_image_data') as retrieve_image_data:
+        with self.settings(IMAGES_FETCH_DATA=True), patch.object(tasks, 'retrieve_image_data') as retrieve_image_data:
             self.image = Image.objects.create(data_url='https://example.com/1', retrieved=timezone.now())
 
         self.assertFalse(retrieve_image_data.delay.called)
@@ -314,7 +314,7 @@ class TestImageFindSquareRepresentation(ImageTestMixin, TestCase):
 
         with self.settings(IMAGES_FETCH_DATA=True), \
                 patch.object(signal_handlers, 'create_image_square_representation') as create_image_square_representation, \
-                patch.object(signal_handlers, 'retrieve_image_data') as retrieve_image_data, \
+                patch.object(tasks, 'retrieve_image_data') as retrieve_image_data, \
                 patch.object(signal_handlers, 'chain') as chain:
             result = self.image.find_square_representation(150)
 
@@ -331,7 +331,7 @@ class TestImageWantsSIze(TestCase):
         image = Image.objects.create(data_url='https://example.com/images/1.jpeg')
 
         with self.settings(IMAGES_FETCH_DATA=True), \
-                patch.object(signal_handlers, 'retrieve_image_data') as retrieve_image_data:
+                patch.object(tasks, 'retrieve_image_data') as retrieve_image_data:
             image.wants_size()
 
         retrieve_image_data.delay.assert_called_with(image.pk, if_not_retrieved_since=None)
