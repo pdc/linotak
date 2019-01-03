@@ -96,6 +96,22 @@ class TestLinksMixin(ScanMixin, TestCase):
 
         self.assertEqual(stuff, [Title('This is the title')])
 
+    def test_not_svg_title(self):
+        stuff = self.scan("""
+            <html>
+                <head>
+                    <title>This is the title</title>
+                </head>
+                <body>
+                    <svg>
+                        <title>This is not the title</title>
+                    </svg>
+                </body>
+            </head>
+        """)
+
+        self.assertEqual(stuff, [Title('This is the title')])
+
     def test_a_with_text(self):
         stuff = self.scan("""
             <a href="/User:Jeena.net"

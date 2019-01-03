@@ -326,8 +326,18 @@ class LinkRecognizer:
 
 
 class TitleRecognizer:
+
+    sensitive = False
+
+    def handle_start_head(self, tag):
+        self.sensitive = True
+
+    def handle_end_head(self, tag):
+        self.sensitive = False
+
     def handle_start_title(self, tag):
-        tag.is_title = Title()
+        if self.sensitive:
+            tag.is_title = Title()
 
     def handle_text(self, tag, text):
         if hasattr(tag, 'is_title'):
