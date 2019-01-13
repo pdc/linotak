@@ -3,7 +3,8 @@
 from datetime import timedelta
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
-from django.test import TestCase
+from django.db import transaction
+from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 import httpretty
 import os
@@ -153,7 +154,7 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
         self.assertEqual(actual, self.data)
 
 
-class TestSignalHandler(TestCase):
+class TestSignalHandler(TransactionTestCase):  # Different superclass so that on_commit hooks are called.
     """Test the signal handler."""
 
     # The retireval of image data is suppressed during testing,
@@ -164,14 +165,15 @@ class TestSignalHandler(TestCase):
         with self.settings(IMAGES_FETCH_DATA=True), patch.object(tasks, 'retrieve_image_data') as retrieve_image_data:
             self.image = Image.objects.create(data_url='https://example.com/1')
 
-        retrieve_image_data.delay.assert_called_with(self.image.pk, if_not_retrieved_since=None)
+        retrieve_image_data.s.assert_called_with(self.image.pk, if_not_retrieved_since=None)
+        retrieve_image_data.s.return_value.delay.assert_called_with()  # from on_commit
 
     def test_doesnt_queue_retrieve_when_retrieved_is_set(self):
         """Test signal handler doesnt queue retrieve when retrieved is set."""
         with self.settings(IMAGES_FETCH_DATA=True), patch.object(tasks, 'retrieve_image_data') as retrieve_image_data:
             self.image = Image.objects.create(data_url='https://example.com/1', retrieved=timezone.now())
 
-        self.assertFalse(retrieve_image_data.delay.called)
+        self.assertFalse(retrieve_image_data.s.delay.called)
 
 
 class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
@@ -293,27 +295,27 @@ class TestImageFindSquareRepresentation(ImageTestMixin, TestCase):
         self.image.representations.create(width=200, height=200, is_cropped=True)
         self.image.representations.create(width=128, height=77, is_cropped=False)
 
-        with patch.object(signal_handlers, 'create_image_square_representation') as create_image_square_representation:
+        with patch.object(self.image, 'queue_square_representation') as queue_square_representation:
             result = self.image.find_square_representation(150)
 
         self.assertEqual(result, rep)
-        create_image_square_representation.delay.assert_called_with(self.image.pk, 150)
+        queue_square_representation.assert_called_with(150)
 
     def test_returns_nothing_if_none_suitable(self):
         self.given_image_with_data('im.png')
         self.image.representations.create(width=640, height=384, is_cropped=True)
 
-        with patch.object(signal_handlers, 'create_image_square_representation') as create_image_square_representation:
+        with patch.object(self.image, 'queue_square_representation') as queue_square_representation:
             result = self.image.find_square_representation(150)
 
         self.assertFalse(result)
-        create_image_square_representation.delay.assert_called_with(self.image.pk, 150)
+        queue_square_representation.assert_called_with(150)
 
     def test_queues_retrieval_if_no_cached_data(self):
         self.image = Image.objects.create(data_url='http://example.com/69')  # No data
 
         with self.settings(IMAGES_FETCH_DATA=True), \
-                patch.object(signal_handlers, 'create_image_square_representation') as create_image_square_representation, \
+                patch.object(tasks, 'create_image_square_representation') as create_image_square_representation, \
                 patch.object(tasks, 'retrieve_image_data') as retrieve_image_data, \
                 patch.object(signal_handlers, 'chain') as chain:
             result = self.image.find_square_representation(150)
@@ -325,13 +327,13 @@ class TestImageFindSquareRepresentation(ImageTestMixin, TestCase):
         chain.return_value.delay.assert_called_with()
 
 
-class TestImageWantsSIze(TestCase):
+class TestImageWantsSize(TestCase):
 
     def test_queues_retrieve_if_no_cached_data(self):
         image = Image.objects.create(data_url='https://example.com/images/1.jpeg')
 
         with self.settings(IMAGES_FETCH_DATA=True), \
-                patch.object(tasks, 'retrieve_image_data') as retrieve_image_data:
+                patch.object(image, 'queue_retrieve_data') as queue_retrieve_data:
             image.wants_size()
 
-        retrieve_image_data.delay.assert_called_with(image.pk, if_not_retrieved_since=None)
+        queue_retrieve_data.assert_called_with()

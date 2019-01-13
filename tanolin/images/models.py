@@ -91,16 +91,15 @@ class Image(models.Model):
         return self.data_url.rsplit('/', 1)[-1]
 
     def retrieve_data_task(self):
-        """How to arrange fir asynchroinous download of this image."""
+        """Celery signature to arrange for async download of this image."""
         from . import tasks
 
         return tasks.retrieve_image_data.s(self.pk, if_not_retrieved_since=(self.retrieved.timesamp() if self.retrieved else None))
 
     def queue_retrieve_data(self):
-        """Arrange fir asynchroinous download of this image."""
-        from . import tasks
-
-        return tasks.retrieve_image_data.delay(self.pk, if_not_retrieved_since=(self.retrieved.timesamp() if self.retrieved else None))
+        """Arrange for async download of this image."""
+        # Queue after transaction committed to avoid a race with the Celery queue.
+        transaction.on_commit(self.retrieve_data_task().delay)
 
     def retrieve_data(self, if_not_retrieved_since=None, save=False):
         """Download the image data if available."""
@@ -177,6 +176,25 @@ class Image(models.Model):
             rep = self.representations.create(media_type=self.media_type, width=size, height=size, is_cropped=is_cropped, etag=etag)
             rep.content.save(file_name_from_etag(rep.etag, rep.media_type), ContentFile(output))
 
+    def square_representation_task(self, size):
+        """Celery signature to arrange for square representarion to be created.
+
+        Do not try to do this in the same transaction as creates the image,
+        as this causes a race condition.
+        """
+        from . import tasks
+
+        return tasks.create_image_square_representation.si(self.pk, size)
+
+    def queue_square_representation(self, size):
+        """Arrange for square representarion to be created.
+
+        Do not try to do this in the same transaction as creates the image,
+        as this causes a race condition.
+        """
+        self.square_representation_task(size).delay()
+
+    @transaction.atomic
     def find_square_representation(self, size):
         """Return the best match for a square area of this size.
 
@@ -190,6 +208,8 @@ class Image(models.Model):
 
     def wants_size(self):
         """Indicates size is wanted and not available."""
+        if self.width and self.height:
+            return
         wants_data.send(self.__class__, instance=self)
 
 
