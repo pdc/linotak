@@ -3,7 +3,6 @@
 from datetime import timedelta
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
-from django.db import transaction
 from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 import httpretty
@@ -11,6 +10,7 @@ import os
 import struct
 from unittest.mock import patch
 
+from ..matchers_for_mocks import DateTimeTimestampMatcher
 from .models import Image, _sniff, CannotSniff
 from . import models, signal_handlers, tasks  # For mocking
 
@@ -174,6 +174,19 @@ class TestSignalHandler(TransactionTestCase):  # Different superclass so that on
             self.image = Image.objects.create(data_url='https://example.com/1', retrieved=timezone.now())
 
         self.assertFalse(retrieve_image_data.s.delay.called)
+
+
+class TestImageQueueRetrieveData(TransactionTestCase):
+
+    def test_sends_timestamp_from_retrieved(self):
+        """Test signal handler queues retrieve when image created."""
+        image = Image.objects.create(data_url='https://example.com/1', retrieved=timezone.now())
+
+        with self.settings(IMAGES_FETCH_DATA=True), patch.object(tasks, 'retrieve_image_data') as retrieve_image_data:
+            image.queue_retrieve_data()
+
+        retrieve_image_data.s.assert_called_with(image.pk, if_not_retrieved_since=DateTimeTimestampMatcher(image.retrieved))
+        retrieve_image_data.s.return_value.delay.assert_called_with()  # from on_commit
 
 
 class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):

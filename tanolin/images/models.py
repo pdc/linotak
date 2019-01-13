@@ -94,7 +94,7 @@ class Image(models.Model):
         """Celery signature to arrange for async download of this image."""
         from . import tasks
 
-        return tasks.retrieve_image_data.s(self.pk, if_not_retrieved_since=(self.retrieved.timesamp() if self.retrieved else None))
+        return tasks.retrieve_image_data.s(self.pk, if_not_retrieved_since=(self.retrieved.timestamp() if self.retrieved else None))
 
     def queue_retrieve_data(self):
         """Arrange for async download of this image."""
