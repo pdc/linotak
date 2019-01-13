@@ -1,7 +1,7 @@
 import re
 
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.db.models import F, Q
 from django.urls import reverse
 from django.utils import timezone
@@ -97,7 +97,8 @@ class Locator(models.Model):
         """Arrange to have this locator’s page fetched and scanned."""
         from . import tasks
 
-        tasks.fetch_locator_page.delay(self.pk, if_not_scanned_since=(self.scanned.timestamp() if self.scanned else None))
+        t = (self.scanned.timestamp() if self.scanned else None)
+        transaction.on_commit(lambda: tasks.fetch_locator_page.delay(self.pk, if_not_scanned_since=t))
 
     def main_image(self):
         """Return the image with the largest source dimensions."""

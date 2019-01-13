@@ -1,11 +1,12 @@
-from django.test import TestCase
+from django.db import transaction
+from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 from unittest.mock import patch
 
-from ...utils import datetime_of_timestamp
+from ...matchers_for_mocks import DateTimeTimestampMatcher
 from ...images.models import Image, wants_data
 from ..models import Locator
-from .. import signals, tasks
+from .. import tasks
 from .factories import NoteFactory, SeriesFactory
 
 
@@ -102,13 +103,17 @@ class TestNoteExtractSubjects(TestCase):
         self.assertEqual([x.url for x in note.subjects.all()], [])
 
 
-class TestLocatorFetchPageUpdate(TestCase):
+class TestLocatorFetchPageUpdate(TransactionTestCase):
     """Test locator_fetch_page_update."""
 
     def test_queues_fetch_when_locator_created(self):
         """Test locator_fetch_page_update queues fetch when locator created."""
         with self.settings(NOTES_FETCH_LOCATORS=True), patch.object(tasks, 'fetch_locator_page') as fetch_locator_page:
-            locator = Locator.objects.create(url='https://example.com/1')
+            with transaction.atomic():
+                locator = Locator.objects.create(url='https://example.com/1')
+
+                self.assertFalse(fetch_locator_page.delay.called)
+                # Not queued during the transaction to avoid race condition.
 
             fetch_locator_page.delay.assert_called_once_with(locator.pk, if_not_scanned_since=None)
 
@@ -129,7 +134,7 @@ class TestLocatorFetchPageUpdate(TestCase):
             fetch_locator_page.delay.assert_called_once_with(locator.pk, if_not_scanned_since=None)
 
 
-class LocatorQueueFetch(TestCase):
+class LocatorQueueFetch(TransactionTestCase):
 
     def test_passes_none_if_never_scanned(self):
         locator = Locator.objects.create(url='https://example.com/1')
@@ -146,24 +151,6 @@ class LocatorQueueFetch(TestCase):
             locator.queue_fetch()
 
         fetch_locator_page.delay.assert_called_once_with(locator.pk, if_not_scanned_since=DateTimeTimestampMatcher(locator.scanned))
-        fetch_locator_page.call_list
-
-
-class DateTimeTimestampMatcher:
-    """Helper for comparing mock argument lists to a timestamp.
-
-    We want a timestamp (seconds since 1970-01-01)
-    that when translated to a datetime instance matches the
-    datetime we first thought of.
-    """
-
-    def __init__(self, expected):
-        self.expected = expected
-
-    def __eq__(self, other):
-        """Check this value will be translated to the same datetime as expected."""
-        actual = datetime_of_timestamp(other)
-        return actual == self.expected
 
 
 class TestLocatorMainImage(TestCase):
@@ -190,4 +177,3 @@ class TestLocatorMainImage(TestCase):
 
         self.assertEqual(result.data_url, 'https://example.com/100')
         wants_data_send.assert_called_once_with(Image, instance=image)
-
