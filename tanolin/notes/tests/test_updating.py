@@ -132,6 +132,13 @@ class TestUpdateLocatorWithStuff(TestCase):
         self.assertEqual(actual.width, 1280)
         self.assertEqual(actual.height, 960)
 
+    def test_uses_hentry_images(self):
+        update_locator_with_stuff(self.locator, [
+            HEntry(images=[Img('https://images.example.com/42')]),
+        ])
+
+        self.assertEqual(self.locator.images.all()[0].data_url, 'https://images.example.com/42')
+
     def xtest_uses_hcard(self):
         update_locator_with_stuff(self.locator, [
             HEntry(

@@ -3,10 +3,9 @@
 Find (meta)data in a web page, an return it in the form of a
 list of ’stuff’ (linkks, properties, and microforat2 structures like h-entrry
 instances).
-
 """
 
-
+import json
 from html.parser import HTMLParser
 import re
 from urllib.parse import urljoin
@@ -237,19 +236,20 @@ class HCard(StuffBase):
 class HEntry(StuffBase):
     """An h-entry instance, representing a blog entry or similar."""
 
-    def __init__(self, href=None, name=None, summary=None, author=None, classes=None, role=None):
+    def __init__(self, href=None, name=None, summary=None, author=None, classes=None, role=None, images=None):
         self.href = href
         self.name = name
         self.summary = summary
         self.author = author
         self.classes = classes or []
         self.role = role
+        self.images = images or []
 
     def __str__(self):
         return self.name
 
     def to_tuple(self):
-        return self.href, self.name, self.summary, self.author, self.classes, self.role
+        return self.href, self.name, self.summary, self.author, self.classes, self.role, self.images
 
 
 # Recognizers will be called by the scanner when various HTML things are parsed.
@@ -327,16 +327,16 @@ class LinkRecognizer:
 
 class TitleRecognizer:
 
-    sensitive = False
+    in_head = False
 
     def handle_start_head(self, tag):
-        self.sensitive = True
+        self.in_head = True
 
     def handle_end_head(self, tag):
-        self.sensitive = False
+        self.in_head = False
 
     def handle_start_title(self, tag):
-        if self.sensitive:
+        if self.in_head:
             tag.is_title = Title()
 
     def handle_text(self, tag, text):
@@ -451,7 +451,8 @@ class HSomethingRecognizer:
         name = name_prop.value if name_prop else link.title if link else None
         summary = summary_prop.value if summary_prop else link.text if link else None
         role = tag.get('role')
-        return HEntry(href, name, summary, author=author, classes=tag.classes, role=role)
+        images = [x for x in stuff if isinstance(x, Img)]
+        return HEntry(href, name, summary, author=author, classes=tag.classes, role=role, images=images)
 
     def make_h_card(self, tag, classes, stuff):
         link = _pop_stuff(stuff, Link, 'u-url')
@@ -499,6 +500,21 @@ class HSomethingRecognizer:
         return link
 
 
+class MastodonMediaGalleryRecognizer:
+    """Recognize media gallery as seen on Mastodon entries."""
+
+    def handle_end(self, tag):
+        if tag.get('data-component') == 'MediaGallery':
+            props = json.loads(tag.get('data-props'))
+            stuff = []
+            for x in props['media']:
+                if x['type'] == 'image':
+                    width = x['meta']['original']['width']
+                    height = x['meta']['original']['height']
+                    stuff.append(Img(x['url'], width=width, height=height))
+            return stuff
+
+
 class PageScanner(HTMLParser):
     """Scan HTML and call methods in subclass as elements are detected."""
 
@@ -508,6 +524,7 @@ class PageScanner(HTMLParser):
         HSomethingRecognizer,
         TitleRecognizer,
         BlockquoteRecognizer,
+        MastodonMediaGalleryRecognizer,
     ]
 
     def __init__(self, base_url, recognizers=None, *args, **kwargs):

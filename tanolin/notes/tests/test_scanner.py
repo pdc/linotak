@@ -353,3 +353,31 @@ class TestHEntryMixin(ScanMixin, TestCase):
             ),
             stuff)
 
+    def test_includes_image(self):
+        stuff = self.scan("""
+            <div id="content" class="gallery-entry h-entry">
+                    <img src="https://example.com/im" width=960 height=720>
+        """)
+
+        self.assertIn(
+            HEntry(
+                None,  # Means same as containing page I guess.
+                images=[Img('https://example.com/im', width=960, height=720)],
+                classes=['gallery-entry', 'h-entry'],
+            ),
+            stuff)
+
+
+class TestMastodonMediaGalleryRecognizer(ScanMixin, TestCase):
+
+    def test_extracts_from_json(self):
+        stuff = self.scan("""
+            <div data-component='MediaGallery' data-props='{&quot;height&quot;:380,&quot;sensitive&quot;:false,&quot;standalone&quot;:true,&quot;autoPlayGif&quot;:null,&quot;reduceMotion&quot;:null,&quot;media&quot;:[{&quot;id&quot;:&quot;272718&quot;,&quot;type&quot;:&quot;image&quot;,&quot;url&quot;:&quot;https://mstdn.tokyocameraclub.com/system/media_attachments/files/000/272/718/original/05a26230216d5521.jpg&quot;,&quot;preview_url&quot;:&quot;https://mstdn.tokyocameraclub.com/system/media_attachments/files/000/272/718/small/05a26230216d5521.jpg&quot;,&quot;remote_url&quot;:null,&quot;text_url&quot;:&quot;https://mstdn.tokyocameraclub.com/media/LI97NA7geN3KCrZupXQ&quot;,&quot;meta&quot;:{&quot;original&quot;:{&quot;width&quot;:1024,&quot;height&quot;:1280,&quot;size&quot;:&quot;1024x1280&quot;,&quot;aspect&quot;:0.8},&quot;small&quot;:{&quot;width&quot;:320,&quot;height&quot;:400,&quot;size&quot;:&quot;320x400&quot;,&quot;aspect&quot;:0.8}},&quot;description&quot;:null}]}'>
+        """)
+
+        self.assertIn(
+            Img(
+                'https://mstdn.tokyocameraclub.com/system/media_attachments/files/000/272/718/original/05a26230216d5521.jpg',
+                width=1024, height=1280,
+            ),
+            stuff)

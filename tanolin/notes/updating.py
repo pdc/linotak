@@ -55,22 +55,30 @@ def update_locator_with_stuff(locator, stuff):
                 titles.append((2, thing.name))
             if thing.summary:
                 locator.text = thing.summary
+            if thing.images:
+                for img in thing.images:
+                    locator.images.add(image_of_img(img))
         elif isinstance(thing, Img):
-            image, is_new = Image.objects.get_or_create(data_url=thing.src, defaults={
-                'media_type': thing.type,
-                'width': thing.width,
-                'height': thing.height,
-            })
-            if not is_new and thing.type or thing.width or thing.height:
-                if thing.type:
-                    image.media_type = thing.type
-                if thing.width:
-                    image.width = thing.width
-                if thing.height:
-                    image.height = thing.height
-                image.save()
-            locator.images.add(image)
+            locator.images.add(image_of_img(thing))
     if titles:
         _, title = max(titles)
         if title:
             locator.title = title
+
+
+def image_of_img(img):
+    """Find or create the Image instance corresponding to this Img."""
+    image, is_new = Image.objects.get_or_create(data_url=img.src, defaults={
+        'media_type': img.type,
+        'width': img.width,
+        'height': img.height,
+    })
+    if not is_new and img.type or img.width or img.height:
+        if img.type:
+            image.media_type = img.type
+        if img.width:
+            image.width = img.width
+        if img.height:
+            image.height = img.height
+        image.save()
+    return image
