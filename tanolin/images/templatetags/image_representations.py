@@ -7,7 +7,7 @@ register = template.Library()
 
 IMAGE_TEMPLATE = template.Template("""{% spaceless %}
     {% if representation %}
-        <img src="{{ representation.content.url }}"
+        <img src="{{ representation.content.url }}" {% if srcset %}srcset="{{srcset}}" sizes="{{sizes}}"{% endif %}
             {% if image.with_class %}class="{{ image.with_class }}" {% endif %}width="{{ representation.width }}" height="{{ representation.height }}"
             alt="">
     {% endif %}
@@ -22,10 +22,23 @@ def square_representation(value, arg):
 
     Usage: {{ someimage|square_representation:75 }}
     """
+    representations = value and sorted(
+        {
+            r for r in (
+                value.find_square_representation(arg * f)
+                for f in [1, 2, 3]
+            )
+            if r
+        },
+        key=lambda r: r.width)
     context = template.Context({
         'image': value,
-        'representation': value and value.find_square_representation(arg),
+        'representations': representations,
+        'representation': representations and representations[0],
+        'srcset': ', '.join('%s %dw' % (r.content.url, r.width) for r in representations) if representations and len(representations) > 1 else None,
+        'sizes': '%dpx' % arg,
     })
+    print(context)
     return IMAGE_TEMPLATE.render(context)
 
 
