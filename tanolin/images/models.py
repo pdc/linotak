@@ -25,6 +25,8 @@ from .signals import wants_data, wants_square_representation
 
 logger = logging.getLogger(__name__)
 
+MAX_LENGTH = 4000
+
 
 class CannotSniff(Exception):
     """Raised if cannot sniff. Args are returncode & message from ImageMagick."""
@@ -47,11 +49,11 @@ class Image(models.Model):
     MAX_DATA = 10 * 1024 * 1024
 
     data_url = models.URLField(
-        max_length=1000,
+        max_length=MAX_LENGTH,
         unique=True,
     )
     media_type = models.CharField(
-        max_length=200,
+        max_length=MAX_LENGTH,
         validators=[
             RegexValidator(r'^(image|application)/\w+(;\s*\w+=.*)?$'),
         ],
@@ -267,7 +269,7 @@ class Representation(models.Model):
         help_text='Content of the image representation.',
     )
     media_type = models.CharField(
-        max_length=200,
+        max_length=MAX_LENGTH,
         validators=[
             RegexValidator(r'^(image|application)/\w+(;\s*\w+=.*)?$'),
         ],

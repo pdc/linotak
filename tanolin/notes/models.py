@@ -9,6 +9,9 @@ from django.utils import timezone
 from ..images.models import Image
 
 
+MAX_LENGTH = 4000
+
+
 class Person(models.Model):
     """A person referred to as the author of some resource.
 
@@ -42,10 +45,10 @@ class Profile(models.Model):
     )
 
     url = models.URLField(
-        max_length=1000,
+        max_length=MAX_LENGTH,
     )
     label = models.CharField(
-        max_length=250,
+        max_length=MAX_LENGTH,
         help_text='How to display the username or equivalent for this person on this site. E.g., @damiancugley if on twitter.'
     )
 
@@ -67,11 +70,11 @@ class Locator(models.Model):
     )
 
     url = models.URLField(
-        max_length=1000,
+        max_length=MAX_LENGTH,
         unique=True,
     )
     title = models.CharField(
-        max_length=250,
+        max_length=MAX_LENGTH,
         blank=True,
     )
     text = models.TextField(
@@ -117,7 +120,7 @@ class Series(models.Model):
         help_text='Used in URLs',
     )
     title = models.CharField(
-        max_length=250,
+        max_length=MAX_LENGTH,
     )
     desc = models.TextField(
         'description',
