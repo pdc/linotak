@@ -6,31 +6,53 @@
 }
 
 .loc-item {
-    margin: 5px 10px;
+    margin: 5px 0;
     padding: 0;
     list-style-type: none;
-    border-width: 1px;
+    border-width: 1px 0;
     border-style: solid;
 }
 
 .loc {
-    min-height: 75px;
     color: inherit;
     text-decoration: inherit;
+}
 
-    display: block;
+.loc-compact {
+    height: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    flex-flow: row nowrap;
+}
+
+@media (min-width: 640px) {
+    .loc-hero {
+        display: flex;
+        flex-flow: row wrap;
+        justify-content: space-between;
+    }
+    .loc-text {
+        min-width: 320px;
+    }
 }
 
 .loc-img {
-    float: left;
-    margin: 0 4px 0 0;
+    display: block;
+    margin: 0;
     padding: 0;
     border: none;
 }
 
-.loc-hdg {
+.loc-text {
+    display: block;
+    margin: 10px 0;
+    max-width: 640px;
+}
+
+.loc-hdg,
+.loc-quote {
     margin: 0 10px;
-    padding-top: 10px;
     display: block;
 }
 
@@ -41,11 +63,6 @@
 .loc:hover .loc-title,
 .loc:active .loc-title {
     text-decoration: underline;
-}
-
-.loc-text {
-    padding: 5px 10px 10px;
-    display: block;
 }
 
 .loc-url {

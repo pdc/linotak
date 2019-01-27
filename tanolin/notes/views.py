@@ -47,7 +47,7 @@ class SeriesMixin(NotesQuerysetMixin):
         return super().get_queryset().filter(series=self.series)
 
     def get_context_data(self, **kwargs):
-        """Add the seriies to the context."""
+        """Add the series to the context."""
         context = super().get_context_data(**kwargs)
         context['series'] = self.series
         context['can_edit_as'] = (
@@ -65,7 +65,11 @@ class NoteListView(SeriesMixin, generic.ListView):
 
 
 class NoteDetailView(SeriesMixin, generic.DetailView):
-    pass
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['puff'] = 3
+        return context
 
 
 class NoteFormMixin:

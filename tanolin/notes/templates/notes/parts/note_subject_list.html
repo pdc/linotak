@@ -4,26 +4,32 @@
                     <ul class="loc-list note-subjects">
                         {% for locator in note.subjects.all %}
                         <li class="note-subject-item loc-item">
-                            <a class="note-subject loc" href="{{ locator.url }}">
-                                {{ locator.main_image|with_class:"loc-img"|square_representation:75 }}
-                                {% if locator.title %}
-                                <span class="loc-hdg">
-                                    <b class="loc-title">{{ locator.title }}</b>
-                                </span>
-                                {% elif locator.author %}
-                                <span class="loc-hdg">
-                                    <b class="loc-title">{{ locator.author.native_name }}</b>
-                                    {% for profile in locator.author.profiles.all|slice:":1" %}
-                                        <small class="loc-profile">{{ profile.label }}</small>
-                                    {% endfor %}
-                                </span>
+                            <a class="note-subject loc {% if puff %}loc-hero{% else %}loc-compact{% endif %}" href="{{ locator.url }}">
+                                {% if puff %}
+                                    {{ locator.main_image|with_class:"loc-img"|representation:"800x600 min 2:3 max 16:9" }}
+                                {% else %}
+                                    {{ locator.main_image|with_class:"loc-img"|square_representation:80 }}
                                 {% endif %}
-                                {% if locator.text %}
-                                <span class="loc-text">{{ locator.text }}</span>
-                                {% endif %}
-                                {% if not locator.text and not locator.title %}
-                                <span class="loc-url">{{ locator.url }}</span>
-                                {% endif %}
+                                <div class="loc-text {% if puff %}loc-hero-text{% else %}loc-compact-text{% endif %}">
+                                    {% if locator.title %}
+                                    <span class="loc-hdg">
+                                        <b class="loc-title">{{ locator.title }}</b>
+                                    </span>
+                                    {% elif locator.author %}
+                                    <span class="loc-hdg">
+                                        <b class="loc-title">{{ locator.author.native_name }}</b>
+                                        {% for profile in locator.author.profiles.all|slice:":1" %}
+                                            <small class="loc-profile">{{ profile.label }}</small>
+                                        {% endfor %}
+                                    </span>
+                                    {% endif %}
+                                    {% if locator.text %}
+                                    <span class="loc-quote">{{ locator.text }}</span>
+                                    {% endif %}
+                                    {% if not locator.text and not locator.title %}
+                                    <span class="loc-url">{{ locator.url }}</span>
+                                    {% endif %}
+                                </div>
                             </a>
                         </li>
                         {% endfor %}
