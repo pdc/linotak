@@ -215,10 +215,13 @@ class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
     def test_doesnt_scale_too_small_image(self):
         self.given_image_with_data('frost-100x101.jpeg')
 
-        with patch('subprocess.run') as mock_run:
-            self.image.create_square_representation(256)
+        self.image.create_square_representation(256)
 
-        self.assertFalse(mock_run.called)
+        # It does create a representation, but it is the original image data (unscaled).
+        self.assertEqual(self.image.representations.count(), 1)
+        rep = self.image.representations.all()[0]
+        self.assert_representation(rep, 'image/jpeg', 100, 101, is_cropped=False)
+        self.assert_same_data_as_file(rep, 'frost-100x101.jpeg')
 
     def test_is_idempotent(self):
         self.given_image_with_data('frost-100x101.jpeg')
@@ -245,6 +248,13 @@ class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
         self.assertEqual(actual_media_type, media_type)
         self.assertEqual(actual_width, width)
         self.assertEqual(actual_height, height)
+
+    def assert_same_data_as_file(self, rep, file_name):
+        with open(os.path.join(data_dir, file_name), 'rb') as f:
+            expected = f.read()
+        with rep.content.open() as f:
+            actual = f.read()
+        self.assertEqual(actual, expected, 'expected content of %s to match %s' % (rep, file_name))
 
     def assert_same_PNG_as_file(self, rep, file_name):
         with open(os.path.join(data_dir, file_name), 'rb') as input:

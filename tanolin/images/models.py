@@ -176,6 +176,13 @@ class Image(models.Model):
             # Already done!
             return
 
+        if final_width == self.width and final_height == self.height:
+            # Want the original size of the image. Just copy the data directly.
+            rep = self.representations.create(media_type=self.media_type, width=self.width, height=self.height, is_cropped=bool(crop), etag=self.etag)
+            with self.cached_data.open() as f:
+                rep.content.save(file_name_from_etag(rep.etag, rep.media_type), f)
+            return
+
         if crop:
             cmd = ['convert', '-', '-resize', '^%dx%d>' % scaled, '-gravity', 'center', '-extent', '%dx%d' % crop, '-']
         else:
@@ -183,8 +190,9 @@ class Image(models.Model):
         with self.cached_data.open() as f:
             output = subprocess.run(cmd, check=True, stdin=f.file, stdout=subprocess.PIPE).stdout
         etag = md5(output).digest()
+        output_file = ContentFile(output)
         rep = self.representations.create(media_type=self.media_type, width=final_width, height=final_height, is_cropped=bool(crop), etag=etag)
-        rep.content.save(file_name_from_etag(rep.etag, rep.media_type), ContentFile(output))
+        rep.content.save(file_name_from_etag(rep.etag, rep.media_type), output_file)
 
     def representation_task(self, spec):
         """Celery signature to arrange for representarion to be created.
