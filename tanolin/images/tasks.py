@@ -6,6 +6,7 @@ from django.db import transaction
 
 from ..utils import datetime_of_timestamp
 from .models import Image
+from .size_spec import SizeSpec
 
 
 logger = get_task_logger(__name__)
@@ -41,12 +42,12 @@ def sniff_image_data(pk):
             logger.warning(e)
 
 
-@shared_task(name='tanolin.images.create_image_square_representation')
-def create_image_square_representation(pk, size):
+@shared_task(name='tanolin.images.create_image_representation')
+def create_image_representation(pk, spec):
     """Task to generate a square representation of an image.
 
     Argument --
         pk -- (integer) identifies the image within the database
-        size -- (integer) specifies the width and height in pixels
+        spec -- (SizeSpec intance) specifies the width and height in pixels
     """
-    Image.objects.get(pk=pk).create_square_representation(size)
+    Image.objects.get(pk=pk).create_representation(SizeSpec.parse(spec))

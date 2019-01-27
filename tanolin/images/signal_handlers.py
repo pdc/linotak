@@ -18,11 +18,11 @@ def on_image_wants_data(sender, instance, **kwargs):
         instance.queue_retrieve_data()
 
 
-def on_image_wants_square_representation(sender, instance, size, **kwargs):
+def on_image_wants_representation(sender, instance, spec, **kwargs):
     if instance.cached_data:
-        instance.queue_square_representation(size)
+        instance.queue_representation(spec)
     elif getattr(settings, 'IMAGES_FETCH_DATA', False):
         chain(
             instance.retrieve_data_task(),
-            instance.square_representation_task(size),
+            instance.representation_task(spec),
         ).delay()

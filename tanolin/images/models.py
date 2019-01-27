@@ -20,7 +20,8 @@ import logging
 import requests
 import subprocess
 
-from .signals import wants_data, wants_square_representation
+from .signals import wants_data, wants_representation
+from .size_spec import SizeSpec
 
 
 logger = logging.getLogger(__name__)
@@ -154,59 +155,77 @@ class Image(models.Model):
             rc, msg = e.args
             raise Image.NotSniffable(file_name_from_etag(self.etag, None), rc, msg)
 
-    @transaction.atomic
     def create_square_representation(self, size):
         """Create a representation (probably cropped) of this image."""
+        return self.create_representation(SizeSpec.of_square(size))
+
+    @transaction.atomic
+    def create_representation(self, spec):
+        """Create a representation  of this image.
+
+        Arguments --
+            spec -- SizeSpec instance that specifies how to scale and crop
+        """
         if not self.width or not self.height:
             # Image size not known, so probably not actually an image.
             return
-        if self.width <= size and self.height <= size:
-            # Do not enlarge to fit!
-            return
-        if self.representations.filter(width=size, height=size).exists():
+
+        scaled, crop = spec.scale_and_crop_to_match(self.width, self.height)
+        final_width, final_height = crop or scaled
+        if self.representations.filter(width=final_width, height=final_height).exists():
+            # Already done!
             return
 
-        cmd = ['convert', '-', '-resize', '^%dx%d>' % (size, size), '-']
-        scale = max(size / self.width, size / self.height)
-        is_cropped = round(scale * self.width) != round(scale * self.height)
-        if is_cropped:
-            cmd[-1:-1] = ['-gravity', 'center', '-extent', '%dx%d' % (size, size)]
+        if crop:
+            cmd = ['convert', '-', '-resize', '^%dx%d>' % scaled, '-gravity', 'center', '-extent', '%dx%d' % crop, '-']
+        else:
+            cmd = ['convert', '-', '-resize', '%dx%d>' % scaled, '-']
         with self.cached_data.open() as f:
             output = subprocess.run(cmd, check=True, stdin=f.file, stdout=subprocess.PIPE).stdout
         etag = md5(output).digest()
-        with transaction.atomic():
-            rep = self.representations.create(media_type=self.media_type, width=size, height=size, is_cropped=is_cropped, etag=etag)
-            rep.content.save(file_name_from_etag(rep.etag, rep.media_type), ContentFile(output))
+        rep = self.representations.create(media_type=self.media_type, width=final_width, height=final_height, is_cropped=bool(crop), etag=etag)
+        rep.content.save(file_name_from_etag(rep.etag, rep.media_type), ContentFile(output))
 
-    def square_representation_task(self, size):
-        """Celery signature to arrange for square representarion to be created.
+    def representation_task(self, spec):
+        """Celery signature to arrange for representarion to be created.
 
         Do not try to do this in the same transaction as creates the image,
         as this causes a race condition.
         """
         from . import tasks
 
-        return tasks.create_image_square_representation.si(self.pk, size)
+        return tasks.create_image_representation.si(self.pk, spec.unparse())
 
-    def queue_square_representation(self, size):
-        """Arrange for square representarion to be created.
+    def queue_representation(self, spec):
+        """Arrange for representation satisfying this spec to be created.
 
         Do not try to do this in the same transaction as creates the image,
         as this causes a race condition.
         """
-        self.square_representation_task(size).delay()
+        self.representation_task(spec).delay()
 
     @transaction.atomic
+    def find_representation(self, spec):
+        """Return the best match for a square area of this size.
+
+        If there is no exact match, fires signal.
+        """
+        if self.width and self.height:
+            final_width, final_height = spec.best_match(self.width, self.height)
+            results = list(self.representations.filter(width__lte=final_width, height__lte=final_height).order_by((F('width') * F('height')).desc())[:1])
+            result = results[0] if results else None
+        else:
+            result = None
+        if not result or result.width != final_width or result.height != final_height:
+            wants_representation.send(self.__class__, instance=self, spec=spec)
+        return result
+
     def find_square_representation(self, size):
         """Return the best match for a square area of this size.
 
         If there is no exact match, fires signal.
         """
-        results = list(self.representations.filter(width__lte=size, height__lte=size).order_by((F('width') * F('height')).desc())[:1])
-        result = results[0] if results else None
-        if not result or result.width != size or result.height != size:
-            wants_square_representation.send(self.__class__, instance=self, size=size)
-        return result
+        return self.find_representation(SizeSpec.of_square(size))
 
     def wants_size(self):
         """Indicates size is wanted and not available."""

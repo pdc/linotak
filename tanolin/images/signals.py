@@ -8,4 +8,4 @@ wants_data = django.dispatch.Signal(providing_args=["instance"])
 
 
 # Called when Image.find_square_representation cannot find an exact match.
-wants_square_representation = django.dispatch.Signal(providing_args=["instance", "size"])
+wants_representation = django.dispatch.Signal(providing_args=["instance", "size_spec"])

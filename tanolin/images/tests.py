@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 from ..matchers_for_mocks import DateTimeTimestampMatcher
 from .models import Image, _sniff, CannotSniff
+from .size_spec import SizeSpec
 from . import models, signal_handlers, tasks  # For mocking
 
 
@@ -290,10 +291,93 @@ def _iter_PNG_chunks(data):
         raise ValueError('Bad chunk(s) in PNG data')
 
 
+class TestSizeSpec(TestCase):
+
+    def test_can_parse_widthxheight(self):
+        result = SizeSpec.parse('600x500')
+
+        self.assertEqual(result.width, 600)
+        self.assertEqual(result.height, 500)
+
+    def test_can_parse_min_ratio(self):
+        result = SizeSpec.parse('600x500 min 2:1')
+
+        self.assertEqual(result.width, 600)
+        self.assertEqual(result.height, 500)
+        self.assertEqual(result.min_ratio, (2, 1))
+
+    def test_can_parse_min_max_ratio(self):
+        result = SizeSpec.parse('550x500 min 3:4 max 6:5')
+
+        self.assertEqual(result.width, 550)
+        self.assertEqual(result.height, 500)
+        self.assertEqual(result.min_ratio, (3, 4))
+        self.assertEqual(result.max_ratio, (6, 5))
+
+    def test_can_write_spec(self):
+        result = SizeSpec(1280, 768).unparse()
+
+        self.assertEqual(result, '1280x768')
+
+    def test_can_write_spec_with_min_max(self):
+        result = SizeSpec(1280, 768, (2, 3), (4, 5)).unparse()
+
+        self.assertEqual(result, '1280x768 min 2:3 max 4:5')
+
+    def test_scales_down_to_fit_box(self):
+        self.assertEqual(
+            SizeSpec(640, 480).scale_and_crop_to_match(1000, 2000),
+            ((240, 480), None))
+        self.assertEqual(
+            SizeSpec(640, 480).scale_and_crop_to_match(2000, 1000),
+            ((640, 320), None))
+        self.assertEqual(
+            SizeSpec(640, 320).scale_and_crop_to_match(2000, 1000),
+            ((640, 320), None))
+        self.assertEqual(
+            SizeSpec(640, 480).scale_and_crop_to_match(2000, 2000),
+            ((480, 480), None))
+        self.assertEqual(
+            SizeSpec(640, 360).scale_and_crop_to_match(4000, 3000),
+            ((480, 360), None))
+
+    def test_crops_to_make_not_as_tall(self):
+        self.assertEqual(
+            SizeSpec(640, 480, min_ratio=(3, 4)).scale_and_crop_to_match(1000, 2000),
+            ((360, 720), (360, 480)))
+
+    def test_crops_to_make_not_as_wide(self):
+        self.assertEqual(
+            SizeSpec(640, 480, max_ratio=(3, 2)).scale_and_crop_to_match(2000, 1000),
+            ((853, 427), (640, 427)))
+
+    def test_rounds_to_nearest_int(self):
+        self.assertEqual(
+            SizeSpec(480, 320).scale_and_crop_to_match(3500, 2400),
+            ((467, 320), None))
+        self.assertEqual(
+            SizeSpec(320, 480).scale_and_crop_to_match(2400, 3500),
+            ((320, 467), None))
+
+    def test_does_not_scale_up(self):
+        self.assertEqual(
+            SizeSpec(1600, 900).scale_and_crop_to_match(600, 500),
+            ((600, 500), None))
+
+    def test_can_make_squares(self):
+        self.assertEqual(
+            SizeSpec(600, 600, min_ratio=(1, 1), max_ratio=(1, 1)).scale_and_crop_to_match(3000, 2000),
+            ((900, 600), (600, 600)))
+
+
 class TestImageFindSquareRepresentation(ImageTestMixin, TestCase):
 
+    def setUp(self):
+        """Create image with data and a reasonably large soure size."""
+        self.image = Image.objects.create(data_url='im.png', width=1280, height=768)
+        self.image.cached_data.save('foo.png', ContentFile(b'LOLWAT'))
+
     def test_returns_exact_match_if_exists(self):
-        self.given_image_with_data('im.png')
         rep = self.image.representations.create(width=100, height=100, is_cropped=True)
         self.image.representations.create(width=200, height=200, is_cropped=True)
         self.image.representations.create(width=128, height=77, is_cropped=False)
@@ -303,32 +387,30 @@ class TestImageFindSquareRepresentation(ImageTestMixin, TestCase):
         self.assertEqual(result, rep)
 
     def test_returns_nearest_smaller_match_and_queues_creation(self):
-        self.given_image_with_data('im.png')
         rep = self.image.representations.create(width=100, height=100, is_cropped=True)
         self.image.representations.create(width=200, height=200, is_cropped=True)
         self.image.representations.create(width=128, height=77, is_cropped=False)
 
-        with patch.object(self.image, 'queue_square_representation') as queue_square_representation:
+        with patch.object(self.image, 'queue_representation') as queue_representation:
             result = self.image.find_square_representation(150)
 
         self.assertEqual(result, rep)
-        queue_square_representation.assert_called_with(150)
+        queue_representation.assert_called_with(SizeSpec.of_square(150))
 
     def test_returns_nothing_if_none_suitable(self):
-        self.given_image_with_data('im.png')
         self.image.representations.create(width=640, height=384, is_cropped=True)
 
-        with patch.object(self.image, 'queue_square_representation') as queue_square_representation:
+        with patch.object(self.image, 'queue_representation') as queue_representation:
             result = self.image.find_square_representation(150)
 
         self.assertFalse(result)
-        queue_square_representation.assert_called_with(150)
+        queue_representation.assert_called_with(SizeSpec.of_square(150))
 
     def test_queues_retrieval_if_no_cached_data(self):
         self.image = Image.objects.create(data_url='http://example.com/69')  # No data
 
         with self.settings(IMAGES_FETCH_DATA=True), \
-                patch.object(tasks, 'create_image_square_representation') as create_image_square_representation, \
+                patch.object(tasks, 'create_image_representation') as create_image_representation, \
                 patch.object(tasks, 'retrieve_image_data') as retrieve_image_data, \
                 patch.object(signal_handlers, 'chain') as chain:
             result = self.image.find_square_representation(150)
@@ -336,7 +418,7 @@ class TestImageFindSquareRepresentation(ImageTestMixin, TestCase):
         self.assertFalse(result)
         chain.assert_called_with(
             retrieve_image_data.s(self.image.pk, if_not_retrieved_since=None),
-            create_image_square_representation.si(self.image.pk, 150))
+            create_image_representation.si(self.image.pk, SizeSpec.of_square(150).unparse()))
         chain.return_value.delay.assert_called_with()
 
 

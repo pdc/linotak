@@ -2,6 +2,9 @@
 
 from django import template
 
+from ..size_spec import SizeSpec
+
+
 register = template.Library()
 
 
@@ -22,23 +25,35 @@ def square_representation(value, arg):
 
     Usage: {{ someimage|square_representation:75 }}
     """
-    representations = value and sorted(
-        {
-            r for r in (
-                value.find_square_representation(arg * f)
-                for f in [1, 2, 3]
-            )
-            if r
-        },
+    return _image_representation(value, SizeSpec.of_square(arg))
+
+
+@register.filter
+def representation(value, arg):
+    """Tag filter that renders an image at a given CSS size
+
+    Value is a string encoding a size spec.
+
+    Usage: {{ someimage|representation:"300x400" }}
+    """
+    return _image_representation(value, SizeSpec.parse(arg))
+
+
+def _image_representation(image, spec):
+    representations = image and sorted(
+        {r for r in (image.find_representation(spec.enlarged(f)) for f in [1, 2, 3]) if r},
         key=lambda r: r.width)
+    srcset_needed = representations and len(representations) > 1
     context = template.Context({
-        'image': value,
+        'image': image,
         'representations': representations,
         'representation': representations and representations[0],
-        'srcset': ', '.join('%s %dw' % (r.content.url, r.width) for r in representations) if representations and len(representations) > 1 else None,
-        'sizes': '%dpx' % arg,
+        'srcset': ', '.join('%s %dw' % (r.content.url, r.width) for r in representations) if srcset_needed else None,
+        'sizes': (
+            '@media (max-width: %dpx) 100vh, %dpx' % (representations[0].width, representations[0].width)
+            if srcset_needed else None
+        ),
     })
-    print(context)
     return IMAGE_TEMPLATE.render(context)
 
 
