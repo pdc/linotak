@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from ...matchers_for_mocks import DateTimeTimestampMatcher
 from ...images.models import Image, wants_data
-from ..models import Locator
+from ..models import Locator, canonicalize_tag_name, Tag
 from .. import tasks
 from .factories import NoteFactory, SeriesFactory
 
@@ -102,6 +102,16 @@ class TestNoteExtractSubjects(TestCase):
         self.assertEqual(note.text, 'Banana frappé')
         self.assertEqual([x.url for x in note.subjects.all()], [])
 
+    def test_extracts_hash_tags(self):
+        note = NoteFactory.create(text='HelloWorld! #greeting https://example.com/1/ #camelCase')
+
+        result = note.extract_subject()
+
+        self.assertTrue(result)
+        self.assertEqual(note.text, 'HelloWorld!')
+        self.assertEqual([x.url for x in note.subjects.all()], ['https://example.com/1/'])
+        self.assertEqual({x.name for x in note.tags.all()}, {'greeting', 'camel-case'})
+
 
 class TestLocatorFetchPageUpdate(TransactionTestCase):
     """Test locator_fetch_page_update."""
@@ -177,3 +187,57 @@ class TestLocatorMainImage(TestCase):
 
         self.assertEqual(result.data_url, 'https://example.com/100')
         wants_data_send.assert_called_once_with(Image, instance=image)
+
+
+class TestCanonicalizeTagName(TestCase):
+
+    def test_rejects_empty_label(self):
+        with self.assertRaises(ValueError):
+            canonicalize_tag_name('')
+
+    def test_rejects_no_label(self):
+        with self.assertRaises(ValueError):
+            canonicalize_tag_name(None)
+
+    def test_lowercases(self):
+        self.assertEqual(canonicalize_tag_name('Foo'), 'foo')
+        self.assertEqual(canonicalize_tag_name('FOO'), 'foo')
+        self.assertEqual(canonicalize_tag_name('foo'), 'foo')
+
+    def test_creates_kebab_case_from_pascal_case(self):
+        self.assertEqual(canonicalize_tag_name('FooBarBaz'), 'foo-bar-baz')
+        self.assertEqual(canonicalize_tag_name('FOOBarBaz'), 'foo-bar-baz')
+        self.assertEqual(canonicalize_tag_name('FooBARBaz'), 'foo-bar-baz')
+        self.assertEqual(canonicalize_tag_name('FooBarBAZ'), 'foo-bar-baz')
+
+    def test_creates_kebab_case_from_camel_case(self):
+        self.assertEqual(canonicalize_tag_name('fooBarBaz'), 'foo-bar-baz')
+        self.assertEqual(canonicalize_tag_name('fooBARBaz'), 'foo-bar-baz')
+
+    def test_splits_numbers_from_following_words(self):
+        self.assertEqual(canonicalize_tag_name('foo3D'), 'foo-3d')
+        self.assertEqual(canonicalize_tag_name('2000AD'), '2000ad')
+
+
+class TestTag(TestCase):
+
+    def test_can_create_from_camel_case(self):
+        result = Tag.objects.get_tag('fooBar')
+
+        self.assertEqual(result.name, 'foo-bar')
+
+    def test_creates_or_gets_existing(self):
+        tag1 = Tag.objects.get_tag('fooBar')
+        tag2 = Tag.objects.get_tag('FooBAR')
+
+        self.assertEqual(tag1.pk, tag2.pk)
+
+    def test_invents_label_if_none_supplied(self):
+        tag = Tag.objects.get_tag('fooBar')
+
+        self.assertEqual(tag.label, 'foo bar')
+
+    def test_retains_capitalized_words(self):
+        tag = Tag.objects.get_tag('fooBAR')
+
+        self.assertEqual(tag.label, 'foo BAR')

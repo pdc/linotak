@@ -63,6 +63,23 @@
     margin: 5px 10px;
 }
 
+.note-tag-list {
+    display: block;
+    margin: 5px 10px;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.note-tag {
+    display: inline-block;
+    padding: 0 5px;
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.3em;
+}
+
 .note-metadata {
     display: block;
     margin: 5px 10px;

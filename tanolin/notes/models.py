@@ -141,6 +141,75 @@ class Series(models.Model):
         return reverse('notes:list', kwargs={'series_name': self.name})
 
 
+_camel_word_re = re.compile(r'(.)([A-Z][a-z])')
+_camel_prefix_re = re.compile(r'([a-z]+)([A-Z0-9])')
+_whitespace_re = re.compile(r'\s+')
+_title_word_re = re.compile(r'\b[A-Z][a-z]+\b')
+
+
+def canonicalize_tag_name(proto_name):
+    if not proto_name:
+        raise ValueError('Tag name cannot be absent or empty')
+    n = _camel_word_re.sub(r'\1-\2', proto_name)
+    n = _camel_prefix_re.sub(r'\1-\2', n)
+    return n.lower()
+
+
+def labelize_tag_name(proto_name):
+    if not proto_name:
+        raise ValueError('Tag name cannot be absent or empty')
+    n = _camel_word_re.sub(r'\1 \2', proto_name)
+    n = _camel_prefix_re.sub(r'\1 \2', n)
+    n = _whitespace_re.sub(' ', n)
+    if n[0].islower():
+        n = _title_word_re.sub(lambda m: m.group(0).lower(), n)
+    return n
+
+
+class TagManager(models.Manager):
+    """Manager for Tag instances."""
+
+    def get_tag(self, proto_name):
+        name = canonicalize_tag_name(proto_name)
+        result, is_new = self.get_or_create(name=name, defaults={'label': labelize_tag_name(proto_name)})
+        return result
+
+
+class Tag(models.Model):
+    """A token used to identify a subject in a note.
+
+    Introduced in notes by adding them in camel-case pprefixed with #
+    as in #blackAndWhite #landscape #tree
+
+    The canonical name is all-lower-case, with words separated by hashes,
+    and no prefix, as in `black-and-white`
+    """
+
+    name = models.SlugField(
+        max_length=MAX_LENGTH,
+        blank=False,
+        unique=True,
+        help_text='Internal name of the tag, as lowercase words separated by dashes.',
+    )
+    label = models.CharField(
+        max_length=MAX_LENGTH,
+        blank=False,
+        unique=True,
+        help_text='Conventional capitalization of this tag, as words separated by spaces.',
+    )
+
+    created = models.DateTimeField(default=timezone.now)
+    modified = models.DateTimeField(auto_now=True)
+
+    objects = TagManager()
+
+    class Meta:
+        ordering = ['label']
+
+    def __str__(self):
+        return self.label
+
+
 class Note(models.Model):
     series = models.ForeignKey(
         Series,
@@ -149,6 +218,11 @@ class Note(models.Model):
     author = models.ForeignKey(
         Person,
         models.CASCADE,
+    )
+    tags = models.ManyToManyField(
+        Tag,
+        related_name='occurences',
+        related_query_name='occurrence',
     )
     subjects = models.ManyToManyField(
         Locator,
@@ -195,6 +269,9 @@ class Note(models.Model):
                 https?://
                 [\w.-]+(?: :\d+)?
                 (?: /\S* )?
+            |
+                \s+
+                \# \w+
             )+
         )
         \s* $
@@ -204,12 +281,17 @@ class Note(models.Model):
         """Anlyse the text of the note for URLs of subject(s) of the note."""
         m = Note.subject_re.search(self.text)
         if m:
-            urls, self.text = m.group(1).split(), self.text[:m.start(0)]
-            for url in urls:
-                if not '/' in url[8:]:
-                    url += '/'
-                self.add_subject(url)
-            return urls
+            things, self.text = m.group(1).split(), self.text[:m.start(0)]
+            for url in things:
+                if url.startswith('#'):
+                    tag = Tag.objects.get_tag(url[1:])
+                    if tag not in self.tags.all():
+                        self.tags.add(tag)
+                else:
+                    if '/' not in url[8:]:
+                        url += '/'
+                    self.add_subject(url)
+            return things
 
 
 class NoteSubject(models.Model):
