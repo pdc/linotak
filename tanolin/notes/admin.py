@@ -1,10 +1,13 @@
 from django.contrib import admin
 
-from .models import Person, Profile, Series, Note, Locator, NoteSubject
-from .tasks import fetch_locator_page
+from .models import Person, Profile, Series, Tag, Note, Locator, NoteSubject
 
 
 class SeriesAdmin(admin.ModelAdmin):
+    pass
+
+
+class TagAdmin(admin.ModelAdmin):
     pass
 
 
@@ -47,6 +50,7 @@ class PersonAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Series, SeriesAdmin)
+admin.site.register(Tag, TagAdmin)
 admin.site.register(Note, NoteAdmin)
 admin.site.register(Locator, LocatorAdmin)
 admin.site.register(Person, PersonAdmin)

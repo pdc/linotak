@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from ...matchers_for_mocks import DateTimeTimestampMatcher
 from ...images.models import Image, wants_data
-from ..models import Locator, canonicalize_tag_name, Tag
+from ..models import Locator, canonicalize_tag_name, wordify, Tag
 from .. import tasks
 from .factories import NoteFactory, SeriesFactory
 
@@ -110,7 +110,8 @@ class TestNoteExtractSubjects(TestCase):
         self.assertTrue(result)
         self.assertEqual(note.text, 'HelloWorld!')
         self.assertEqual([x.url for x in note.subjects.all()], ['https://example.com/1/'])
-        self.assertEqual({x.name for x in note.tags.all()}, {'greeting', 'camel-case'})
+        self.assertEqual({x.name for x in note.tags.all()}, {'greeting', 'camelcase'})
+        self.assertEqual({x.label for x in note.tags.all()}, {'greeting', 'camel case'})
 
 
 class TestLocatorFetchPageUpdate(TransactionTestCase):
@@ -144,7 +145,7 @@ class TestLocatorFetchPageUpdate(TransactionTestCase):
             fetch_locator_page.delay.assert_called_once_with(locator.pk, if_not_scanned_since=None)
 
 
-class LocatorQueueFetch(TransactionTestCase):
+class TestLocatorQueueFetch(TransactionTestCase):
 
     def test_passes_none_if_never_scanned(self):
         locator = Locator.objects.create(url='https://example.com/1')
@@ -204,19 +205,23 @@ class TestCanonicalizeTagName(TestCase):
         self.assertEqual(canonicalize_tag_name('FOO'), 'foo')
         self.assertEqual(canonicalize_tag_name('foo'), 'foo')
 
-    def test_creates_kebab_case_from_pascal_case(self):
-        self.assertEqual(canonicalize_tag_name('FooBarBaz'), 'foo-bar-baz')
-        self.assertEqual(canonicalize_tag_name('FOOBarBaz'), 'foo-bar-baz')
-        self.assertEqual(canonicalize_tag_name('FooBARBaz'), 'foo-bar-baz')
-        self.assertEqual(canonicalize_tag_name('FooBarBAZ'), 'foo-bar-baz')
+    def test_does_not_split_words(self):
+        self.assertEqual(canonicalize_tag_name('FooBarBaz'), 'foobarbaz')
 
-    def test_creates_kebab_case_from_camel_case(self):
-        self.assertEqual(canonicalize_tag_name('fooBarBaz'), 'foo-bar-baz')
-        self.assertEqual(canonicalize_tag_name('fooBARBaz'), 'foo-bar-baz')
 
-    def test_splits_numbers_from_following_words(self):
-        self.assertEqual(canonicalize_tag_name('foo3D'), 'foo-3d')
-        self.assertEqual(canonicalize_tag_name('2000AD'), '2000ad')
+class TestWordify(TestCase):
+
+    def test_spolits_camel_case(self):
+        self.assertEqual(wordify('fooBarBaz'), 'foo bar baz')
+
+    def test_leaves_initial_caps_if_first_letter_uppercase(self):
+        self.assertEqual(wordify('FooBarBaz'), 'Foo Bar Baz')
+
+    def test_leaves_allcaps_allcaps(self):
+        self.assertEqual(wordify('FOOBarBaz'), 'FOO Bar Baz')
+        self.assertEqual(wordify('FooBARBaz'), 'Foo BAR Baz')
+        self.assertEqual(wordify('FooBarBAZ'), 'Foo Bar BAZ')
+        self.assertEqual(wordify('fooBARBaz'), 'foo BAR baz')
 
 
 class TestTag(TestCase):
@@ -224,7 +229,7 @@ class TestTag(TestCase):
     def test_can_create_from_camel_case(self):
         result = Tag.objects.get_tag('fooBar')
 
-        self.assertEqual(result.name, 'foo-bar')
+        self.assertEqual(result.name, 'foobar')
 
     def test_creates_or_gets_existing(self):
         tag1 = Tag.objects.get_tag('fooBar')

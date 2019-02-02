@@ -1,7 +1,7 @@
             {% if note.tags %}
             <ul class="note-tag-list">
                 {% for tag in note.tags.all %}
-                <li class="note-tag">{{ tag.name }}</li>
+                <li class="note-tag">{{ tag.label }}</li>
                 {% endfor %}
             </ul>
             {% endif %}

@@ -150,12 +150,10 @@ _title_word_re = re.compile(r'\b[A-Z][a-z]+\b')
 def canonicalize_tag_name(proto_name):
     if not proto_name:
         raise ValueError('Tag name cannot be absent or empty')
-    n = _camel_word_re.sub(r'\1-\2', proto_name)
-    n = _camel_prefix_re.sub(r'\1-\2', n)
-    return n.lower()
+    return proto_name.lower()
 
 
-def labelize_tag_name(proto_name):
+def wordify(proto_name):
     if not proto_name:
         raise ValueError('Tag name cannot be absent or empty')
     n = _camel_word_re.sub(r'\1 \2', proto_name)
@@ -171,7 +169,7 @@ class TagManager(models.Manager):
 
     def get_tag(self, proto_name):
         name = canonicalize_tag_name(proto_name)
-        result, is_new = self.get_or_create(name=name, defaults={'label': labelize_tag_name(proto_name)})
+        result, is_new = self.get_or_create(name=name, defaults={'label': wordify(proto_name)})
         return result
 
 
