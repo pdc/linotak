@@ -1,0 +1,26 @@
+
+.tag-list {
+    display: contents;
+    margin: 5px 10px 10px;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.tag {
+    display: inline-block;
+    padding: 0 5px;
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.5em;
+}
+
+.tag-link {
+    text-decoration: inherit;
+}
+
+.tag-link:hover,
+.tag-link:active {
+    text-decoration: underline;
+}

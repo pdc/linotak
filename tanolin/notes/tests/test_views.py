@@ -2,7 +2,7 @@ from django.test import Client, TestCase
 from django.utils import timezone
 
 from ..models import Locator
-from .factories import SeriesFactory, PersonFactory, NoteFactory
+from .factories import SeriesFactory, PersonFactory, TagFactory, NoteFactory
 
 
 class TestNoteList(TestCase):
@@ -48,6 +48,16 @@ class TestNoteList(TestCase):
 
         self.assertEqual(list(r.context['note_list']), [])
         self.assertEqual(list(r.context['draft_list']), [note])
+
+    def test_fitered_by_tag_if_specified(self):
+        series = SeriesFactory.create(name='alpha')
+        note1 = NoteFactory.create(series=series, tags=['foo', 'bar'], published=timezone.now())
+        note2 = NoteFactory.create(series=series, tags=['bar'], published=timezone.now())
+        note3 = NoteFactory.create(series=series, tags=['qux', 'foo'], published=timezone.now())
+
+        r = self.client.get('/alpha/tagged/foo')
+
+        self.assertEqual(list(r.context['note_list']), [note3, note1])
 
     def given_logged_in_as(self, person):
         self.client.login(username=person.login.username, password='secret')

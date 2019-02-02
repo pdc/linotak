@@ -2,7 +2,7 @@
 from django.contrib.auth import get_user_model
 import factory
 
-from ..models import Person, Series, Note
+from ..models import Person, Series, Tag, Note, wordify
 
 
 class PersonFactory(factory.django.DjangoModelFactory):
@@ -35,6 +35,14 @@ class SeriesFactory(factory.django.DjangoModelFactory):
             self.editors.add(person)
 
 
+class TagFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Tag
+
+    name = factory.Sequence(lambda n: 'tag%d' % n)
+    label = factory.LazyAttribute(lambda x: wordify(x.name))
+
+
 class NoteFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Note
@@ -44,11 +52,10 @@ class NoteFactory(factory.django.DjangoModelFactory):
     author = factory.LazyAttribute(lambda x: x.series.editors.all()[0])
     published = None
 
-    # @factory.post_generation
-    # def author(self, create, extracted, **kwargs):
-    #     if not create:
-    #         return
-    #     if extracted:
-    #         self.author = extracted.login
-    #     else:
-    #         self.author = self.series.editors.all()[0]
+    @factory.post_generation
+    def tags(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for tag in extracted:
+                self.tags.add(Tag.objects.get_tag(tag))

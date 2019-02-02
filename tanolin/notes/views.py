@@ -11,7 +11,7 @@ from django.views import generic
 from django.views.generic.edit import CreateView, UpdateView
 
 from .forms import NoteForm
-from .models import Series, Note
+from .models import Series, Note, Tag
 
 
 class NotesQuerysetMixin:
@@ -56,11 +56,30 @@ class SeriesMixin(NotesQuerysetMixin):
         return context
 
 
-class IndexView(NotesQuerysetMixin, generic.ListView):
+class TaggedMixin:
+
+    def get_queryset(self, **kwargs):
+        """Filter by tags if required."""
+        queryset = super().get_queryset()
+        tags = self.kwargs.get('tags')
+        if tags:
+            return queryset.filter(tags__name=tags)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        """Add the series to the context."""
+        context = super().get_context_data(**kwargs)
+        tags = self.kwargs.get('tags')
+        if tags:
+            context['tags'] = Tag.objects.filter(name=tags)
+        return context
+
+
+class IndexView(TaggedMixin, NotesQuerysetMixin, generic.ListView):
     template_name = 'notes/index.html'
 
 
-class NoteListView(SeriesMixin, generic.ListView):
+class NoteListView(TaggedMixin, SeriesMixin, generic.ListView):
     pass
 
 

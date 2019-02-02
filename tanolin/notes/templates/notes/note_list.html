@@ -6,12 +6,19 @@
         <style>
             {% include 'notes/inline-styles/note_list.css' %}
             {% include 'notes/inline-styles/subject_list.css' %}
+            {% include 'notes/inline-styles/tag_list.css' %}
         </style>
 {% endblock %}
 
 {% block content %}
         <header class="note-list-header">
-            <h1>{{ series.title }}</h1>
+            <h1>
+                {{ series.title }}
+                {% if tags %}
+                    tagged
+                    {% for tag in tags %}{{ tag.label }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                {% endif %}
+            </h1>
             {% if can_edit_as %}
                 <div class="action-bar">
                     {% for person in can_edit_as %}

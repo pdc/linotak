@@ -1,7 +1,13 @@
             {% if note.tags %}
-            <ul class="note-tag-list">
+            <ul class="tag-list">
                 {% for tag in note.tags.all %}
-                <li class="note-tag">{{ tag.label }}</li>
+                <li class="tag">
+                    {% if series %}
+                    <a class="tag-link" href="{% url 'notes:list' series_name=series.name tags=tag.name %}">{{ tag.label }}</a>
+                    {% else %}
+                    <a class="tag-link" href="{% url 'notes:index' tags=tag.name %}">{{ tag.label }}</a>
+                    {% endif %}
+                </li>
                 {% endfor %}
             </ul>
             {% endif %}

@@ -106,6 +106,19 @@ textarea {
     background-color: var(--hl-paper);
 }
 
+/* Tags */
+
+.tag-link {
+    color: inherit;
+}
+
+.tag:hover,
+.tag:active {
+    color: rgba(0, 0. 0, 0.85);
+    color: var(--link);
+    background-color: var(--ui-bg);
+}
+
 /* Subject list */
 
 .loc {
@@ -165,17 +178,19 @@ textarea {
     color: var(--muted);
 }
 
-.note-metadata a:link {
+.note-metadata-link:link {
     color: #007FFF;
     color: var(--link);
 }
 
-.note-metadata a:visited {
+.note-metadata-link:visited {
     color: #003366;
     color: var(--visited);
 }
 
-.note-metadata a:hover,
-.note-metadata a:visited {
+.note-metadata-link:hover,
+.note-metadata-link:active {
+    color: rgba(0, 0. 0, 0.85);
+    color: var(--link);
     background-color: var(--ui-bg);
 }
