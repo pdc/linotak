@@ -3,6 +3,6 @@
                 <span class="p-author">{{ note.author.native_name }}</span>
                 <time class="dt-published" datetime="{{ note.published|date:"c" }}" title="{{ note.published|date:'P l j F Y e' }}">{{ note.published|timesince }} ago</time>.
 {% else %}
-                <strong>Unpublished</strong>
+                <a class="u-uri u-uid" href="{{ note.get_absolute_url }}"><strong>Unpublished</strong></a>
                 <a href="{% url 'notes:update' series_name=note.series.name pk=note.pk %}">Edit</a>
 {% endif %}
