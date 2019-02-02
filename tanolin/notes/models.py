@@ -221,6 +221,7 @@ class Note(models.Model):
         Tag,
         related_name='occurences',
         related_query_name='occurrence',
+        blank=True,
     )
     subjects = models.ManyToManyField(
         Locator,
@@ -268,7 +269,7 @@ class Note(models.Model):
                 [\w.-]+(?: :\d+)?
                 (?: /\S* )?
             |
-                \s+
+                (\s+ | ^)
                 \# \w+
             )+
         )

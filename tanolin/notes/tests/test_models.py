@@ -102,7 +102,7 @@ class TestNoteExtractSubjects(TestCase):
         self.assertEqual(note.text, 'Banana frappé')
         self.assertEqual([x.url for x in note.subjects.all()], [])
 
-    def test_extracts_hash_tags(self):
+    def test_extracts_hashtags(self):
         note = NoteFactory.create(text='HelloWorld! #greeting https://example.com/1/ #camelCase')
 
         result = note.extract_subject()
@@ -112,6 +112,15 @@ class TestNoteExtractSubjects(TestCase):
         self.assertEqual([x.url for x in note.subjects.all()], ['https://example.com/1/'])
         self.assertEqual({x.name for x in note.tags.all()}, {'greeting', 'camelcase'})
         self.assertEqual({x.label for x in note.tags.all()}, {'greeting', 'camel case'})
+
+    def test_extracts_hashtags_at_start(self):
+        note = NoteFactory.create(text='#TokyoCameraClub #Japan #torii')
+
+        result = note.extract_subject()
+
+        self.assertTrue(result)
+        self.assertEqual(note.text, '')
+        self.assertEqual({x.name for x in note.tags.all()}, {'tokyocameraclub', 'japan', 'torii'})
 
 
 class TestLocatorFetchPageUpdate(TransactionTestCase):
