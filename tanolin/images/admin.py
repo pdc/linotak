@@ -16,6 +16,14 @@ queue_retrieve.short_description = 'Queue retrieval of image data'
 
 class ImageAdmin(admin.ModelAdmin):
     actions = [queue_retrieve]
+    date_hierarchy = 'created'
+    list_display = ['__str__', 'media_type', 'width', 'height', 'retrieved']
+    list_filter = [
+        'media_type',
+        'retrieved',
+    ]
+    search_fields = ['data_url']
+
 
 
 admin.site.register(Image, ImageAdmin)

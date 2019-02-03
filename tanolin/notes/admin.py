@@ -4,11 +4,11 @@ from .models import Person, Profile, Series, Tag, Note, Locator, NoteSubject
 
 
 class SeriesAdmin(admin.ModelAdmin):
-    pass
+    list_display = ['name', 'title', 'created', 'modified']
 
 
 class TagAdmin(admin.ModelAdmin):
-    pass
+    search_fields = ['name', 'label']
 
 
 class NoteSubjectInline(admin.TabularInline):
@@ -18,9 +18,16 @@ class NoteSubjectInline(admin.TabularInline):
 
 class NoteAdmin(admin.ModelAdmin):
     autocomplete_fields = ['subjects']
+    date_hierarchy = 'published'
+    filter_horizontal = ['tags']
     inlines = [
         NoteSubjectInline
     ]
+    list_display = ['__str__', 'series', 'author', 'published']
+    list_filter = [
+        'published',
+    ]
+    search_fields = ['text', 'subjects__url', 'tags__name']
 
 
 def queue_fetch(model_admin, request, queryset):
@@ -33,8 +40,13 @@ queue_fetch.short_description = 'Queue fetch'
 
 
 class LocatorAdmin(admin.ModelAdmin):
+    date_hierarchy = 'created'
     search_fields = ['url', 'title']
     actions = [queue_fetch]
+    raw_id_fields = ['images']
+    list_display = ['__str__', 'title', 'scanned']
+    list_filter = ['scanned']
+    search_fields = ['url', 'title', 'text']
 
 
 class ProfileInline(admin.TabularInline):
