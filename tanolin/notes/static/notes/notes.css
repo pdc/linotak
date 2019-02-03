@@ -126,7 +126,8 @@ textarea {
     background-color: var(--ui-bg2);
 }
 
-.loc-item {
+.loc-item,
+.note-text + .loc-list {
     border-color: rgba(0, 0, 0, 0.3);
     border-color: var(--faint);
 }

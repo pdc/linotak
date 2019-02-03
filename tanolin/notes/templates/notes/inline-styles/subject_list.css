@@ -1,15 +1,20 @@
 .loc-list {
-    margin: 10px 0;
+    margin: 0 0 10px;
     padding: 0;
 
     font-weight: 400;
 }
 
+.note-text + .loc-list {
+    border-width: 1px 0 0 0;
+    border-style: solid;
+}
+
 .loc-item {
-    margin: 5px 0;
+    margin: 0;
     padding: 0;
     list-style-type: none;
-    border-width: 1px 0;
+    border-width: 0 0 1px;
     border-style: solid;
 }
 
