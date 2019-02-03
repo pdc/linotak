@@ -91,7 +91,10 @@ class Image(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.data_url.rsplit('/', 1)[-1]
+        last_part = self.data_url.rsplit('/', 1)[-1]
+        if len(last_part) > 60:
+            return '%s…%s' % (last_part[:30], last_part[-20:])
+        return last_part
 
     def retrieve_data_task(self):
         """Celery signature to arrange for async download of this image."""
