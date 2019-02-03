@@ -153,6 +153,7 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
         with self.image.cached_data.open() as f:
             actual = f.read()
         self.assertEqual(actual, self.data)
+        self.assertTrue(self.image.retrieved)
 
 
 class TestSignalHandler(TransactionTestCase):  # Different superclass so that on_commit hooks are called.

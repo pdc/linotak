@@ -104,10 +104,14 @@ class Image(models.Model):
         # Queue after transaction committed to avoid a race with the Celery queue.
         transaction.on_commit(self.retrieve_data_task().delay)
 
+    @transaction.atomic
     def retrieve_data(self, if_not_retrieved_since=None, save=False):
         """Download the image data if available."""
         if self.retrieved and (not if_not_retrieved_since or if_not_retrieved_since < self.retrieved):
             return
+        self.retrieved = timezone.now()
+        self.save()  # This will be rolled back in case of error but settingit now avoids some race conditons.
+
         r = requests.get(self.data_url)
         media_type = r.headers['Content-Type']
         if media_type:
