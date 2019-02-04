@@ -2,6 +2,7 @@ from django.test import Client, TestCase
 from django.utils import timezone
 
 from ..models import Locator
+from ..tag_filter import TagFilter
 from .factories import SeriesFactory, PersonFactory, TagFactory, NoteFactory
 
 
@@ -51,13 +52,14 @@ class TestNoteList(TestCase):
 
     def test_fitered_by_tag_if_specified(self):
         series = SeriesFactory.create(name='alpha')
-        note1 = NoteFactory.create(series=series, tags=['foo', 'bar'], published=timezone.now())
-        note2 = NoteFactory.create(series=series, tags=['bar'], published=timezone.now())
-        note3 = NoteFactory.create(series=series, tags=['qux', 'foo'], published=timezone.now())
+        note1 = NoteFactory.create(series=series, tags=['foo', 'bar', 'baz'], published=timezone.now())
+        note2 = NoteFactory.create(series=series, tags=['bar', 'baz'], published=timezone.now())
+        note3 = NoteFactory.create(series=series, tags=['qux', 'foo', 'bar'], published=timezone.now())
 
-        r = self.client.get('/alpha/tagged/foo')
+        r = self.client.get('/alpha/tagged/foo+bar')
 
         self.assertEqual(list(r.context['note_list']), [note3, note1])
+        self.assertEqual(r.context['tag_filter'], TagFilter(['foo', 'bar']))
 
     def given_logged_in_as(self, person):
         self.client.login(username=person.login.username, password='secret')

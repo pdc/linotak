@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ..images.models import Image
+from .tag_filter import canonicalize_tag_name, wordify
 
 
 MAX_LENGTH = 4000
@@ -139,29 +140,6 @@ class Series(models.Model):
 
     def get_absolute_url(self):
         return reverse('notes:list', kwargs={'series_name': self.name})
-
-
-_camel_word_re = re.compile(r'(.)([A-Z][a-z])')
-_camel_prefix_re = re.compile(r'([a-z]+)([A-Z0-9])')
-_whitespace_re = re.compile(r'\s+')
-_title_word_re = re.compile(r'\b[A-Z][a-z]+\b')
-
-
-def canonicalize_tag_name(proto_name):
-    if not proto_name:
-        raise ValueError('Tag name cannot be absent or empty')
-    return proto_name.lower()
-
-
-def wordify(proto_name):
-    if not proto_name:
-        raise ValueError('Tag name cannot be absent or empty')
-    n = _camel_word_re.sub(r'\1 \2', proto_name)
-    n = _camel_prefix_re.sub(r'\1 \2', n)
-    n = _whitespace_re.sub(' ', n)
-    if n[0].islower():
-        n = _title_word_re.sub(lambda m: m.group(0).lower(), n)
-    return n
 
 
 class TagManager(models.Manager):

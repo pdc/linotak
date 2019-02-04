@@ -12,6 +12,7 @@ from django.views.generic.edit import CreateView, UpdateView
 
 from .forms import NoteForm
 from .models import Series, Note, Tag
+from .tag_filter import TagFilter
 
 
 class NotesQuerysetMixin:
@@ -58,20 +59,23 @@ class SeriesMixin(NotesQuerysetMixin):
 
 class TaggedMixin:
 
+    @cached_property
+    def tag_filter(self):
+        """TagFilter instance implied by URL, or None."""
+        return TagFilter.parse(self.kwargs.get('tags'))
+
     def get_queryset(self, **kwargs):
-        """Filter by tags if required."""
+        """Filter by tags if specified."""
         queryset = super().get_queryset()
-        tags = self.kwargs.get('tags')
-        if tags:
-            return queryset.filter(tags__name=tags)
+        tag_filter = self.tag_filter
+        if tag_filter:
+            queryset = tag_filter.apply(queryset)
         return queryset
 
     def get_context_data(self, **kwargs):
         """Add the series to the context."""
         context = super().get_context_data(**kwargs)
-        tags = self.kwargs.get('tags')
-        if tags:
-            context['tags'] = Tag.objects.filter(name=tags)
+        context['tag_filter'] = self.tag_filter
         return context
 
 

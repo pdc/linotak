@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from ...matchers_for_mocks import DateTimeTimestampMatcher
 from ...images.models import Image, wants_data
-from ..models import Locator, canonicalize_tag_name, wordify, Tag
+from ..models import Locator, Tag
 from .. import tasks
 from .factories import NoteFactory, SeriesFactory
 
@@ -197,40 +197,6 @@ class TestLocatorMainImage(TestCase):
 
         self.assertEqual(result.data_url, 'https://example.com/100')
         wants_data_send.assert_called_once_with(Image, instance=image)
-
-
-class TestCanonicalizeTagName(TestCase):
-
-    def test_rejects_empty_label(self):
-        with self.assertRaises(ValueError):
-            canonicalize_tag_name('')
-
-    def test_rejects_no_label(self):
-        with self.assertRaises(ValueError):
-            canonicalize_tag_name(None)
-
-    def test_lowercases(self):
-        self.assertEqual(canonicalize_tag_name('Foo'), 'foo')
-        self.assertEqual(canonicalize_tag_name('FOO'), 'foo')
-        self.assertEqual(canonicalize_tag_name('foo'), 'foo')
-
-    def test_does_not_split_words(self):
-        self.assertEqual(canonicalize_tag_name('FooBarBaz'), 'foobarbaz')
-
-
-class TestWordify(TestCase):
-
-    def test_spolits_camel_case(self):
-        self.assertEqual(wordify('fooBarBaz'), 'foo bar baz')
-
-    def test_leaves_initial_caps_if_first_letter_uppercase(self):
-        self.assertEqual(wordify('FooBarBaz'), 'Foo Bar Baz')
-
-    def test_leaves_allcaps_allcaps(self):
-        self.assertEqual(wordify('FOOBarBaz'), 'FOO Bar Baz')
-        self.assertEqual(wordify('FooBARBaz'), 'Foo BAR Baz')
-        self.assertEqual(wordify('FooBarBAZ'), 'Foo Bar BAZ')
-        self.assertEqual(wordify('fooBARBaz'), 'foo BAR baz')
 
 
 class TestTag(TestCase):
