@@ -4,7 +4,7 @@ from django.test import TestCase
 from unittest.mock import MagicMock
 
 from ..tag_filter import canonicalize_tag_name, wordify, TagFilter
-from ..templatetags.tag_filters import with_included
+from ..templatetags.tag_filters import with_included, without_included, with_excluded, without_excluded
 from .factories import TagFactory
 
 
@@ -128,3 +128,18 @@ class TestTagFiltersWithIncluded(TestCase):
         result = with_included(TagFilter(['foo']), TagFactory(name='bar'))
 
         self.assertEqual(result, TagFilter(['foo', 'bar']))
+
+    def test_adds_tag_to_anti_filter(self):
+        result = with_excluded(TagFilter(['foo'], ['quux']), 'bar')
+
+        self.assertEqual(result, TagFilter(['foo'], ['quux', 'bar']))
+
+    def test_removes_tag_from_filter(self):
+        result = without_included(TagFilter(['foo', 'bar'], ['quux']), 'bar')
+
+        self.assertEqual(result, TagFilter(['foo'], ['quux']))
+
+    def test_removes_tag_from_filter(self):
+        result = without_excluded(TagFilter(['foo'], ['quux', 'quux2']), 'quux')
+
+        self.assertEqual(result, TagFilter(['foo'], ['quux2']))

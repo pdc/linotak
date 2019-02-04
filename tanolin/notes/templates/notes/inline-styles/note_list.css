@@ -18,6 +18,41 @@
     margin: 10px;
 }
 
+.filter {
+    margin: 10px 0;
+}
+
+.filter-wrapper {
+    margin: 5px 10px 0;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: baseline;
+}
+
+.filter-tag-heading {
+
+}
+
+.filter-tag-list {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-flow: row wrap;
+}
+
+.filter-tag {
+    list-style-type: none;
+    margin: 5px 0 0 10px;
+    padding: 0;
+}
+
+.filter-tag-link:hover,
+.filter-tag-link:active {
+    text-decoration: line-through wavy;
+}
+
+
+
 @media (min-width: 640px) {
     .notes-wrapper {
         display: flex;
@@ -69,3 +104,4 @@
     font-size: 13px;
     line-height: 1.25;
 }
+

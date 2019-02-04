@@ -1,4 +1,5 @@
 {% extends 'notes/base.html' %}
+{% load tag_filters %}
 
 {% block title %}{{ series.title }}{% endblock %}
 
@@ -14,10 +15,6 @@
         <header class="note-list-header">
             <h1>
                 {{ series.title }}
-                {% if tags %}
-                    tagged
-                    {% for tag in tags %}{{ tag.label }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                {% endif %}
             </h1>
             {% if can_edit_as %}
                 <div class="action-bar">
@@ -30,6 +27,47 @@
 
         {% if series.desc %}
             <p class="series-desc">{{ series.desc }}</p>
+        {% endif %}
+
+        {% if tag_filter %}
+            <div class="filter">
+                {% if tag_filter.included %}
+                <div class="filter-wrapper filter-included">
+                    <div class="filter-tag-heading">Included tags:</div>
+                    <ul class="filter-tag-list">
+                        {% for tag_name in tag_filter.included_sorted %}
+                        <li class="filter-tag">
+                            {% with tf=tag_filter|without_included:tag_name %}
+                                {% if tf %}
+                            <a class="filter-tag-link" href="{% url 'notes:list' series_name=series.name tags=tf %}">{{ tag_name }}</a>
+                                {% else %}
+                            <a class="filter-tag-link" href="{% url 'notes:list' series_name=series.name %}">{{ tag_name }}</a>
+                                {% endif %}
+                            {% endwith %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% if tag_filter.excluded %}
+                <div class="filter-wrapper filter-excluded">
+                    <div class="filter-tag-heading">Excluded tags:</div>
+                    <ul class="filter-tag-list">
+                        {% for tag_name in tag_filter.excluded_sorted %}
+                        <li class="filter-tag">
+                            {% with tf=tag_filter|without_excluded:tag_name %}
+                                {% if tf %}
+                            <a class="filter-tag-link" href="{% url 'notes:list' series_name=series.name tags=tf %}">{{ tag_name }}</a>
+                                {% else %}
+                            <a class="filter-tag-link" href="{% url 'notes:list' series_name=series.name %}">{{ tag_name }}</a>
+                                {% endif %}
+                            {% endwith %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
         {% endif %}
 
         <div class="notes-wrapper">

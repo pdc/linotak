@@ -82,11 +82,22 @@ class TagFilter:
             queryset = queryset.exclude(**{selector: t})
         return queryset
 
+    def included_sorted(self):
+        """For templates."""
+        return sorted(self.included)
+
+    def excluded_sorted(self):
+        """For templates."""
+        return sorted(self.excluded)
+
     def __str__(self):
         return self.unparse()
 
     def __repr__(self):
         return '%s%r' % (type(self).__name__, self._unique())
+
+    def __bool__(self):
+        return bool(self.included or self.excluded)
 
     def __eq__(self, other):
         if not other:
