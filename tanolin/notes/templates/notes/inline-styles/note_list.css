@@ -20,6 +20,9 @@
 
 .filter {
     margin: 10px 0;
+    display: flex;
+    flex-flow: row wrap;
+    align-items: baseline;
 }
 
 .filter-wrapper {
@@ -49,6 +52,11 @@
 .filter-tag-link:hover,
 .filter-tag-link:active {
     text-decoration: line-through wavy;
+}
+
+.filter-hint {
+    margin: 5px 10px 5px;
+    font-size: 13px;
 }
 
 

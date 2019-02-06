@@ -33,7 +33,7 @@
             <div class="filter">
                 {% if tag_filter.included %}
                 <div class="filter-wrapper filter-included">
-                    <div class="filter-tag-heading">Included tags:</div>
+                    <div class="filter-tag-heading">Showing posts tagged</div>
                     <ul class="filter-tag-list">
                         {% for tag_name in tag_filter.included_sorted %}
                         <li class="filter-tag">
@@ -51,7 +51,8 @@
                 {% endif %}
                 {% if tag_filter.excluded %}
                 <div class="filter-wrapper filter-excluded">
-                    <div class="filter-tag-heading">Excluded tags:</div>
+                    <div class="filter-tag-heading">
+                        {% if tag_filter.included %}but not tagged{% else %}Showing notes NOT tagged{% endif %}</div>
                     <ul class="filter-tag-list">
                         {% for tag_name in tag_filter.excluded_sorted %}
                         <li class="filter-tag">
@@ -67,6 +68,7 @@
                     </ul>
                 </div>
                 {% endif %}
+                <p class="filter-hint">Click on tags to remove them from the filter.</p>
             </div>
         {% endif %}
 

@@ -74,6 +74,16 @@ textarea {
 
 /* Note lists */
 
+.filter-heading {
+    color: rgba(0, 0, 0, 0.5);
+    color: var(--muted);
+}
+
+.filter-hint {
+    color: rgba(0, 0, 0, 0.5);
+    color: var(--muted);
+}
+
 .form-action,
 .action-btn {
     color: rgba(0, 0, 0, 0.85);
