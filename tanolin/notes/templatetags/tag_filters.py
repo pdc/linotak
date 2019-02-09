@@ -31,7 +31,7 @@ def with_included(tag_filter, tag_name):
 def without_included(tag_filter, tag_name):
     """Given a tag filter, return one with an additional arg."""
     if tag_filter:
-        return TagFilter(tag_filter.included - set([tag_name]), tag_filter.excluded) or None
+        return TagFilter(tag_filter.included - set([tag_name]), tag_filter.excluded) or ''
 
 
 @register.filter
@@ -48,7 +48,7 @@ def with_excluded(tag_filter, tag_name):
 def without_excluded(tag_filter, tag_name):
     """Given a tag filter, return one with an additional arg."""
     if tag_filter:
-        return TagFilter(tag_filter.included, tag_filter.excluded - set([tag_name])) or None
+        return TagFilter(tag_filter.included, tag_filter.excluded - set([tag_name])) or ''
 
 
 @register.filter

@@ -150,38 +150,66 @@ textarea {
 
 /* Note detail */
 
-.trail-link {
+.nav-link {
     color: rgba(0, 0, 0, 0.6);
     color: var(--muted);
     background-color: #DDD;
     background-color: var(--ui2);
+}
+
+.nav-link-back {
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
 }
 
-.trail-link:hover,
-.trail-link:active {
+.nav-link-fwd {
+    border-bottom-left-radius: 4px;
+    border-top-left-radius: 4px;
+}
+
+.nav-link:hover,
+.nav-link:active {
     color: var(--ink);
     background-color: var(--ui);
 }
 
-.trail-link:before {
-    content: "<";
+.nav-link-back:before,
+.nav-link-fwd:after {
     position: absolute;
-    right: 100%;
     width: 0;
     height: 0;
+
     overflow: hidden;
     border-top: 1em solid transparent;
-    border-right: 0.5em solid;
-    border-right-color: #DDD;
-    border-right-color: var(--ui2);
     border-bottom: 1em solid transparent;
 }
 
-.trail-link:hover:before,
-.trail-link:before:active {
+.nav-link-back:before {
+    content: "<";
+    right: 100%;
+
+    border-right: 0.5em solid;
+    border-right-color: #DDD;
+    border-right-color: var(--ui2);
+}
+
+.nav-link-fwd:after {
+    content: ">";
+    left: 100%;
+
+    border-left: 0.5em solid;
+    border-left-color: #DDD;
+    border-left-color: var(--ui2);
+}
+
+.nav-link-back:hover:before,
+.nav-link-back:active:before {
     border-right-color: var(--ui);
+}
+
+.nav-link-fwd:hover:after,
+.nav-link-fwd:active:after, {
+    border-left-color: var(--ui);
 }
 
 .note-metadata {

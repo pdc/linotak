@@ -7,6 +7,7 @@
 {% block styles %}
         <style>
             {% include 'notes/inline-styles/note_list.css' %}
+            {% include 'notes/inline-styles/nav.css' %}
             {% include 'notes/inline-styles/subject_list.css' %}
             {% include 'notes/inline-styles/tag_list.css' %}
         </style>
@@ -22,20 +23,6 @@
             </div>
         </header>
 
-        <div class="notes-wrapper">
-            {% if draft_list %}
-                <ul class="note-list draft-note-list">
-                    {% for note in draft_list %}
-                        {% include 'notes/parts/note_item.html' %}
-                    {% endfor %}
-                </ul>
-            {% endif %}
-
-            <ul class="note-list">
-                {% for note in note_list %}
-                    {% include 'notes/parts/note_item.html' %}
-                {% endfor %}
-            </ul>
-        </div>
+    {% include 'notes/parts/note_list.html' %}
 
 {% endblock %}

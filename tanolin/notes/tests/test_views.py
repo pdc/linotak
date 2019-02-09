@@ -3,19 +3,35 @@ from django.utils import timezone
 
 from ..models import Locator
 from ..tag_filter import TagFilter
-from .factories import SeriesFactory, PersonFactory, TagFactory, NoteFactory
+from .factories import SeriesFactory, PersonFactory, NoteFactory
 
 
 class TestNoteList(TestCase):
     def setUp(self):
         self.client = Client()
 
-    def test_includes_series(self):
+    def test_filters_by_series(self):
         series = SeriesFactory.create(name='bar')
+        note = NoteFactory.create(series=series, published=timezone.now())
+        other = SeriesFactory.create()
+        NoteFactory.create(series=other, published=timezone.now())  # Will be omitted because wrong series
 
         r = self.client.get('/bar/')
 
         self.assertEqual(r.context['series'], series)
+        self.assertEqual(list(r.context['object_list']), [note])
+        self.assertEqual(list(r.context['note_list']), [note])
+
+    def test_doesnt_filter_by_series_if_star(self):
+        series1 = SeriesFactory.create()
+        note1 = NoteFactory.create(series=series1, published=timezone.now())
+        series2 = SeriesFactory.create()
+        note2 = NoteFactory.create(series=series2, published=timezone.now())
+
+        r = self.client.get('/*/')
+
+        self.assertFalse(r.context.get('series'))
+        self.assertEqual(set(r.context['object_list']), {note1, note2})
 
     def test_excludes_unpublished_notes(self):
         series = SeriesFactory.create(name='bar')
@@ -26,8 +42,7 @@ class TestNoteList(TestCase):
 
         r = self.client.get('/bar/')
 
-        self.assertEqual(list(r.context['note_list']), [note2])
-        self.assertFalse(r.context.get('has_draft'))
+        self.assertEqual(list(r.context['object_list']), [note2])
         self.assertFalse(r.context['can_edit_as'])
 
     def test_includes_create_button_if_editor(self):
@@ -43,12 +58,12 @@ class TestNoteList(TestCase):
         author = PersonFactory.create()
         series = SeriesFactory.create(name='bar', editors=[author])
         note = NoteFactory.create(author=author, series=series, text='text of note')
+        NoteFactory.create(author=author, series=series, text='published', published=timezone.now())
         self.given_logged_in_as(author)
 
-        r = self.client.get('/bar/')
+        r = self.client.get('/bar/drafts/')
 
-        self.assertEqual(list(r.context['note_list']), [])
-        self.assertEqual(list(r.context['draft_list']), [note])
+        self.assertEqual(list(r.context['object_list']), [note])
 
     def test_fitered_by_tag_if_specified(self):
         series = SeriesFactory.create(name='alpha')
@@ -56,9 +71,9 @@ class TestNoteList(TestCase):
         note2 = NoteFactory.create(series=series, tags=['bar', 'baz'], published=timezone.now())
         note3 = NoteFactory.create(series=series, tags=['qux', 'foo', 'bar'], published=timezone.now())
 
-        r = self.client.get('/alpha/tagged/foo+bar')
+        r = self.client.get('/alpha/tagged/foo+bar/')
 
-        self.assertEqual(list(r.context['note_list']), [note3, note1])
+        self.assertEqual(list(r.context['object_list']), [note3, note1])
         self.assertEqual(r.context['tag_filter'], TagFilter(['foo', 'bar']))
 
     def given_logged_in_as(self, person):
@@ -71,14 +86,6 @@ class TestNoteUpdateView(TestCase):
         self.author = PersonFactory.create()
         self.series = SeriesFactory.create(name='bar', editors=[self.author])
         self.client.login(username=self.author.login.username, password='secret')
-
-    def test_redirects_permenently_if_published(self):
-        note = NoteFactory.create(author=self.author, series=self.series, published=timezone.now())
-        self.assertTrue(note.pk)
-
-        r = self.client.get('/bar/%d/edit' % (note.pk,), follow=True)
-
-        self.assertEqual(r.redirect_chain, [('/bar/%d' % (note.pk,), 301)])
 
     def test_passes_series_and_author(self):
         Locator.objects.create(url='http://example.com/1')

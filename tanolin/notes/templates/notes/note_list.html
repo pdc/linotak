@@ -1,11 +1,13 @@
 {% extends 'notes/base.html' %}
 {% load tag_filters %}
+{% load note_lists %}
 
 {% block title %}{{ series.title }}{% endblock %}
 
 {% block styles %}
         <style>
             {% include 'notes/inline-styles/note_list.css' %}
+            {% include 'notes/inline-styles/nav.css' %}
             {% include 'notes/inline-styles/subject_list.css' %}
             {% include 'notes/inline-styles/tag_list.css' %}
         </style>
@@ -14,10 +16,15 @@
 {% block content %}
         <header class="note-list-header">
             <h1>
-                {{ series.title }}
+                {% if drafts %}DRAFTS{% elif series %}{{ series.title }}{% else %}ooble.uk{% endif %}
             </h1>
             {% if can_edit_as %}
                 <div class="action-bar">
+                    {% if drafts %}
+                        <a href="{% note_list_url drafts=False page=1 %}" class="action-link">Show {{ series.title }}</a>
+                    {% else %}
+                        <a href="{% note_list_url drafts=True page=1 %}" class="action-link">Show drafts</a>
+                    {% endif %}
                     {% for person in can_edit_as %}
                     <a href="{% url 'notes:create' series_name=series.name %}" class="action-btn" title="Create a new note as {{ person.native_name }}">Create</a>
                     {% endfor %}
@@ -37,13 +44,7 @@
                     <ul class="filter-tag-list">
                         {% for tag_name in tag_filter.included_sorted %}
                         <li class="filter-tag">
-                            {% with tf=tag_filter|without_included:tag_name %}
-                                {% if tf %}
-                            <a class="filter-tag-link" href="{% url 'notes:list' series_name=series.name tags=tf %}">{{ tag_name }}</a>
-                                {% else %}
-                            <a class="filter-tag-link" href="{% url 'notes:list' series_name=series.name %}">{{ tag_name }}</a>
-                                {% endif %}
-                            {% endwith %}
+                            <a href="{% note_list_url tag_filter=tag_filter|without_included:tag_name page=1 %}" class="filter-tag-link" >{{ tag_name }}</a>
                         </li>
                         {% endfor %}
                     </ul>
@@ -56,13 +57,7 @@
                     <ul class="filter-tag-list">
                         {% for tag_name in tag_filter.excluded_sorted %}
                         <li class="filter-tag">
-                            {% with tf=tag_filter|without_excluded:tag_name %}
-                                {% if tf %}
-                            <a class="filter-tag-link" href="{% url 'notes:list' series_name=series.name tags=tf %}">{{ tag_name }}</a>
-                                {% else %}
-                            <a class="filter-tag-link" href="{% url 'notes:list' series_name=series.name %}">{{ tag_name }}</a>
-                                {% endif %}
-                            {% endwith %}
+                            <a href="{% note_list_url tag_filter=tag_filter|without_excluded:tag_name page=1 %}" class="filter-tag-link" >{{ tag_name }}</a>
                         </li>
                         {% endfor %}
                     </ul>
@@ -72,20 +67,6 @@
             </div>
         {% endif %}
 
-        <div class="notes-wrapper">
-            {% if draft_list %}
-                <ul class="note-list draft-note-list">
-                    {% for note in draft_list %}
-                        {% include 'notes/parts/note_item.html' %}
-                    {% endfor %}
-                </ul>
-            {% endif %}
-
-            <ul class="note-list">
-                {% for note in note_list %}
-                    {% include 'notes/parts/note_item.html' %}
-                {% endfor %}
-            </ul>
-        </div>
+    {% include 'notes/parts/note_list.html' %}
 
 {% endblock %}

@@ -1,10 +1,12 @@
 {% extends 'notes/base.html' %}
+{% load note_lists %}
 
 {% block title %}#{{ note.pk }} – {{ series.title }}{% endblock %}
 
 {% block styles %}
         <style>
             {% include 'notes/inline-styles/note_detail.css' %}
+            {% include 'notes/inline-styles/nav.css' %}
             {% include 'notes/inline-styles/subject_list.css' %}
             {% include 'notes/inline-styles/tag_list.css' %}
         </style>
@@ -12,8 +14,8 @@
 
 {% block content %}
         <header class="note-detail-header">
-            <nav class="trail">
-                <a class="trail-link trail-series-link" href="{% url 'notes:list' series_name=series.name %}">{{ series.title }}</a>
+            <nav class="nav">
+                <a class="nav-link nav-link-back" href="{% note_list_url %}">{{ series.title }}</a>
             </nav>
             <h1>{{ note.id }}</h1>
         </header>

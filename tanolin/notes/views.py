@@ -11,7 +11,7 @@ from django.views import generic
 from django.views.generic.edit import CreateView, UpdateView
 
 from .forms import NoteForm
-from .models import Series, Note, Tag
+from .models import Series, Note
 from .tag_filter import TagFilter
 
 
@@ -20,19 +20,20 @@ class NotesQuerysetMixin:
 
     def get_queryset(self, **kwargs):
         """Acquire the relevant series and return the notes in that series."""
-        return Note.objects.order_by(
+        notes = Note.objects.order_by(
             F('published').desc(),
             F('created').desc())
+        if self.kwargs.get('drafts') and self.request.user.is_authenticated:
+            series = Series.objects.filter(editors__login=self.request.user)
+            notes = notes.filter(published__isnull=True, series__in=series)
+        else:
+            notes = notes.filter(published__isnull=False)
+        return notes
 
     def get_context_data(self, **kwargs):
-        """If user is editor and there is a note list then partition the list in to published & unpublished."""
+        """Add the series to the context."""
         context = super().get_context_data(**kwargs)
-        notes = context.get('note_list')
-        if notes:
-            context['note_list'] = notes.filter(published__isnull=False)
-            if self.request.user.is_authenticated:
-                series = Series.objects.filter(editors__login=self.request.user)
-                context['draft_list'] = notes.filter(published__isnull=True, series__in=series)
+        context['drafts'] = self.kwargs.get('drafts', False)
         return context
 
 
@@ -42,10 +43,14 @@ class SeriesMixin(NotesQuerysetMixin):
     @cached_property
     def series(self):
         """The series of notes this page relates to."""
-        return get_object_or_404(Series, name=self.kwargs['series_name'])
+        series_name = self.kwargs['series_name']
+        return None if series_name == '*' else get_object_or_404(Series, name=series_name)
 
     def get_queryset(self, **kwargs):
-        return super().get_queryset().filter(series=self.series)
+        notes = super().get_queryset()
+        if self.series:
+            return notes.filter(series=self.series)
+        return notes
 
     def get_context_data(self, **kwargs):
         """Add the series to the context."""
@@ -53,6 +58,7 @@ class SeriesMixin(NotesQuerysetMixin):
         context['series'] = self.series
         context['can_edit_as'] = (
             self.request.user.is_authenticated
+            and self.series
             and self.series.editors.filter(login=self.request.user))
         return context
 
@@ -80,11 +86,16 @@ class TaggedMixin:
 
 
 class IndexView(TaggedMixin, NotesQuerysetMixin, generic.ListView):
+
+    paginate_by = 6
+    paginate_orphans = 3
     template_name = 'notes/index.html'
 
 
 class NoteListView(TaggedMixin, SeriesMixin, generic.ListView):
-    pass
+
+    paginate_by = 30
+    paginate_orphans = 3
 
 
 class NoteDetailView(SeriesMixin, generic.DetailView):
@@ -117,11 +128,6 @@ class NoteCreateView(LoginRequiredMixin, SeriesMixin, NoteFormMixin, CreateView)
 
 
 class NoteUpdateView(LoginRequiredMixin, SeriesMixin, NoteFormMixin, UpdateView):
-    def dispatch(self, *args, **kwargs):
-        if self.get_object().published:
-            messages.info(self.request, 'This note has already been published and cannot be edited.')
-            return HttpResponsePermanentRedirect(self.get_object().get_absolute_url())
-        return super().dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         if not form.instance.published and self.request.POST.get('publish_now'):
