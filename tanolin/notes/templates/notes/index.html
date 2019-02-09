@@ -1,15 +1,44 @@
 {% extends 'notes/base.html' %}
 {% load static %}
-{% load tag_filters %}
+{% load note_lists %}
 
 {% block title %}Notes{% endblock %}
 
 {% block styles %}
         <style>
-            {% include 'notes/inline-styles/note_list.css' %}
-            {% include 'notes/inline-styles/nav.css' %}
-            {% include 'notes/inline-styles/subject_list.css' %}
-            {% include 'notes/inline-styles/tag_list.css' %}
+            .flow {
+                max-width: 560px;
+                margin: 1.25em auto;
+            }
+            .flow > * + * {
+                margin-top: 1.25em;
+            }
+            .flow > * {
+                margin-left: 10px;
+                margin-right: 10px;
+                max-width: 620px;
+            }
+
+
+            h1 {
+                font-size: 2.5em;
+            }
+
+            .series-list {
+                padding: 0;
+                margin: 0;
+            }
+            .series {
+                margin: 0;
+                display: block;
+            }
+            .series-link {
+                display: block;
+                padding: 0.5em 10px;
+            }
+
+
+
         </style>
 {% endblock %}
 
@@ -23,6 +52,20 @@
             </div>
         </header>
 
-    {% include 'notes/parts/note_list.html' %}
+        <section class="flow">
+            <p>
+                Notes and links to thinks we found interesting online.
+            </p>
+            <ul class="series-list">
+                {% for series in series_list %}
+                <li class="series">
+                    <a href="{% note_list_url series=series %}" class="series-link">{{ series.title }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+            <p>
+                Still a work in progress.
+            </p>
+        </section>
 
 {% endblock %}

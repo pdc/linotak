@@ -85,9 +85,11 @@ class TaggedMixin:
         return context
 
 
-class IndexView(TaggedMixin, NotesQuerysetMixin, generic.ListView):
+class IndexView(generic.ListView):
 
-    paginate_by = 6
+    queryset = Series.objects.all()
+
+    paginate_by = 60
     paginate_orphans = 3
     template_name = 'notes/index.html'
 

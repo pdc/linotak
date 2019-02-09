@@ -36,6 +36,6 @@ def note_list_url(context, series=None, tag_filter=None, drafts=None, page=None)
     return reverse('notes:list', kwargs={
         'series_name': '*' if series == '*' else series.name if series else '*',
         'tags': tag_filter.unparse() if tag_filter else '',
-        'drafts': drafts,
+        'drafts': drafts or False,
         'page': page or 1,
     })
