@@ -1,6 +1,6 @@
 {% load image_representations %}
 
-                    {% if note.subjects %}
+                    {% if note.subjects.count %}
                     <ul class="loc-list note-subjects">
                         {% for locator in note.subjects.all %}
                         <li class="note-subject-item loc-item">
