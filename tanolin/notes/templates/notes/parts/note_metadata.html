@@ -1,8 +1,10 @@
+{% load note_lists %}
+
 {% if note.published %}
-                <a class="u-uri u-uid link" href="{{ note.get_absolute_url }}">Noted</a> by
+                <a class="u-uri u-uid link" href="{% note_url 'detail' %}">Noted</a> by
                 <span class="p-author">{{ note.author.native_name }}</span>
                 <time class="dt-published" datetime="{{ note.published|date:"c" }}" title="{{ note.published|date:'P l j F Y e' }}">{{ note.published|timesince }} ago</time>.
 {% else %}
-                <a class="u-uri u-uid link" href="{{ note.get_absolute_url }}"><strong>Unpublished</strong></a>
-                <a class="link" href="{% url 'notes:update' series_name=note.series.name pk=note.pk %}">Edit</a>
+                <a class="u-uri u-uid link" href="{% note_url 'detail' %}"><strong>Unpublished</strong></a>
+                <a class="link" href="{% note_url 'edit' %}">Edit</a>
 {% endif %}

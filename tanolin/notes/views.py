@@ -1,9 +1,7 @@
 """Views fro notes."""
 
-from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import F
-from django.http import HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -43,7 +41,7 @@ class SeriesMixin(NotesQuerysetMixin):
     @cached_property
     def series(self):
         """The series of notes this page relates to."""
-        series_name = self.kwargs['series_name']
+        series_name = getattr(self.request, 'series_name', None)
         return None if series_name == '*' else get_object_or_404(Series, name=series_name)
 
     def get_queryset(self, **kwargs):

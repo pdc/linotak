@@ -41,11 +41,6 @@
 {% block content %}
         <header class="note-list-header">
             <h1>Ooble.uk</h1>
-            <div class="action-bar">
-                {% for series in user.series_set.all %}
-                    <a href="{% url 'notes:create' series_name=series.name %}" class="action-btn">Create in {{ series.title }}</a>
-                {% endfor %}
-            </div>
         </header>
 
         <section class="flow">

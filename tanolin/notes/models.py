@@ -238,11 +238,8 @@ class Note(models.Model):
 
     def get_absolute_url(self):
         return reverse('notes:detail', kwargs={
-            'series_name': self.series.name,
             'pk': self.id,
             'drafts': not self.published,
-            # 'page': 1,
-            # 'tags': '',
         })
 
     subject_re = re.compile(r"""

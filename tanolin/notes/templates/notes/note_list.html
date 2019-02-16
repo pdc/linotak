@@ -30,7 +30,7 @@
             {% if can_edit_as %}
                 <div class="action-bar">
                     {% for person in can_edit_as %}
-                    <a href="{% url 'notes:create' series_name=series.name %}" class="action-btn" title="Create a new note as {{ person.native_name }}">Create</a>
+                    <a href="{% note_list_url 'new' %}" class="action-btn" title="Create a new note as {{ person.native_name }}">Create</a>
                     {% endfor %}
                 </div>
             {% endif %}

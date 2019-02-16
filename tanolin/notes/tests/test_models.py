@@ -73,7 +73,7 @@ class TestNoteExtractSubjects(TestCase):
 
         self.assertTrue(result)
         self.assertEqual(note.text, 'Many!')
-        self.assertEqual([x.url for x in note.subjects.all()], ['http://example.com/1', 'https://example.com/2'])
+        self.assertEqual({x.url for x in note.subjects.all()}, {'http://example.com/1', 'https://example.com/2'})
 
     def test_matches_with_empty_path(self):
         note = NoteFactory.create(text='Yo! http://example.com/')

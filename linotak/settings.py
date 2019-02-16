@@ -24,6 +24,7 @@ env = environ.Env(
     STATIC_URL=(str, None),
     CELERY_BROKER_URL=(str, 'pyamqp://localhost/'),
     NOTES_FETCH_LOCATORS=(bool, False),
+    NOTES_DOMAIN=(str, None),
     IMAGES_FETCH_DATA=(bool, False),
 )
 environ.Env.read_env()
@@ -46,8 +47,8 @@ TEST = 'test' in sys.argv
 SECRET_KEY = 'secret-key-value' if DEBUG else env('SECRET_KEY')
 
 ALLOWED_HOSTS = [
-    'mustardseed.local',
     'localhost',
+    'mustardseed.local',
     'ooble.uk',
 ]
 
@@ -67,6 +68,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'tanolin.notes.middleware.SubdomainSeriesMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -174,3 +176,6 @@ CELERY_BROKER_URL = not TEST and env('CELERY_BROKER_URL')
 NOTES_FETCH_LOCATORS = not TEST and env('NOTES_FETCH_LOCATORS')
 IMAGES_FETCH_DATA = not TEST and env('IMAGES_FETCH_DATA')
 
+NOTES_DOMAIN = env('NOTES_DOMAIN')
+if NOTES_DOMAIN:
+    ALLOWED_HOSTS.append('.' + NOTES_DOMAIN.split(':', 1)[0])
