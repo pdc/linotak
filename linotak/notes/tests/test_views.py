@@ -1,7 +1,9 @@
+"""Test for some views."""
 
 from datetime import datetime, timedelta
 from django.test import Client, TestCase, override_settings
 from django.utils import timezone
+from unittest.mock import patch
 
 from ..models import Locator
 from ..tag_filter import TagFilter
@@ -141,6 +143,28 @@ class TestNoteFeedView(TestCase):
             '        <link href="https://alpha.example.com/tagged/bar+foo/9"/>\n'
             '    </entry>\n'
             '</feed>')
+
+
+@override_settings(NOTES_DOMAIN='example.com', ALLOWED_HOSTS=['.example.com'])
+@patch.object(NoteListView, 'paginate_by', 30)
+class TestNoteListPagination(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.series = SeriesFactory.create(name='bar')
+        cls.notes = [NoteFactory.create(series=cls.series, published=(timezone.now() - timedelta(days=i))) for i in range(64)]
+
+    def test_adds_next_link_at_start(self):
+        r = self.client.get('/', HTTP_HOST='bar.example.com')
+
+        self.assertEqual(list(r.context['note_list']), self.notes[:30])
+        self.assertEqual(r['Link'], '</page2/>; rel=next')
+
+    def test_adds_both_links_in_middle(self):
+        r = self.client.get('/page2/', HTTP_HOST='bar.example.com')
+
+        self.assertEqual(list(r.context['note_list']), self.notes[30:60])
+        self.assertEqual({x.strip() for x in r['Link'].split(',')}, {'</>; rel=prev', '</page3/>; rel=next'})
 
 
 @override_settings(NOTES_DOMAIN='example.com', ALLOWED_HOSTS=['.example.com'])

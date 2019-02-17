@@ -13,6 +13,7 @@ from django.views.generic.edit import CreateView, UpdateView
 from .forms import NoteForm
 from .models import Series, Note, Locator
 from .tag_filter import TagFilter
+from .templatetags.note_lists import note_list_url
 
 
 class NotesQuerysetMixin:
@@ -105,10 +106,44 @@ class IndexView(ListView):
     template_name = 'notes/index.html'
 
 
-class NoteListView(TaggedMixin, SeriesMixin, ListView):
+class LinksMixin:
+    """Mixin to add Link header to response."""
 
-    paginate_by = 30
+    def get_links(self):
+        """Override to add (rel, href) pairs."""
+        return []
+
+    def dispatch(self, request, *args, **kwargs):
+        """Called to dispatch a request. Adds pagination links if needed."""
+        response = super().dispatch(request, args, kwargs)
+        response['Link'] = ', '.join('<%s>; rel=%s' % (href, rel) for rel, href in self.get_links())
+        return response
+
+
+class NoteListView(TaggedMixin, SeriesMixin, LinksMixin, ListView):
+
+    paginate_by = 5
     paginate_orphans = 3
+    links = None
+
+    def get_links(self):
+        if self.links is None:
+            self.get_context_data()  # self.links is created as a side effect.
+        return super().get_links() + self.links
+
+    def get_context_data(self, **kwargs):
+        """Get context data, and also set pagination links."""
+        context = super().get_context_data(**kwargs)
+
+        self.links = []
+        page_obj = context.get('page_obj')
+        if 'page_obj':
+            if page_obj.has_next():
+                self.links.append(('next', note_list_url(context, page=page_obj.next_page_number())))
+            if page_obj.has_previous():
+                self.links.append(('prev', note_list_url(context, page=page_obj.previous_page_number())))
+
+        return context
 
 
 class NoteDetailView(SeriesMixin, DetailView):
