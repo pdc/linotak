@@ -1,5 +1,6 @@
 <!DOCTYPE HTML>
 {% load static %}
+{% load note_lists %}
 <html lang="en">
     <head>
         <meta charset=UTF-8>
@@ -11,6 +12,12 @@
         {% block styles %}{% endblock %}
         <link rel=stylesheet href="{% static 'notes/notes.css' %}">
         <link href="https://fonts.googleapis.com/css?family=Abril+Fatface|Fira+Sans:400,500" rel="stylesheet">
+        {% if is_paginated and page_obj.has_next %}
+        <link rel="next" href="{% note_list_url page=page_obj.next_page_number %}">
+        {% endif %}
+        {% if is_paginated and page_obj.has_previous %}
+        <link rel="prev" href="{% note_list_url page=page_obj.previous_page_number %}">
+        {% endif %}
     </head>
     <body>
         {% if messages %}
