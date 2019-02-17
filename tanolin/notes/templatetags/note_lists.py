@@ -9,7 +9,7 @@ register = template.Library()
 
 
 @register.simple_tag(takes_context=True)
-def note_list_url(context, view=None, series=None, tag_filter=None, drafts=None, page=None):
+def note_list_url(context, view=None, series=None, tag_filter=None, drafts=None, page=None, with_host=False):
     """Like url tag except specialized for links to note lists.
 
     Arguments --
@@ -42,13 +42,13 @@ def note_list_url(context, view=None, series=None, tag_filter=None, drafts=None,
             'drafts': drafts or False,
             'page': page or 1,
         })
-    if series != context_series:
-        return '//%s.%s%s' % (series.name if hasattr(series, 'name') else series, settings.NOTES_DOMAIN, path)
+    if with_host or series != context_series:
+        return 'https://%s.%s%s' % (series.name if hasattr(series, 'name') else series, settings.NOTES_DOMAIN, path)
     return path
 
 
 @register.simple_tag(takes_context=True)
-def note_url(context, view=None, note=None, tag_filter=None, drafts=None):
+def note_url(context, view=None, note=None, tag_filter=None, drafts=None, with_host=False):
     """Like url tag except specialized for links to note lists.
 
     Arguments --
@@ -74,6 +74,6 @@ def note_url(context, view=None, note=None, tag_filter=None, drafts=None):
         'tags': tag_filter.unparse() if tag_filter else '',
         'drafts': drafts or False,
     })
-    if note.series != context_series:
-        return '//%s.%s%s' % (note.series.name, settings.NOTES_DOMAIN, path)
+    if with_host or note.series != context_series:
+        return 'https://%s.%s%s' % (note.series.name, settings.NOTES_DOMAIN, path)
     return path
