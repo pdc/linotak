@@ -1,14 +1,16 @@
+
+from datetime import datetime, timedelta
 from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
 from ..models import Locator
 from ..tag_filter import TagFilter
-from ..views import NoteListView, NoteDetailView, NoteUpdateView
+from ..views import NoteListView, NoteDetailView
 from .factories import SeriesFactory, PersonFactory, NoteFactory
 
 
 @override_settings(NOTES_DOMAIN='example.com', ALLOWED_HOSTS=['.example.com'])
-class TestNoteList(TestCase):
+class TestNoteListView(TestCase):
 
     def test_filters_by_series(self):
         series = SeriesFactory.create(name='bar')
@@ -79,6 +81,61 @@ class TestNoteList(TestCase):
 
     def given_logged_in_as(self, person):
         self.client.login(username=person.login.username, password='secret')
+
+
+@override_settings(NOTES_DOMAIN='example.com', ALLOWED_HOSTS=['.example.com'])
+class TestNoteFeedView(TestCase):
+    """Tests for comformance to
+
+    https://tools.ietf.org/html/rfc4287 – The Atom Syndication Format
+    https://tools.ietf.org/html/rfc5005 -  Feed Paging and Archiving
+
+    """
+    maxDiff = 10_000
+
+    def test_fitered_by_tag_if_specified(self):
+        series = SeriesFactory.create(name='alpha', title="Series Title")
+        author = PersonFactory.create(native_name='Alice de Winter')
+        latest = datetime(2019, 2, 21, 22, 19, 45, 0, tzinfo=timezone.utc)
+        note1 = NoteFactory.create(series=series, author=author, pk=13, tags=['foo', 'bar', 'baz'], text='Note 1 text', published=latest)
+        note2 = NoteFactory.create(series=series, author=author, pk=11, tags=['bar', 'baz'], published=latest - timedelta(days=1))
+        note3 = NoteFactory.create(series=series, author=author, pk=9, tags=['qux', 'foo', 'bar'], text='Note 3 text', published=latest - timedelta(days=2))
+
+        r = self.client.get('/tagged/foo+bar/atom/', HTTP_HOST='alpha.example.com')
+
+        self.assertEqual(
+            r.content.decode('UTF-8'),
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en-GB">\n'
+            '    <id>https://alpha.example.com/tagged/bar+foo/</id>\n'
+            '    <title>Series Title</title>\n'
+            # TODO category
+            '    <link href="https://alpha.example.com/tagged/bar+foo/atom/" rel="self"/>\n'
+            '    <link href="https://alpha.example.com/tagged/bar+foo/"/>\n'
+            '    <updated>2019-02-21T22:19:45Z</updated>\n'
+            '    <entry>\n'
+            '        <id>https://alpha.example.com/13</id>\n'
+            '        <title>13</title>\n'
+            '        <author>\n'
+            '            <name>Alice de Winter</name>\n'
+            '        </author>\n'
+            '        <content>Note 1 text\n\n#bar #baz #foo</content>\n'
+            '        <published>2019-02-21T22:19:45Z</published>\n'
+            '        <updated>2019-02-21T22:19:45Z</updated>\n'
+            '        <link href="https://alpha.example.com/tagged/bar+foo/13"/>\n'
+            '    </entry>\n'
+            '    <entry>\n'
+            '        <id>https://alpha.example.com/9</id>\n'
+            '        <title>9</title>\n'
+            '        <author>\n'
+            '            <name>Alice de Winter</name>\n'
+            '        </author>\n'
+            '        <content>Note 3 text\n\n#bar #foo #qux</content>\n'
+            '        <published>2019-02-19T22:19:45Z</published>\n'
+            '        <updated>2019-02-19T22:19:45Z</updated>\n'
+            '        <link href="https://alpha.example.com/tagged/bar+foo/9"/>\n'
+            '    </entry>\n'
+            '</feed>')
 
 
 @override_settings(NOTES_DOMAIN='example.com', ALLOWED_HOSTS=['.example.com'])

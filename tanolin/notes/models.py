@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ..images.models import Image
-from .tag_filter import canonicalize_tag_name, wordify
+from .tag_filter import canonicalize_tag_name, wordify, camel_from_words
 
 
 MAX_LENGTH = 4000
@@ -185,6 +185,9 @@ class Tag(models.Model):
     def __str__(self):
         return self.label
 
+    def as_camel_case(self):
+        return camel_from_words(self.label)
+
 
 class Note(models.Model):
     series = models.ForeignKey(
@@ -228,6 +231,9 @@ class Note(models.Model):
         return locator
 
     def __str__(self):
+        return self.shorrt_title()
+
+    def short_title(self):
         if not self.text:
             if not self.id:
                 return '(blank)'
@@ -235,6 +241,14 @@ class Note(models.Model):
         if len(self.text) <= 30:
             return self.text
         return '%s…' % self.text[:30]
+
+    def text_with_links(self):
+        parts = [
+            self.text.strip(),
+            ' '.join('#' + x.as_camel_case() for x in self.tags.all()),
+            '\n'.join(x.url for x in self.subjects.all()),
+        ]
+        return '\n\n'.join(x for x in parts if x)
 
     def get_absolute_url(self):
         return reverse('notes:detail', kwargs={

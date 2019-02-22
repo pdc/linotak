@@ -19,7 +19,7 @@ class TestNoteListUrl(TestCase):
             drafts=True,
             page=13)
 
-        self.assertEqual(result, 'https://zerg.example.org/tagged/bar+foo/drafts/page/13/')
+        self.assertEqual(result, 'https://zerg.example.org/tagged/bar+foo/drafts/page13/')
 
     def test_omits_domain_if_same_as_series(self):
         zerg = SeriesFactory.create(name='zerg')
@@ -30,7 +30,7 @@ class TestNoteListUrl(TestCase):
             drafts=True,
             page=13)
 
-        self.assertEqual(result, '/tagged/bar+foo/drafts/page/13/')
+        self.assertEqual(result, '/tagged/bar+foo/drafts/page13/')
 
     def test_omits_page_if_equal_to_1(self):
         result = note_list_url(
@@ -50,7 +50,7 @@ class TestNoteListUrl(TestCase):
             drafts=False,
             page=10)
 
-        self.assertEqual(result, 'https://zerg.example.org/tagged/bar+foo/page/10/')
+        self.assertEqual(result, 'https://zerg.example.org/tagged/bar+foo/page10/')
 
     def test_omits_tag_filter_if_false(self):
         result = note_list_url(
@@ -60,7 +60,7 @@ class TestNoteListUrl(TestCase):
             drafts=False,
             page=10)
 
-        self.assertEqual(result, 'https://zerg.example.org/page/10/')
+        self.assertEqual(result, 'https://zerg.example.org/page10/')
 
     def test_omits_tag_filter_if_omitted(self):
         result = note_list_url(
@@ -70,7 +70,7 @@ class TestNoteListUrl(TestCase):
             drafts=False,
             page=10)
 
-        self.assertEqual(result, 'https://zerg.example.org/page/10/')
+        self.assertEqual(result, 'https://zerg.example.org/page10/')
 
     def test_shows_just_the_series_if_page_1(self):
         result = note_list_url(
@@ -109,7 +109,7 @@ class TestNoteListUrl(TestCase):
             drafts=False,
             page=69)
 
-        self.assertEqual(result, 'https://example.org/*/tagged/wat/page/69/')
+        self.assertEqual(result, 'https://example.org/*/tagged/wat/page69/')
 
     def test_aquires_arguments_from_context(self):
         result = note_list_url(
@@ -121,7 +121,7 @@ class TestNoteListUrl(TestCase):
             },
         )
 
-        self.assertEqual(result, '/tagged/-sad/drafts/page/42/')
+        self.assertEqual(result, '/tagged/-sad/drafts/page42/')
 
     def test_gives_priority_to_args(self):
         result = note_list_url(
@@ -137,7 +137,7 @@ class TestNoteListUrl(TestCase):
             page=41,
         )
 
-        self.assertEqual(result, 'https://glog.example.org/page/41/')
+        self.assertEqual(result, 'https://glog.example.org/page41/')
 
     def test_can_specify_view_in_which_case_tags_and_draft_ignored(self):
         result = note_list_url(

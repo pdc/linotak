@@ -1,6 +1,6 @@
 from django.urls import path, include
 
-from . import views
+from . import views, feed
 
 
 thing_or_list = [
@@ -10,10 +10,12 @@ thing_or_list = [
 ]
 
 series_paged = [
-    path('page/<int:page>/', include(thing_or_list), {'drafts': False}),
+    path('page<int:page>/', include(thing_or_list), {'drafts': False}),
     path('', include(thing_or_list), {'page': 1, 'drafts': False}),
-    path('drafts/page/<int:page>/', include(thing_or_list), {'drafts': True}),
+    path('drafts/page<int:page>/', include(thing_or_list), {'drafts': True}),
     path('drafts/', include(thing_or_list), {'page': 1, 'drafts': True}),
+    path('atom/page<int:page>/', feed.NoteFeedView.as_view(), {'drafts': False}, name='feed'),
+    path('atom/', feed.NoteFeedView.as_view(), {'page': 1, 'drafts': False}, name='feed'),
 ]
 
 tagged_paged = [

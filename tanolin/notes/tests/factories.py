@@ -1,7 +1,9 @@
+from datetime import timedelta
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 import factory
 
-from ..models import Person, Series, Tag, Note, wordify
+from ..models import Person, Series, Tag, Note, NoteSubject, Locator, wordify
 
 
 class PersonFactory(factory.django.DjangoModelFactory):
@@ -58,3 +60,22 @@ class NoteFactory(factory.django.DjangoModelFactory):
         if extracted:
             for tag in extracted:
                 self.tags.add(Tag.objects.get_tag(tag))
+
+    @factory.post_generation
+    def subjects(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for i, locator in enumerate(extracted):
+                NoteSubject.objects.create(note=self, locator=locator, sequence=i)
+
+
+class LocatorFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Locator
+
+    author = factory.SubFactory(PersonFactory)
+    url = factory.Sequence(lambda n: 'https://example.com/%d' % n)
+    title = factory.Sequence(lambda n: 'Locator %d' % n)
+    text = factory.Sequence(lambda n: 'Text of locator %d' % n)
+    published = factory.Sequence(lambda n: timezone.now() - timedelta(days=n))

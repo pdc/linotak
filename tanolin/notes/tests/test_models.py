@@ -7,7 +7,7 @@ from ...matchers_for_mocks import DateTimeTimestampMatcher
 from ...images.models import Image, wants_data
 from ..models import Locator, Tag
 from .. import tasks
-from .factories import NoteFactory, SeriesFactory
+from .factories import NoteFactory, SeriesFactory, LocatorFactory
 
 
 class TestFactories(TestCase):
@@ -121,6 +121,25 @@ class TestNoteExtractSubjects(TestCase):
         self.assertTrue(result)
         self.assertEqual(note.text, '')
         self.assertEqual({x.name for x in note.tags.all()}, {'tokyocameraclub', 'japan', 'torii'})
+
+
+class TestNoteTextWithLinks(TestCase):
+
+    def test_adds_tags_with_hashes(self):
+        note = NoteFactory.create(text='Hello, world', tags=['bamboo', 'firefly'], subjects=[
+            LocatorFactory.create(url='https://example.com/1'), LocatorFactory.create(url='https://example.com/2'),
+        ])
+
+        self.assertEqual(
+            note.text_with_links(),
+            'Hello, world\n\n#bamboo #firefly\n\nhttps://example.com/1\nhttps://example.com/2')
+
+    def test_makes_tags_camel_case(self):
+        note = NoteFactory.create(text='Hello, world', tags=['bambooFirefly'])
+
+        self.assertEqual(
+            note.text_with_links(),
+            'Hello, world\n\n#bambooFirefly')
 
 
 class TestLocatorFetchPageUpdate(TransactionTestCase):

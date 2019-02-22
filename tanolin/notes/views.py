@@ -5,7 +5,7 @@ from django.db.models import F
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.functional import cached_property
-from django.views import generic
+from django.views.generic import DetailView, ListView
 from django.views.generic.edit import CreateView, UpdateView
 
 from .forms import NoteForm
@@ -83,7 +83,7 @@ class TaggedMixin:
         return context
 
 
-class IndexView(generic.ListView):
+class IndexView(ListView):
 
     queryset = Series.objects.all()
 
@@ -92,13 +92,13 @@ class IndexView(generic.ListView):
     template_name = 'notes/index.html'
 
 
-class NoteListView(TaggedMixin, SeriesMixin, generic.ListView):
+class NoteListView(TaggedMixin, SeriesMixin, ListView):
 
     paginate_by = 30
     paginate_orphans = 3
 
 
-class NoteDetailView(SeriesMixin, generic.DetailView):
+class NoteDetailView(SeriesMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -11,12 +11,22 @@ _plus_minus_re = re.compile(r'([+-])')
 
 
 def canonicalize_tag_name(proto_name):
+    """Given camel-case tag, return its canonical name.
+
+    This is used to define the equivalence classes of tags.
+    Essentially it is lowercase letters and digits,
+    with no dashes or underscores.
+    """
     if not proto_name:
         raise ValueError('Tag name cannot be absent or empty')
     return proto_name.lower()
 
 
 def wordify(proto_name):
+    """Given a camel-case tag, return space-separated words.
+
+    This is used as the first approximation to the label of the tag.
+    """
     if not proto_name:
         raise ValueError('Tag name cannot be absent or empty')
     n = _camel_word_re.sub(r'\1 \2', proto_name)
@@ -25,6 +35,13 @@ def wordify(proto_name):
     if n[0].islower():
         n = _title_word_re.sub(lambda m: m.group(0).lower(), n)
     return n
+
+
+def camel_from_words(words):
+    """Given a string with whitespace-separated words, return camel-case."""
+    parts = words.split()
+    parts[1:] = [x[0].upper() + x[1:] for x in parts[1:]]
+    return ''.join(parts)
 
 
 class TagFilter:

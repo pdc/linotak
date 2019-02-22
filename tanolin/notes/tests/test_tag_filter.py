@@ -3,7 +3,7 @@
 from django.test import TestCase
 from unittest.mock import MagicMock
 
-from ..tag_filter import canonicalize_tag_name, wordify, TagFilter
+from ..tag_filter import camel_from_words, canonicalize_tag_name, wordify, TagFilter
 from ..templatetags.tag_filters import with_included, without_included, with_excluded, without_excluded
 from .factories import TagFactory
 
@@ -29,7 +29,7 @@ class TestCanonicalizeTagName(TestCase):
 
 class TestWordify(TestCase):
 
-    def test_spolits_camel_case(self):
+    def test_splits_camel_case(self):
         self.assertEqual(wordify('fooBarBaz'), 'foo bar baz')
 
     def test_leaves_initial_caps_if_first_letter_uppercase(self):
@@ -40,6 +40,15 @@ class TestWordify(TestCase):
         self.assertEqual(wordify('FooBARBaz'), 'Foo BAR Baz')
         self.assertEqual(wordify('FooBarBAZ'), 'Foo Bar BAZ')
         self.assertEqual(wordify('fooBARBaz'), 'foo BAR baz')
+
+
+class TestCamelFromWords(TestCase):
+
+    def test_capitalizes_initial_charatcers(self):
+        self.assertEqual(camel_from_words('foo bar baz'), 'fooBarBaz')
+
+    def test_doesnt_lowercase_allcaps_words(self):
+        self.assertEqual(camel_from_words('foo BAR baz'), 'fooBARBaz')
 
 
 class TestTagFilterParse(TestCase):
