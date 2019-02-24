@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from ...matchers_for_mocks import DateTimeTimestampMatcher
 from ...images.models import Image, wants_data
-from ..models import Locator, Tag
+from ..models import Locator, Tag, Note
 from .. import tasks
 from .factories import NoteFactory, SeriesFactory, LocatorFactory
 
@@ -25,6 +25,38 @@ class TestFactories(TestCase):
 
         self.assertTrue(note.author.native_name)
         self.assertTrue(note.series.editors.filter(pk=note.author.pk).exists())
+
+
+class TestNoteTitle(TestCase):
+    """Test generating titles from notes.
+
+    Notes don’t have titles, so we grab the first N words of the text.
+    """
+
+    def test_short_note_is_its_own_title(self):
+        result = Note(text='Hello, world').short_title()
+
+        self.assertEqual(result, 'Hello, world')
+
+    def test_shortens_long_single_paragraph(self):
+        result = Note(text='This is a very long paragraph contrived to illustrate the shortening of note titles').short_title()
+
+        self.assertEqual(result, 'This is a very long paragraph …')
+
+    def test_takes_first_line_if_multiline(self):
+        result = Note(text='Short title\nThis is a very long paragraph contrived to illustrate the shortening of note titles').short_title()
+
+        self.assertEqual(result, 'Short title')
+
+    def test_choosese_words_to_make_30_chars_or_so(self):
+        result = Note(text='A web app for designing computer keyboard layouts!').short_title()
+
+        self.assertEqual(result, 'A web app for designing computer …')
+
+    def test_uses_short_title_for_dunder_dunder_str(self):
+        result = str(Note(text='This is a very long paragraph contrived to illustrate the shortening of note titles'))
+
+        self.assertEqual(result, 'This is a very long paragraph …')
 
 
 class TestNoteExtractSubjects(TestCase):

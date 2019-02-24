@@ -231,16 +231,25 @@ class Note(models.Model):
         return locator
 
     def __str__(self):
-        return self.shorrt_title()
+        return self.short_title()
 
     def short_title(self):
+        """Return a title for this note.
+
+        Since notes do not have a separate title, we draw one from the
+        first few words of the  first line (paragraph) of the text.
+        If the line must be shortened, then attempts to break at a space
+        and make something 30-odd characters long.
+        """
         if not self.text:
             if not self.id:
                 return '(blank)'
             return '#%d' % self.id
-        if len(self.text) <= 30:
-            return self.text
-        return '%s…' % self.text[:30]
+        title = self.text.split('\n', 1)[0]
+        if len(title) <= 30:
+            return title
+        pos = title.find(' ', 29)
+        return '%s…' % title[:30] if pos < 0 else '%s …' % title[:pos]
 
     def text_with_links(self):
         parts = [
