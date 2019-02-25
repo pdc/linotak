@@ -7,7 +7,9 @@ from .tasks import sniff_image_data
 
 
 def on_image_post_save(sender, instance, created, **kwargs):
-    if created and not instance.cached_data and not instance.retrieved and getattr(settings, 'IMAGES_FETCH_DATA', False):
+    if (created and not instance.cached_data and not instance.retrieved
+            and (not instance.width or instance.width >= 40)
+            and getattr(settings, 'IMAGES_FETCH_DATA', False)):
         instance.queue_retrieve_data()
 
 
