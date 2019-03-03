@@ -1,5 +1,5 @@
 
-                <li class="h-entry note{% if not note.published %} note-unpublished{% endif %}">
+                <li class="h-entry note{% if not note.published %} note-unpublished{% endif %} p{{ puff }}">
                     {% if note.text %}
                     <p class="p-name e-content note-text">{{ note.text }}</p>
                     {% endif %}

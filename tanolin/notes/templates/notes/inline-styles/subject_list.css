@@ -16,26 +16,48 @@
 }
 
 .loc {
+    display: block;
     color: inherit;
     text-decoration: inherit;
 }
 
-.loc-compact {
+
+/* Title and one-line summary */
+.loc-p3B .loc,
+.loc-p2A .loc {
+    height: 50px;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+}
+
+/* Small thumb */
+.loc-p4B .loc,
+.loc-p3A .loc {
     height: 80px;
     overflow: hidden;
-    text-overflow: ellipsis;
     display: flex;
     flex-flow: row nowrap;
 }
 
+/* Large thumb */
+
+
 @media (min-width: 640px) {
-    .loc-hero {
+    .loc-p5B .loc,
+    .loc-p4A .loc {
         display: flex;
         flex-flow: row wrap;
-        justify-content: space-between;
+        justify-content: flex-start;
     }
     .loc-text {
-        min-width: 320px;
+        min-width: 240px;
+    }
+}
+@media (min-width: 1120px) {
+    .loc-p5B .loc,
+    .loc-p4A .loc {
+        flex-flow: row nowrap;
     }
 }
 
@@ -68,9 +90,38 @@
     text-decoration: underline;
 }
 
+.loc-p2A .loc-text span,
+.loc-p3B .loc-text span {
+    display: block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.loc-p2A .loc-quote,
+.loc-p3B .loc-quote {
+    font-size: 13px;
+}
+
 .loc-url {
     margin: 5px 10px;
     display: block;
 
     font-size: 13px;
+}
+
+.loc-via {
+    font-weight: 500;
+    font-size: 13px;
+    font-style: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.loc-via:before {
+    content: "[";
+}
+
+.loc-via:after {
+    content: "]";
 }

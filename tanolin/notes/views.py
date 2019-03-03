@@ -1,7 +1,7 @@
 """Views fro notes."""
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import F
+from django.db.models import F, Prefetch
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -9,7 +9,7 @@ from django.views.generic import DetailView, ListView
 from django.views.generic.edit import CreateView, UpdateView
 
 from .forms import NoteForm
-from .models import Series, Note
+from .models import Series, Note, Locator
 from .tag_filter import TagFilter
 
 
@@ -18,9 +18,13 @@ class NotesQuerysetMixin:
 
     def get_queryset(self, **kwargs):
         """Acquire the relevant series and return the notes in that series."""
-        notes = Note.objects.order_by(
-            F('published').desc(),
-            F('created').desc())
+        notes = (
+            Note.objects
+            .order_by(
+                F('published').desc(),
+                F('created').desc())
+            .prefetch_related(
+                Prefetch('subjects', queryset=Locator.objects.order_by('notesubject__sequence'))))
         if self.kwargs.get('drafts') and self.request.user.is_authenticated:
             series = Series.objects.filter(editors__login=self.request.user)
             notes = notes.filter(published__isnull=True, series__in=series)
@@ -102,7 +106,7 @@ class NoteDetailView(SeriesMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['puff'] = 3
+        context['puff'] = 4
         return context
 
 

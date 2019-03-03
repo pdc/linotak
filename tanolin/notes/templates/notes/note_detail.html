@@ -24,7 +24,7 @@
             <h1>{{ note.id }}</h1>
         </header>
 
-        <article class="h-entry note-detail">
+        <article class="h-entry note-detail p{{ puff }}">
             <p class="e-content p-name note-text">{{ note.text }}</p>
             {% include 'notes/parts/note_subject_list.html' %}
             <small class="note-metadata">
