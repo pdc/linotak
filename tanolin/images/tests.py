@@ -175,7 +175,14 @@ class TestSignalHandler(TransactionTestCase):  # Different superclass so that on
         with self.settings(IMAGES_FETCH_DATA=True), patch.object(tasks, 'retrieve_image_data') as retrieve_image_data:
             self.image = Image.objects.create(data_url='https://example.com/1', retrieved=timezone.now())
 
-        self.assertFalse(retrieve_image_data.s.delay.called)
+        self.assertFalse(retrieve_image_data.s.called)
+
+    def test_doesnt_queue_retrieve_when_size_knwn_to_be_too_small(self):
+        """Test signal handler doesnt queue retrieve when retrieved is set."""
+        with self.settings(IMAGES_FETCH_DATA=True), patch.object(tasks, 'retrieve_image_data') as retrieve_image_data:
+            self.image = Image.objects.create(data_url='https://example.com/1', width=32, height=32)
+
+        self.assertFalse(retrieve_image_data.s.called)
 
 
 class TestImageQueueRetrieveData(TransactionTestCase):
