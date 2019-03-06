@@ -29,6 +29,9 @@
             {% include 'notes/parts/note_subject_list.html' %}
             <small class="note-metadata">
                 {% include 'notes/parts/note_metadata.html' %}
+                {% if user.is_staff %}
+                <a class="link" href="{% url 'admin:notes_note_change' object_id=note.pk %}" title="Edit this note in the Admin app">Admin</a>
+                {% endif %}
                 {% include 'notes/parts/note_tag_list.html' %}
             </small>
         </article>
