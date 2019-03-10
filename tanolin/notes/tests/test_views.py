@@ -12,6 +12,11 @@ from .factories import SeriesFactory, PersonFactory, NoteFactory
 @override_settings(NOTES_DOMAIN='example.com', ALLOWED_HOSTS=['.example.com'])
 class TestNoteListView(TestCase):
 
+    def test_redirects_to_about_page_if_no_series(self):
+        r = self.client.get('/', HTTP_HOST='example.com', follow=True)
+
+        self.assertEqual(r.redirect_chain, [('/about/', 302)])
+
     def test_filters_by_series(self):
         series = SeriesFactory.create(name='bar')
         note = NoteFactory.create(series=series, published=timezone.now())

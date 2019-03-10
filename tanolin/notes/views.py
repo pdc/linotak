@@ -2,7 +2,9 @@
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import F, Prefetch
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
 from django.views.generic import DetailView, ListView
@@ -42,11 +44,13 @@ class NotesQuerysetMixin:
 class SeriesMixin(NotesQuerysetMixin):
     """Mixin for view classes for when the URL includes the series name."""
 
+    series_required = True
+
     @cached_property
     def series(self):
         """The series of notes this page relates to."""
         series_name = getattr(self.request, 'series_name', None)
-        return None if series_name == '*' else get_object_or_404(Series, name=series_name)
+        return None if not series_name or series_name == '*' else get_object_or_404(Series, name=series_name)
 
     def get_queryset(self, **kwargs):
         notes = super().get_queryset()
@@ -63,6 +67,11 @@ class SeriesMixin(NotesQuerysetMixin):
             and self.series
             and self.series.editors.filter(login=self.request.user))
         return context
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.series_required and not self.series:
+            return HttpResponseRedirect(reverse('about:index'))
+        return super().dispatch(request, *args, **kwargs)
 
 
 class TaggedMixin:
