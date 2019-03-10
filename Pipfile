@@ -10,6 +10,7 @@ celery = "*"
 httpretty = "*"
 requests = "*"
 "psycopg2" = "*"
+markdown = "*"
 
 [dev-packages]
 tblib = "*"

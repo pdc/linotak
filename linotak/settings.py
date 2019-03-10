@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'customuser.apps.CustomuserConfig',
     'tanolin.notes.apps.NotesConfig',
     'tanolin.images.apps.ImagesConfig',
+    'linotak.about.apps.AboutConfig',
 ]
 
 MIDDLEWARE = [
