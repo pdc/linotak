@@ -7,7 +7,7 @@ Images have two main classes:
         scaled version of an image
 """
 
-from base64 import urlsafe_b64encode
+from base64 import b64decode, urlsafe_b64encode
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.validators import RegexValidator
@@ -56,7 +56,7 @@ class Image(models.Model):
     media_type = models.CharField(
         max_length=MAX_LENGTH,
         validators=[
-            RegexValidator(r'^(image|application)/\w+(;\s*\w+=.*)?$'),
+            RegexValidator(r'^(image|application)/[\w.+-]+(;\s*\w+=.*)?$'),
         ],
         null=True,
         blank=True,
@@ -115,26 +115,35 @@ class Image(models.Model):
         self.retrieved = timezone.now()
         self.save()  # This will be rolled back in case of error but settingit now avoids some race conditons.
 
-        r = requests.get(self.data_url)
-        media_type = r.headers['Content-Type']
+        if self.data_url.startswith('data:'):
+            media_type, rest = self.data_url.split(';', 1)
+            if rest.startswith('base64,'):
+                data = b64decode(rest[7:])
+            self.etag = md5(data).digest()
+            file = ContentFile(data)
+        else:
+            r = requests.get(self.data_url)
+            media_type = r.headers['Content-Type']
+            buf = io.BytesIO()
+            total_size = 0
+            hasher = md5()
+            for chunk in r.iter_content(chunk_size=10_240):
+                total_size += len(chunk)
+                buf.write(chunk)
+                hasher.update(chunk)
+            self.etag = hasher.digest()
+            data = buf.getvalue()
+            file = File(buf)
+
         if media_type:
             self.media_type = media_type
-        buf = io.BytesIO()
-        total_size = 0
-        hasher = md5()
-        for chunk in r.iter_content(chunk_size=10_240):
-            total_size += len(chunk)
-            buf.write(chunk)
-            hasher.update(chunk)
-        self.etag = hasher.digest()
-
         try:
-            self._sniff(input=buf.getvalue())  # Needed to get file type for file name.
+            self._sniff(input=data)  # Needed to get file type for file name.
             file_name = file_name_from_etag(self.etag, self.media_type)
         except Image.NotSniffable as e:
             file_name = file_name_from_etag(self.etag, None)
             logger.warning(e)
-        self.cached_data.save(file_name, File(buf), save=save)
+        self.cached_data.save(file_name, file, save=save)
 
     def sniff(self, save=False):
         """Presuming already has image data, guess width, height, and media_type."""
@@ -277,9 +286,14 @@ def media_type_from_imagemagick_type(type):
     return 'image/%s' % type.decode('UTF-8').lower()
 
 
+_suffixes_by_media = {
+    'image/svg+xml': '.svg',
+}
+
+
 def suffix_from_media_type(media_type):
     """Given an image MIME type, return file-name suffix."""
-    return '.' + media_type.split('/', 1)[1] if media_type else '.data'
+    return (_suffixes_by_media.get(media_type) or '.' + media_type.split('/', 1)[1]) if media_type else '.data'
 
 
 def file_name_from_etag(etag, media_type):

@@ -16,6 +16,12 @@ IMAGE_TEMPLATE = template.Template("""{% spaceless %}
     {% endif %}
 {% endspaceless %}""")
 
+SVG_TEMPLATE = template.Template("""{% spaceless %}
+    <svg width="{{ width }}px" height="{{ height }}px" viewBox="0 0 {{ width }} {{ height }}">
+        <image width="{{ width }}" height="{{ height }}" xlink:href="{{ image.data_url }}"/>
+    </svg>
+{% endspaceless %}""")
+
 
 @register.filter
 def square_representation(value, arg):
@@ -40,6 +46,13 @@ def representation(value, arg):
 
 
 def _image_representation(image, spec):
+    if image and image.media_type in ('image/svg+xml', 'image/svg'):
+        context = template.Context({
+            'image': image,
+            'width': spec.width,
+            'height': spec.height
+        })
+        return SVG_TEMPLATE.render(context)
     representations = image and sorted(
         {r for r in (image.find_representation(spec.enlarged(f)) for f in [1, 2, 3]) if r},
         key=lambda r: r.width)

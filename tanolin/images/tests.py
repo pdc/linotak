@@ -1,5 +1,6 @@
 """Tests for the Images app."""
 
+from base64 import b64encode
 from datetime import timedelta
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
@@ -11,8 +12,9 @@ import struct
 from unittest.mock import patch
 
 from ..matchers_for_mocks import DateTimeTimestampMatcher
-from .models import Image, _sniff, CannotSniff
+from .models import Image, _sniff, CannotSniff, suffix_from_media_type
 from .size_spec import SizeSpec
+from .templatetags.image_representations import _image_representation
 from . import models, signal_handlers, tasks  # For mocking
 
 
@@ -129,6 +131,18 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
         self.then_retrieved_and_sniffed('text/plain', None, None)
         self.assertTrue(logger.warning.called)
 
+    @httpretty.activate(allow_net_connect=False)
+    def test_gets_data_from_data_url(self):
+        with open(os.path.join(data_dir, 'smol.gif'), 'rb') as input:
+            self.data = input.read()
+        data_url = 'data:image/gif;base64,' + b64encode(self.data).decode('UTF-8')
+        self.image = Image.objects.create(data_url=data_url)
+
+        with patch.object(models, 'logger') as logger:
+            self.image.retrieve_data(if_not_retrieved_since=None)
+
+        self.then_retrieved_and_sniffed('image/gif', 1020, 100)
+
     def given_image_with_data(self, data=None, media_type='image/png', **kwargs):
         if data is None:
             # Use default.
@@ -154,6 +168,18 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
             actual = f.read()
         self.assertEqual(actual, self.data)
         self.assertTrue(self.image.retrieved)
+
+
+class TestSuffixFromMediaType(TestCase):
+
+    def test_returns_jpeg_for_jpeg(self):
+        self.assertEqual(suffix_from_media_type('image/jpeg'), '.jpeg')
+        self.assertEqual(suffix_from_media_type('image/png'), '.png')
+        self.assertEqual(suffix_from_media_type('image/gif'), '.gif')
+
+    def test_returns_svg_for_svg(self):
+        self.assertEqual(suffix_from_media_type('image/svg+xml'), '.svg')
+        self.assertEqual(suffix_from_media_type('image/svg'), '.svg')
 
 
 class TestSignalHandler(TransactionTestCase):  # Different superclass so that on_commit hooks are called.
@@ -450,3 +476,21 @@ class TestImageWantsSize(TestCase):
             image.wants_size()
 
         queue_retrieve_data.assert_called_with()
+
+
+class TestImageRepresentationTag(TestCase):
+
+    maxDiff = None
+
+    def test_given_svg_generates_svg(self):
+        image = Image.objects.create(data_url='http://example.com/foo.svg', media_type='image/svg+xml')
+        size_spec = SizeSpec(1000, 500)
+
+        result = _image_representation(image, size_spec)
+
+        self.assertEqual(
+            result,
+            '<svg width="1000px" height="500px" viewBox="0 0 1000 500">'
+            '<image width="1000" height="500" xlink:href="http://example.com/foo.svg"/>'
+            '</svg>')
+
