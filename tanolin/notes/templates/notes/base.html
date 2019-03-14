@@ -40,7 +40,7 @@
         <link href="https://fonts.googleapis.com/css?family=Abril+Fatface|Fira+Sans:400,500" rel="stylesheet">
         <script>
             (function (hour) {
-                if (hour < 6 || hour > 18) {
+                if (hour < 6 || 18 <= hour) {
                     document.body.classList.add('dark');
                 }
             })(new Date().getHours());

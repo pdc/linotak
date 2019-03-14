@@ -103,7 +103,7 @@
         <link rel="stylesheet" href="{% static 'about/base.css' %}">
         <script>
             (function (hour) {
-                if (hour < 6 || hour > 18) {
+                if (hour < 6 || 18 <= hour) {
                     document.body.classList.add('dark');
                 }
             })(new Date().getHours());
