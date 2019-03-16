@@ -293,7 +293,10 @@ _suffixes_by_media = {
 
 def suffix_from_media_type(media_type):
     """Given an image MIME type, return file-name suffix."""
-    return (_suffixes_by_media.get(media_type) or '.' + media_type.split('/', 1)[1]) if media_type else '.data'
+    if not media_type:
+        return '.data'
+    media_type = media_type.split(';', 1)[0]
+    return (_suffixes_by_media.get(media_type) or '.' + media_type.split('/', 1)[1])
 
 
 def file_name_from_etag(etag, media_type):

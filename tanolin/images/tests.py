@@ -181,6 +181,10 @@ class TestSuffixFromMediaType(TestCase):
         self.assertEqual(suffix_from_media_type('image/svg+xml'), '.svg')
         self.assertEqual(suffix_from_media_type('image/svg'), '.svg')
 
+    def test_returns_html_for_html(self):  # Not that that makes any sense for an image …
+        self.assertEqual(suffix_from_media_type('text/html'), '.html')
+        self.assertEqual(suffix_from_media_type('text/html; charset=UTF-8'), '.html')
+
 
 class TestSignalHandler(TransactionTestCase):  # Different superclass so that on_commit hooks are called.
     """Test the signal handler."""
