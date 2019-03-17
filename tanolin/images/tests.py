@@ -562,3 +562,39 @@ class TestImageRepresentationTag(TestCase):
             '<image width="1000" height="500" xlink:href="http://example.com/foo.svg"/>'
             '</svg>')
 
+    def test_skrinks_to_fit_svg_if_size_known(self):
+        image = Image.objects.create(data_url='http://example.com/foo.svg', media_type='image/svg+xml', width=600, height=400)
+        size_spec = SizeSpec(300, 300)
+
+        result = _image_representation(image, size_spec)
+
+        self.assertEqual(
+            result,
+            '<svg width="300px" height="200px" viewBox="0 0 300 200">'
+            '<image width="300" height="200" xlink:href="http://example.com/foo.svg"/>'
+            '</svg>')
+
+    def test_scales_up_svg(self):
+        image = Image.objects.create(data_url='http://example.com/foo.svg', media_type='image/svg+xml', width=600, height=400)
+        size_spec = SizeSpec(900, 900)
+
+        result = _image_representation(image, size_spec)
+
+        self.assertEqual(
+            result,
+            '<svg width="900px" height="600px" viewBox="0 0 900 600">'
+            '<image width="900" height="600" xlink:href="http://example.com/foo.svg"/>'
+            '</svg>')
+
+    def test_slices_if_cropped(self):
+        image = Image.objects.create(data_url='http://example.com/foo.svg', media_type='image/svg+xml', width=600, height=400)
+        size_spec = SizeSpec.of_square(600)
+
+        result = _image_representation(image, size_spec)
+
+        self.assertEqual(
+            result,
+            '<svg width="600px" height="600px" viewBox="0 0 900 600" preserveAspectRatio="xMidYMid slice">'
+            '<image width="900" height="600" xlink:href="http://example.com/foo.svg"/>'
+            '</svg>')
+

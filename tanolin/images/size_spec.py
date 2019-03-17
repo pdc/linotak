@@ -81,18 +81,19 @@ class SizeSpec:
         """Return size spec scaled up by this factor"""
         return SizeSpec(self.width * f, self.height * f, self.min_ratio, self.max_ratio)
 
-    def scale_and_crop_to_match(self, source_width, source_height):
+    def scale_and_crop_to_match(self, source_width, source_height, allow_upscale=False):
         """Return dimensions of an reresentation satisfying criteria.
 
         Arguments --
             source_width, source_height -- dimensions of source image to be scaled to this size space
+            allow_upscale -- will scale up image if required (default False)
 
         Returns (SCALED_WIDTH, SCALED_HEIGHT), CROPPED
             where (SCALED_WIDTH, SCALED_HEIGHT) is the size to scale the whole image to
             and CROPPED is (WIDTH, HEIGHT) to crop out of this scaled image,
             or None if the scaled image is already OK.
         """
-        if source_width <= self.width and source_height <= self.height:
+        if source_width <= self.width and source_height <= self.height and not allow_upscale:
             return (source_width, source_height), None  # Do not scale up!
         if self.min_ratio:
             w, h = self.min_ratio
@@ -119,7 +120,7 @@ class SizeSpec:
         return (round(source_width * self.height / source_height), self.height), None
 
     def best_match(self, source_width, source_height):
-        """Best match for ai image of this source size.
+        """Best match for an image of this source size.
 
         This may be cropped as well as scaled, depending on min_ratio and max_ratio.
 

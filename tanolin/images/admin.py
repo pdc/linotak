@@ -18,7 +18,7 @@ queue_retrieve.short_description = 'Queue retrieval of image data'
 
 def small_thumbnail(image):
     return format_html(
-        '<div style="width: 40px; background-color: #DED">'
+        '<div style="display: inline-block; background-color: #DED">'
         '{representation}</div>',
         representation=square_representation(image, 40) or '–')
     return
@@ -26,7 +26,7 @@ def small_thumbnail(image):
 
 def large_thumbnail(image):
     return format_html(
-        '<div style="width: 320px; height: 320px; display: flex; justify-contents: center; align-items: center; background-color: #DED">'
+        '<div style="display: inline-block; background-color: #DED">'
         '{representation}</div>',
         representation=representation(image, '320x320') or '–')
 

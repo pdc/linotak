@@ -17,8 +17,8 @@ IMAGE_TEMPLATE = template.Template("""{% spaceless %}
 {% endspaceless %}""")
 
 SVG_TEMPLATE = template.Template("""{% spaceless %}
-    <svg width="{{ width }}px" height="{{ height }}px" viewBox="0 0 {{ width }} {{ height }}">
-        <image width="{{ width }}" height="{{ height }}" xlink:href="{{ image.data_url }}"/>
+    <svg {% if image.with_class %}class="{{ image.with_class }}" {% endif %}width="{{ width }}px" height="{{ height }}px" viewBox="0 0 {{ image_width }} {{ image_height }}"{% if preserve_aspect_ratio %} preserveAspectRatio="{{ preserve_aspect_ratio }}"{% endif %}>
+        <image width="{{ image_width }}" height="{{ image_height }}" xlink:href="{{ image.data_url }}"/>
     </svg>
 {% endspaceless %}""")
 
@@ -47,10 +47,24 @@ def representation(value, arg):
 
 def _image_representation(image, spec):
     if image and image.media_type in ('image/svg+xml', 'image/svg'):
+        if image.width and image.height:
+            scaled, cropped = spec.scale_and_crop_to_match(image.width, image.height, allow_upscale=True)
+            width, height = cropped or scaled
+            image_width, image_height = scaled
+            preserve_aspect_ratio = 'xMidYMid slice' if cropped else None
+        else:
+            # Dont know image size so have to hope SVG defaults are OK.
+            width, height = spec.width, spec.height
+            image_width, image_height = width, height
+            preserve_aspect_ratio = None
+
         context = template.Context({
             'image': image,
-            'width': spec.width,
-            'height': spec.height
+            'width': width,
+            'height': height,
+            'image_width': image_width,
+            'image_height': image_height,
+            'preserve_aspect_ratio': preserve_aspect_ratio,
         })
         return SVG_TEMPLATE.render(context)
     representations = image and sorted(
