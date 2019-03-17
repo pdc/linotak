@@ -17,8 +17,10 @@ from django.utils import timezone
 from hashlib import md5
 import io
 import logging
+import re
 import requests
 import subprocess
+from xml.etree import ElementTree
 
 from .signals import wants_data, wants_representation
 from .size_spec import SizeSpec
@@ -138,7 +140,7 @@ class Image(models.Model):
         if media_type:
             self.media_type = media_type
         try:
-            self._sniff(input=data)  # Needed to get file type for file name.
+            self._sniff(input=data, media_type=media_type)  # Needed to get file type for file name.
             file_name = file_name_from_etag(self.etag, self.media_type)
         except Image.NotSniffable as e:
             file_name = file_name_from_etag(self.etag, None)
@@ -159,14 +161,14 @@ class Image(models.Model):
                 f.seek(0)
             self._sniff(stdin=f.file)
 
-    def _sniff(self, **kwargs):
+    def _sniff(self, media_type=None, **kwargs):
         """Given a file-like object, guess width, height, and media_type.
 
         Arguments --
             kwargs -- how to get the input. Either stdin=REALFILE or input=BYTES
         """
         try:
-            self.media_type, self.width, self.height = _sniff(**kwargs)
+            self.media_type, self.width, self.height = _sniff(media_type=media_type, **kwargs)
         except CannotSniff as e:
             rc, msg = e.args
             raise Image.NotSniffable(file_name_from_etag(self.etag, None), rc, msg)
@@ -258,7 +260,7 @@ class Image(models.Model):
         wants_data.send(self.__class__, instance=self)
 
 
-def _sniff(**kwargs):
+def _sniff(media_type=None, **kwargs):
     """Given a file-like object, guess media_type, width, and height.
 
     Arguments --
@@ -267,9 +269,13 @@ def _sniff(**kwargs):
     Returns --
         MEDIA_TYPE, WIDTH, HEIGHT
 
-    Throws --
+    Raises --
         CannotSniff when cannot sniff
     """
+    if media_type and 'svg' in media_type:
+        media_type_1, width, height = _sniff_svg(**kwargs)
+        if media_type_1:
+            return media_type_1, width, height
     cmd = ['identify', '-']
     result = subprocess.run(cmd, check=False, stderr=subprocess.PIPE, stdout=subprocess.PIPE, **kwargs)
     if result.returncode:
@@ -281,9 +287,57 @@ def _sniff(**kwargs):
     return media_type_from_imagemagick_type(type), int(w), int(h)
 
 
+_length_pattern = re.compile(r'^\s*(\d+|\d*\.\d+)\s*([a-z]{2,3})?\s*$')
+_px_per_unit = {
+    'px': 1.0,
+    'pt': 96.0 / 72.0,
+    'cm': 96.0 / 2.54,
+    'mm': 96.0 / 25.4,
+    'em': 16.0,  # Assume my usual 16px tyoe size
+    'rem': 16.0,  # Ditto
+}
+
+
+def px_from_length(length):
+    m = _length_pattern.match(length)
+    if m:
+        if m[2]:
+            return round(float(m[1]) * _px_per_unit[m[2]])
+        return round(float(m[1]))
+
+
+def _sniff_svg(input=None, stdin=None):
+    """Given file data that might well be SVG, return type and dimensions.
+
+    Arguments --
+        input (bytes instance) -- the image data
+        stdin (file-like object) -- contains the image data
+
+    Exactly one of the above should be specified.
+
+    Returns --
+        MEDIA_TYPE, WIDTH, HEIGHT
+    """
+    root = ElementTree.parse(stdin) if stdin else ElementTree.fromstring(input)
+    width, height, view_box = root.get('width'), root.get('height'), root.get('viewBox')
+    if width and height:
+        width, height = px_from_length(width), px_from_length(height)
+    elif view_box:
+        width, height = view_box.split()[-2:]
+        width, height = round(float(width)), round(float(height))
+    else:
+        width, height = None, None
+    return 'image/svg+xml' if root.tag in ['{http://www.w3.org/2000/svg}svg', 'svg'] else None, width, height
+
+
+_media_types_by_imagemagick = {
+    b'SVG': 'image/svg+xml',
+}
+
+
 def media_type_from_imagemagick_type(type):
     """Given the type of image as reported by ImageMagick, return MIME type."""
-    return 'image/%s' % type.decode('UTF-8').lower()
+    return _media_types_by_imagemagick.get(type) or 'image/%s' % type.decode('UTF-8').lower()
 
 
 _suffixes_by_media = {

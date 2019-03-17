@@ -12,7 +12,7 @@ import struct
 from unittest.mock import patch
 
 from ..matchers_for_mocks import DateTimeTimestampMatcher
-from .models import Image, _sniff, CannotSniff, suffix_from_media_type
+from .models import Image, _sniff, CannotSniff, _sniff_svg, suffix_from_media_type
 from .size_spec import SizeSpec
 from .templatetags.image_representations import _image_representation
 from . import models, signal_handlers, tasks  # For mocking
@@ -46,7 +46,7 @@ class TestImageSniff(ImageTestMixin, TestCase):
     """Test Image.sniff."""
 
     def test_can_get_width_and_height_of_png(self):
-        image = self.create_image_with_data('im.png')
+        image = self.create_image_with_data_from_file('im.png')
 
         image.sniff()
 
@@ -55,7 +55,7 @@ class TestImageSniff(ImageTestMixin, TestCase):
         self.assertEqual(image.height, 42)
 
     def test_can_get_width_and_height_of_jpeg(self):
-        image = self.create_image_with_data('37x57.jpeg')
+        image = self.create_image_with_data_from_file('37x57.jpeg')
 
         image.sniff()
 
@@ -64,8 +64,7 @@ class TestImageSniff(ImageTestMixin, TestCase):
         self.assertEqual(image.height, 57)
 
     def test_doesnt_explode_if_not_image(self):
-        image = Image.objects.create(data_url='https://example.org/1')
-        image.cached_data.save('test_file', ContentFile(b'Nope.'), save=True)
+        image = self.create_image_with_data(b'Nope.')
 
         with self.assertRaises(CannotSniff):
             image.sniff()
@@ -74,7 +73,13 @@ class TestImageSniff(ImageTestMixin, TestCase):
         self.assertIsNone(image.width)
         self.assertIsNone(image.height)
 
-    def create_image_with_data(self, file_name):
+    def create_image_with_data(self, data):
+        """Create image with these bytes"""
+        image = Image.objects.create(data_url='https://example.org/1')
+        image.cached_data.save('test_file', ContentFile(data), save=True)
+        return image
+
+    def create_image_with_data_from_file(self, file_name):
         """Create an image and remember to delete it."""
         with open(os.path.join(data_dir, file_name), 'rb') as input:
             data = input.read()
@@ -82,6 +87,65 @@ class TestImageSniff(ImageTestMixin, TestCase):
         self.image.cached_data.save('test_file', ContentFile(data), save=True)
         # Intentionally don’t give it a ‘.png’ extension.
         return self.image
+
+
+class TestSniffSVG(TestCase):
+
+    def test_can_get_width_and_height_of_svg_with_width_and_height(self):
+        media_type, width, height = _sniff_svg(
+            input=b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6 3" height="600px" width="300px"/>')
+
+        self.assertEqual(media_type, 'image/svg+xml')
+        self.assertEqual(width, 300)
+        self.assertEqual(height, 600)
+
+    def test_comverts_mm_to_px(self):
+        media_type, width, height = _sniff_svg(
+            input=(
+                b'<svg xmlns="http://www.w3.org/2000/svg" '
+                b'viewBox="0 0 713.35878 175.8678" height="49.633801mm" width="201.3257mm"/>'))
+
+        self.assertEqual(media_type, 'image/svg+xml')
+        self.assertEqual(width, 761)
+        self.assertEqual(height, 188)
+
+    def test_can_get_width_and_height_of_svg_with_view_box(self):
+        media_type, width, height = _sniff_svg(
+            input=b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 48"/>')
+
+        self.assertEqual(media_type, 'image/svg+xml')
+        self.assertEqual(width, 72)
+        self.assertEqual(height, 48)
+
+    def test_accepts_unitless_lengths(self):
+        media_type, width, height = _sniff_svg(
+            input=b'<svg xmlns="http://www.w3.org/2000/svg" width="640" height="270"/>')
+
+        self.assertEqual(media_type, 'image/svg+xml')
+        self.assertEqual(width, 640)
+        self.assertEqual(height, 270)
+
+    def test_accepts_namespaceless_svg(self):
+        media_type, width, height = _sniff_svg(
+            input=b'<svg width="640px" height="270px"/>')
+
+        self.assertEqual(media_type, 'image/svg+xml')
+        self.assertEqual(width, 640)
+        self.assertEqual(height, 270)
+
+    def test_not_confused_by_xml_decl(self):
+        media_type, width, height = _sniff_svg(
+            input=b'<?xml version="1.0"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="640px" height="270px"/>')
+
+        self.assertEqual(media_type, 'image/svg+xml')
+        self.assertEqual(width, 640)
+        self.assertEqual(height, 270)
+
+    def test_rejects_non_svg(self):
+        media_type, width, height = _sniff_svg(
+            input=b'<html/>')
+
+        self.assertFalse(media_type)
 
 
 class TestImageRetrieve(ImageTestMixin, TestCase):
