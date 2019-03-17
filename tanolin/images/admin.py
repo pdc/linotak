@@ -3,8 +3,8 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
+from .templatetags.image_representations import square_representation, representation
 from .models import Image
-from .size_spec import SizeSpec
 
 
 def queue_retrieve(model_admin, request, queryset):
@@ -16,21 +16,19 @@ def queue_retrieve(model_admin, request, queryset):
 queue_retrieve.short_description = 'Queue retrieval of image data'
 
 
-def thumbnail(image, size):
-    rep = image.find_representation(size)
-    if rep:
-        return format_html(
-            '<img src="{src}" width="{width}" height"{height}" alt="(thumbnail)"/>',
-            src=rep.content.url, width=rep.width, height=rep.height)
-    return '–'
-
-
 def small_thumbnail(image):
-    return thumbnail(image, SizeSpec.of_square(40))
+    return format_html(
+        '<div style="width: 40px; background-color: #DED">'
+        '{representation}</div>',
+        representation=square_representation(image, 40) or '–')
+    return
 
 
 def large_thumbnail(image):
-    return thumbnail(image, SizeSpec(320, 320))
+    return format_html(
+        '<div style="width: 320px; height: 320px; display: flex; justify-contents: center; align-items: center; background-color: #DED">'
+        '{representation}</div>',
+        representation=representation(image, '320x320') or '–')
 
 
 small_thumbnail.short_description = 'Thumbnail'
@@ -47,7 +45,6 @@ class ImageAdmin(admin.ModelAdmin):
     ]
     search_fields = ['data_url']
     readonly_fields = [large_thumbnail]
-
 
 
 admin.site.register(Image, ImageAdmin)
