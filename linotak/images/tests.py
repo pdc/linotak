@@ -299,7 +299,7 @@ class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
 
         self.image.create_square_representation(32)
 
-        # convert - -resize '^32x32>' -gravity center -extent 32x32 - < tanolin/images/test-data/im.png > tanolin/images/test-data/im-32sq.png
+        # convert - -resize '^32x32>' -gravity center -extent 32x32 - < linotak/images/test-data/im.png > linotak/images/test-data/im-32sq.png
         self.assertEqual(self.image.representations.count(), 1)
         rep = self.image.representations.all()[0]
         self.assert_representation(rep, 'image/png', 32, 32, is_cropped=True)

@@ -2,7 +2,7 @@ from django.apps import AppConfig
 
 
 class ImagesConfig(AppConfig):
-    name = 'tanolin.images'
+    name = 'linotak.images'
 
     def ready(self):
         from django.db.models.signals import post_save

@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 
 from .pages import Page
-from tanolin.notes.models import Series
+from linotak.notes.models import Series
 
 
 def page_view(request, name=None):

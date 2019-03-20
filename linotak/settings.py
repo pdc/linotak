@@ -63,13 +63,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'customuser.apps.CustomuserConfig',
-    'tanolin.notes.apps.NotesConfig',
-    'tanolin.images.apps.ImagesConfig',
+    'linotak.notes.apps.NotesConfig',
+    'linotak.images.apps.ImagesConfig',
     'linotak.about.apps.AboutConfig',
 ]
 
 MIDDLEWARE = [
-    'tanolin.notes.middleware.SubdomainSeriesMiddleware',
+    'linotak.notes.middleware.SubdomainSeriesMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

@@ -12,7 +12,7 @@ from .size_spec import SizeSpec
 logger = get_task_logger(__name__)
 
 
-@shared_task(name='tanolin.images.retrieve_image_data')
+@shared_task(name='linotak.images.retrieve_image_data')
 def retrieve_image_data(pk, if_not_retrieved_since):
     """Task to request image content via HTTP and hence determine format and dimensions.
 
@@ -28,7 +28,7 @@ def retrieve_image_data(pk, if_not_retrieved_since):
         Image.objects.get(pk=pk).retrieve_data(if_not_retrieved_since=datetime_of_timestamp(if_not_retrieved_since), save=True)
 
 
-@shared_task(name='tanolin.images.sniff_image_data')
+@shared_task(name='linotak.images.sniff_image_data')
 def sniff_image_data(pk):
     """Task to request image content be scanned for format and dimensions.
 
@@ -42,7 +42,7 @@ def sniff_image_data(pk):
             logger.warning(e)
 
 
-@shared_task(name='tanolin.images.create_image_representation')
+@shared_task(name='linotak.images.create_image_representation')
 def create_image_representation(pk, spec):
     """Task to generate a square representation of an image.
 

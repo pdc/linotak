@@ -2,7 +2,7 @@ from django.apps import AppConfig
 
 
 class NotesConfig(AppConfig):
-    name = 'tanolin.notes'
+    name = 'linotak.notes'
 
     def ready(self):
         from django.db.models.signals import post_save
