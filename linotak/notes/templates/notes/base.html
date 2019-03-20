@@ -19,6 +19,13 @@
         {% block links %}{% endblock %}
     </head>
     <body>
+        <script>
+            (function (hour) {
+                if (hour < 6 || 18 <= hour) {
+                    document.body.classList.add('dark');
+                }
+            })(new Date().getHours());
+        </script>
         {% if messages %}
         <ul class="message-list">
             {% for message in messages %}
@@ -26,6 +33,7 @@
             {% endfor %}
         </ul>
         {% endif %}
+
         {% block content %}
         {% endblock %}
 
@@ -38,13 +46,7 @@
         <link rel=stylesheet href="{% static 'notes/nav.css' %}">
         <link rel=stylesheet href="{% static 'notes/notes.css' %}">
         <link href="https://fonts.googleapis.com/css?family=Abril+Fatface|Fira+Sans:400,500" rel="stylesheet">
-        <script>
-            (function (hour) {
-                if (hour < 6 || 18 <= hour) {
-                    document.body.classList.add('dark');
-                }
-            })(new Date().getHours());
-        </script>
+
     </body>
 </html>
 

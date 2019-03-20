@@ -1,7 +1,8 @@
 
-html {
+:root {
     margin: 0;
 
+    font-family: "Trebuchet MS", Helvetica Neue, Arial, Helvetica, sans-serif;
     font-size: 16px;
     -webkit-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
@@ -13,6 +14,11 @@ body {
     min-height: 100vh;
 }
 
+.dark {
+    color: #FFF;
+    background-color: #000;
+}
+
 header {
     display: flex;
     flex-flow: row wrap;
@@ -22,6 +28,7 @@ header {
 
 h1 {
     margin: 10px;
+    height: 1.25em;
 
     font-size: 1.25em;
     font-weight: 400;
