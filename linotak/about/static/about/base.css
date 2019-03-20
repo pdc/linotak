@@ -1,6 +1,5 @@
-html, body {
-    font-family: "Fira Sans", sans-serif;
-    font-weight: 300;
+:root {
+    font-family: "Fira Sans", "Trebuchet MS", sans-serif;
     color: var(--ink);
     background-color: var(--paper);
 }
