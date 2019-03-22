@@ -84,7 +84,23 @@
             }
 
             footer {
-                padding: 20px 10px;
+            }
+
+            .ftr-links {
+                margin: 0;
+                padding: 15px 5px;
+                display: flex;
+                flex-flow: row wrap;
+            }
+
+            .ftr-item {
+                display: block;
+                margin: 0;
+            }
+
+            .ftr-item a {
+                display: block;
+                padding: 5px;
             }
 
             {% include 'notes/inline-styles/nav.css' %}
@@ -109,7 +125,16 @@
             {{ page.formatted }}
         </main>
         <footer>
-            {% if page.name != 'privacy' %}<a href="{% url 'about:page' name='privacy' %}">Privacy policy</a>{% endif %}
+            <ul class="ftr-links">
+                {% if page.name != 'privacy' %}
+                <li class="ftr-item">
+                    <a href="{% url 'about:page' name='privacy' %}">Privacy policy</a>
+                </li>
+                {% endif %}
+                <li class="ftr-item">
+                    <a href="https://github.com/pdc/linotak">GitHub repo</a>
+                </li>
+            </ul>
         </footer>
         <link href="https://fonts.googleapis.com/css?family=Playfair+Display:900i|Fira+Sans:300,600" rel="stylesheet">
         <link rel=stylesheet href="{% static 'notes/vars.css' %}">
