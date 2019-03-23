@@ -53,7 +53,9 @@ image_thumbnail.short_description = 'Thumbnail'
 
 
 def image_size(locator_image):
-    return '%dx%d' % (locator_image.image.width, locator_image.image.height)
+    if not locator_image.image.width or not locator_image.image.height:
+        return '–'
+    return '%d\u2009×\u2009%d' % (locator_image.image.width, locator_image.image.height)
 
 
 image_size.short_description = 'Image size'
