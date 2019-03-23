@@ -36,9 +36,9 @@
                                         {% endif %}
                                         {{ locator.text }}</span>
                                     {% endif %}
-                                    {% if not forloop.first and not locator.text and not locator.title %}
+                                    {% if not locator.text and not locator.title %}
                                     <span class="loc-url">
-                                        {% if not locator.author %}
+                                        {% if not forloop.first and not locator.author %}
                                         <i class="loc-via">via</i>
                                         {% endif %}{{ locator.url }}
                                     </span>
