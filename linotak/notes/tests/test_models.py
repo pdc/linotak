@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from ...matchers_for_mocks import DateTimeTimestampMatcher
 from ...images.models import Image, wants_data
-from ..models import Locator, Tag, Note
+from ..models import Locator, LocatorImage, Tag, Note
 from .. import tasks
 from .factories import NoteFactory, SeriesFactory, LocatorFactory
 
@@ -226,11 +226,25 @@ class TestLocatorQueueFetch(TransactionTestCase):
 
 class TestLocatorMainImage(TestCase):
 
+    def test_returns_most_prominent_image(self):
+        locator = Locator.objects.create(url='https://example.com/1')
+        LocatorImage.objects.bulk_create([
+            LocatorImage(locator=locator, image=Image.objects.create(data_url='https://example.com/1', width=500, height=300)),
+            LocatorImage(locator=locator, image=Image.objects.create(data_url='https://example.com/2', width=500, height=400), prominence=3),
+            LocatorImage(locator=locator, image=Image.objects.create(data_url='https://example.com/3', width=500, height=500)),
+        ])
+
+        result = locator.main_image()
+
+        self.assertEqual(result.data_url, 'https://example.com/2')
+
     def test_returns_largest_image(self):
         locator = Locator.objects.create(url='https://example.com/1')
-        locator.images.add(Image.objects.create(data_url='https://example.com/100', width=100, height=50))
-        locator.images.add(Image.objects.create(data_url='https://example.com/500', width=500, height=400))
-        locator.images.add(Image.objects.create(data_url='https://example.com/50', width=60, height=60))
+        LocatorImage.objects.bulk_create([
+            LocatorImage(locator=locator, image=Image.objects.create(data_url='https://example.com/100', width=100, height=50)),
+            LocatorImage(locator=locator, image=Image.objects.create(data_url='https://example.com/500', width=500, height=400)),
+            LocatorImage(locator=locator, image=Image.objects.create(data_url='https://example.com/50', width=60, height=60)),
+        ])
 
         result = locator.main_image()
 
@@ -238,10 +252,12 @@ class TestLocatorMainImage(TestCase):
 
     def test_queues_retrieval_of_unsized_images(self):
         locator = Locator.objects.create(url='https://example.com/1')
-        locator.images.add(Image.objects.create(data_url='https://example.com/100', width=100, height=50))
         image = Image.objects.create(data_url='https://example.com/500')
-        locator.images.add(image)
-        locator.images.add(Image.objects.create(data_url='https://example.com/50', width=60, height=60))
+        LocatorImage.objects.bulk_create([
+            LocatorImage(locator=locator, image=Image.objects.create(data_url='https://example.com/100', width=100, height=50)),
+            LocatorImage(locator=locator, image=image),
+            LocatorImage(locator=locator, image=Image.objects.create(data_url='https://example.com/50', width=60, height=60)),
+        ])
 
         with patch.object(wants_data, 'send') as wants_data_send:
             result = locator.main_image()

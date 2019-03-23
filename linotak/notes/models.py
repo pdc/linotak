@@ -68,6 +68,9 @@ class Locator(models.Model):
     )
     images = models.ManyToManyField(
         Image,
+        through='LocatorImage',
+        related_name='occurences',
+        related_query_name='occurrence',
     )
 
     url = models.URLField(
@@ -108,8 +111,32 @@ class Locator(models.Model):
         """Return the image with the largest source dimensions."""
         for image in self.images.filter(Q(width__isnull=True) | Q(height__isnull=True)):
             image.wants_size()
-        candidates = list(self.images.filter(width__isnull=False, height__isnull=False).order_by((F('width') * F('height')).desc())[:1])
+        candidates = list(
+            self.images
+            .filter(width__isnull=False, height__isnull=False)
+            .order_by(
+                '-locatorimage__prominence',
+                (F('width') * F('height')).desc()
+            )
+            [:1])
         return candidates[0] if candidates else None
+
+
+class LocatorImage(models.Model):
+    """Relationship between locator and an image it references."""
+
+    locator = models.ForeignKey(Locator, models.CASCADE)
+    image = models.ForeignKey(Image, models.CASCADE)
+    prominence = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['-prominence']
+        unique_together = [
+            ['locator', 'image']
+        ]
+
+    def __str__(self):
+        return '%s->%s' % (self.locator, self.image)
 
 
 class Series(models.Model):

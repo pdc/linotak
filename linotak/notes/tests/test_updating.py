@@ -7,7 +7,7 @@ import httpretty
 from unittest.mock import patch
 
 from ...images.models import Image
-from ..models import Locator
+from ..models import Locator, LocatorImage
 from ..updating import fetch_page_update_locator, update_locator_with_stuff
 from ..scanner import Title, HCard, HEntry, Img
 from .. import updating
@@ -122,7 +122,12 @@ class TestUpdateLocatorWithStuff(TestCase):
         self.assertEqual(actual.height, 997)
 
     def test_doesnt_clobber_existing_metadata(self):
-        self.locator.images.add(Image.objects.create(data_url='https://images.example.com/69', media_type='application/octet-stream', width=1280, height=960))
+        LocatorImage.objects.create(
+            locator=self.locator,
+            image=Image.objects.create(
+                data_url='https://images.example.com/69',
+                media_type='application/octet-stream',
+                width=1280, height=960))
         update_locator_with_stuff(self.locator, [
             Img('https://images.example.com/69', type='image/jpeg'),
         ])

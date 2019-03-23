@@ -6,6 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from ..images.models import Image
+from .models import LocatorImage
 from .scanner import PageScanner, Title, HEntry, Img
 
 
@@ -57,9 +58,11 @@ def update_locator_with_stuff(locator, stuff):
                 locator.text = thing.summary
             if thing.images:
                 for img in thing.images:
-                    locator.images.add(image_of_img(img))
+                    thing, is_new = LocatorImage.objects.get_or_create(
+                        locator=locator,
+                        image=image_of_img(img))
         elif isinstance(thing, Img):
-            locator.images.add(image_of_img(thing))
+            LocatorImage.objects.get_or_create(locator=locator, image=image_of_img(thing))
     if titles:
         _, title = max(titles)
         if title:
