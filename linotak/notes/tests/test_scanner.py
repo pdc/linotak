@@ -368,6 +368,36 @@ class TestHEntryMixin(ScanMixin, TestCase):
             stuff)
 
 
+class TestOGEntryCapture(ScanMixin, TestCase):
+
+    def test_captures_og_properties(self):
+        # Inspired by https://twitter.com/Rainmaker1973/status/1105737868893405184
+        stuff = self.scan("""
+            <html>
+                <head>
+                    <meta  property="og:type" content="video">
+                    <meta  property="og:url" content="https://twitter.com/Rainmaker1973/status/1105737868893405184">
+                    <meta  property="og:title" content="Massimo on Twitter">
+                    <meta  property="og:image" content="https://pbs.twimg.com/ext_tw_video_thumb/1105737823666225152/pu/img/25oLWXF1zjzBovqJ.jpg">
+                    <meta  property="og:description" content="“Pure samples are subjected to the high frequency pulsed field of a Tesla coil. https://t.co/wOpc2LcgkZ”">
+                    <meta  property="og:site_name" content="Twitter">
+                </head>
+                <body>…</body>
+            </html>
+        """)
+
+        self.assertIn(
+            HEntry(
+                'https://twitter.com/Rainmaker1973/status/1105737868893405184',
+                'Massimo on Twitter',
+                '“Pure samples are subjected to the high frequency pulsed field of a Tesla coil. https://t.co/wOpc2LcgkZ”',
+                images=[
+                    Img('https://pbs.twimg.com/ext_tw_video_thumb/1105737823666225152/pu/img/25oLWXF1zjzBovqJ.jpg'),
+                ]
+            ),
+            stuff)
+
+
 class TestMastodonMediaGalleryRecognizer(ScanMixin, TestCase):
 
     def test_extracts_from_json(self):

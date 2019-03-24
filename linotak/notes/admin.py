@@ -16,6 +16,7 @@ class TagAdmin(admin.ModelAdmin):
 class NoteSubjectInline(admin.TabularInline):
     model = NoteSubject
     extra = 0
+    raw_id_fields = ['locator']
 
 
 class NoteAdmin(admin.ModelAdmin):

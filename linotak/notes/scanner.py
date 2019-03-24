@@ -74,7 +74,7 @@ def _pop_stuff_strictly(stuff, cls, html_class):
 
 
 class Tag(StuffHolderMixin):
-    """Somewhere to store information about a tage being processed."""
+    """Somewhere to store information about a tag being processed."""
 
     def __init__(self, name, attrs):
         """Create instance with this element type and attributes.
@@ -101,6 +101,7 @@ no_content_tags = {
     'br'
     'img',
     'link',
+    'meta',
 }
 
 
@@ -427,6 +428,33 @@ class BlockquoteRecognizer:
                 return [link]
 
 
+class OGRecognizer:
+    """Capture OpenGraph (og:-prefixed) properties."""
+
+    def __init__(self):
+        self.props = {}
+
+    def handle_end_meta(self, tag):
+        name = tag.get('property')
+        if name and name.startswith('og:'):
+            value = tag.get('content')
+            if value:
+                self.props[name] = value
+                return [Property(name, value)]
+
+    def handle_end_body(self, tag):
+        image = self.props.pop('og:image', None)
+        title = self.props.pop('og:title', None)
+        desc = self.props.pop('og:description', None)
+        url = self.props.pop('og:url', None)
+        result = [Property(k, v) for k, v in self.props.items()]
+        if url:
+            result.append(HEntry(url, title, desc, images=image and [Img(image)]))
+        elif image:
+            result.append(Img(image))
+        return result
+
+
 class HSomethingRecognizer:
     def handle_stuff(self, tag, stuff):
         h_classes = [x for x in tag.classes if x.startswith('h-')]
@@ -525,6 +553,7 @@ class PageScanner(HTMLParser):
         TitleRecognizer,
         BlockquoteRecognizer,
         MastodonMediaGalleryRecognizer,
+        OGRecognizer,
     ]
 
     def __init__(self, base_url, recognizers=None, *args, **kwargs):
