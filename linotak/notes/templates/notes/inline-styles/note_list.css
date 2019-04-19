@@ -110,7 +110,12 @@
 }
 
 .note-text {
-    margin: 10px 10px;
+    margin: 10px 10px 5px;
+}
+
+.note-via-chain {
+    margin: 5px 10px;
+    font-size: 13px;
 }
 
 .note-metadata {

@@ -17,6 +17,11 @@
     max-width: 620px;
 }
 
+.note-via-chain {
+    margin: 5px 10px 10px;
+    font-size: 13px;
+}
+
 @media (max-width: 640px) {
     .note-detail .loc-img {
         max-width: 100%;
