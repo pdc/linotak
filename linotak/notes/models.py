@@ -311,10 +311,13 @@ class Note(models.Model):
         return '%s…' % title[:30] if pos < 0 else '%s …' % title[:pos]
 
     def text_with_links(self):
+
         parts = [
             self.text.strip(),
             ' '.join('#' + x.as_camel_case() for x in self.tags.all()),
-            '\n'.join(x.url for x in self.subjects.all()),
+            '\n'.join(
+                '\n via '.join([x.url] + [xx.url for xx in x.via_chain()])
+                for x in self.subjects.all()),
         ]
         return '\n\n'.join(x for x in parts if x)
 

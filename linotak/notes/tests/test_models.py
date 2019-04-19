@@ -198,6 +198,20 @@ class TestNoteTextWithLinks(TestCase):
             note.text_with_links(),
             'Hello, world\n\n#bambooFirefly')
 
+    def test_adds_vias(self):
+        note = NoteFactory.create(text='Hello, world', subjects=[
+            LocatorFactory.create(
+                url='https://example.com/1',
+                via=LocatorFactory.create(
+                    url='https://example.com/2',
+                    via=LocatorFactory.create(url='https://example.com/3'))),
+        ])
+
+        self.assertEqual(
+            note.text_with_links(),
+            'Hello, world\n\nhttps://example.com/1\n via https://example.com/2\n via https://example.com/3')
+
+
 
 class TestLocatorFetchPageUpdate(TransactionTestCase):
     """Test locator_fetch_page_update."""
