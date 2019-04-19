@@ -79,6 +79,7 @@ class LocatorAdmin(admin.ModelAdmin):
     list_display = ['__str__', 'title', 'scanned']
     list_filter = ['scanned']
     search_fields = ['url', 'title', 'text']
+    raw_id_fields = ['via']
 
 
 class ProfileInline(admin.TabularInline):

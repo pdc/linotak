@@ -125,6 +125,31 @@ class TestNoteExtractSubjects(TestCase):
         self.assertEqual(note.text, 'Yo!')
         self.assertEqual([x.url for x in note.subjects.all()], ['http://example.com/'])
 
+    def test_matches_via_between_URLs(self):
+        note = NoteFactory.create(text='https://example.com/1 via https://example.com/2')
+
+        result = note.extract_subject()
+
+        # Then we have 1 subject and it has a ‘via’ link.
+        self.assertEqual([x.url for x in note.subjects.all()], ['https://example.com/1'])
+        self.assertEqual(note.subjects.all()[0].via.url, 'https://example.com/2')
+
+    def test_moves_subjects_to_via_if_so_instructed(self):
+        # Given a note originally created with 2 URLs mentioned without a ‘via’ relationship:
+        note = NoteFactory.create(subjects=[
+            LocatorFactory.create(url='https://example.com/1'),
+            LocatorFactory.create(url='https://example.com/2')
+        ])
+
+        # When editing to add ‘via’ between the URLs
+        note.text = 'Hoo https://example.com/1 via https://example.com/2'
+        note.save()
+        result = note.extract_subject()
+
+        # Then we have 1 subject and it has a "via" link.
+        self.assertEqual([x.url for x in note.subjects.all()], ['https://example.com/1'])
+        self.assertEqual(note.subjects.all()[0].via.url, 'https://example.com/2')
+
     def test_returns_false_if_no_urls(self):
         note = NoteFactory.create(text='Banana frappé')
 
@@ -264,6 +289,18 @@ class TestLocatorMainImage(TestCase):
 
         self.assertEqual(result.data_url, 'https://example.com/100')
         wants_data_send.assert_called_once_with(Image, instance=image)
+
+
+class TestLocatorViaChain(TestCase):
+
+    def test_returns_locators_in_via_order(self):
+        mention2 = LocatorFactory.create(via=None)
+        mention1 = LocatorFactory.create(via=mention2)
+        original = LocatorFactory.create(via=mention1)
+
+        result = original.via_chain()
+
+        self.assertEqual(result, [mention1, mention2])
 
 
 class TestTag(TestCase):

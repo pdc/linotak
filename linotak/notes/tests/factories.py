@@ -79,3 +79,10 @@ class LocatorFactory(factory.django.DjangoModelFactory):
     title = factory.Sequence(lambda n: 'Locator %d' % n)
     text = factory.Sequence(lambda n: 'Text of locator %d' % n)
     published = factory.Sequence(lambda n: timezone.now() - timedelta(days=n))
+
+    @factory.post_generation
+    def via(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            self.via = extracted

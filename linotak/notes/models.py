@@ -72,6 +72,14 @@ class Locator(models.Model):
         related_name='occurences',
         related_query_name='occurrence',
     )
+    via = models.ForeignKey('self',
+        models.SET_NULL,
+        related_name='destinatons',
+        related_query_name='destination',
+        null=True,
+        blank=True,
+        help_text='linm to another locator that referenced this one'
+    )
 
     url = models.URLField(
         max_length=MAX_LENGTH,
@@ -120,6 +128,27 @@ class Locator(models.Model):
             )
             [:1])
         return candidates[0] if candidates else None
+
+    def via_chain(self):
+        """Return list of locators this locator was discovered via.
+
+        First member of list (if any) is a page that links to this one.
+        Second member of list (if any) is page that links to the first.
+        Etc.
+        """
+        return list(self.via_iter())
+
+    def via_iter(self):
+        """Yield locators this locator was discovered via.
+
+        First member of list (if any) is a page that links to this one.
+        Second member of list (if any) is page that links to the first.
+        Etc.
+        """
+        locator = self
+        while locator.via:
+            yield locator.via
+            locator = locator.via
 
 
 class LocatorImage(models.Model):
@@ -249,8 +278,11 @@ class Note(models.Model):
     class Meta:
         ordering = ['-published', '-created']
 
-    def add_subject(self, url, **kwargs):
+    def add_subject(self, url, via_url=None, **kwargs):
         """Add a subject locator."""
+        if via_url:
+            via, is_new = Locator.objects.get_or_create(url=via_url)
+            kwargs['via'] =  via
         locator, is_new = Locator.objects.get_or_create(url=url, defaults=kwargs)
         NoteSubject.objects.get_or_create(note=self, locator=locator, defaults={
             'sequence': 1 + len(self.subjects.all()),
@@ -296,11 +328,12 @@ class Note(models.Model):
         (
             (?:
                 \s*
+                (?: \b via \s+ )?
                 https?://
                 [\w.-]+(?: :\d+)?
                 (?: /\S* )?
             |
-                (\s+ | ^)
+                (?:\s+ | ^)
                 \# \w+
             )+
         )
@@ -310,17 +343,29 @@ class Note(models.Model):
     def extract_subject(self):
         """Anlyse the text of the note for URLs of subject(s) of the note."""
         m = Note.subject_re.search(self.text)
+        prev_locator = None
+        next_uri_is_via = False
         if m:
-            things, self.text = m.group(1).split(), self.text[:m.start(0)]
+            things, self.text = m.group(1).split(), self.text[:m.start(0)].rstrip()
             for url in things:
                 if url.startswith('#'):
                     tag = Tag.objects.get_tag(url[1:])
                     if tag not in self.tags.all():
                         self.tags.add(tag)
+                elif url == 'via':
+                    next_uri_is_via = True
                 else:
                     if '/' not in url[8:]:
                         url += '/'
-                    self.add_subject(url)
+                    if next_uri_is_via:
+                        locator, _ = Locator.objects.get_or_create(url=url)
+                        prev_locator.via = locator
+                        prev_locator.save()
+                        NoteSubject.objects.filter(note=self, locator=locator).delete()
+                        prev_locator = locator
+                        next_uri_is_via = False
+                    else:
+                        prev_locator = self.add_subject(url)
             return things
 
 
