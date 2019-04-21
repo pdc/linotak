@@ -346,6 +346,8 @@ class Note(models.Model):
     def extract_subject(self):
         """Anlyse the text of the note for URLs of subject(s) of the note."""
         m = Note.subject_re.search(self.text)
+        excess_urls = set(x.url for x in self.subjects.all())  # Will be reduced to just locators NOT mentioned in text.
+        excess_tags = set(x.name for x in self.tags.all())  # Will be reducted to just tags NOT mentioned in text
         prev_locator = None
         next_uri_is_via = False
         if m:
@@ -355,6 +357,7 @@ class Note(models.Model):
                     tag = Tag.objects.get_tag(url[1:])
                     if tag not in self.tags.all():
                         self.tags.add(tag)
+                    excess_tags.discard(tag.name)
                 elif url == 'via':
                     next_uri_is_via = True
                 else:
@@ -369,6 +372,11 @@ class Note(models.Model):
                         next_uri_is_via = False
                     else:
                         prev_locator = self.add_subject(url)
+                    excess_urls.discard(url)
+            if excess_urls:
+                NoteSubject.objects.filter(note=self, locator__url__in=excess_urls).delete()
+            if excess_tags:
+                self.tags.filter(name__in=excess_tags).delete()
             return things
 
 

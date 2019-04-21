@@ -144,11 +144,27 @@ class TestNoteExtractSubjects(TestCase):
         # When editing to add ‘via’ between the URLs
         note.text = 'Hoo https://example.com/1 via https://example.com/2'
         note.save()
-        result = note.extract_subject()
+        note.extract_subject()
 
         # Then we have 1 subject and it has a "via" link.
         self.assertEqual([x.url for x in note.subjects.all()], ['https://example.com/1'])
         self.assertEqual(note.subjects.all()[0].via.url, 'https://example.com/2')
+
+    def test_deletes_subjects_if_removed_from_text(self):
+        # Given a note originally created with 2 URLs mentionedp:
+        note = NoteFactory.create(subjects=[
+            LocatorFactory.create(url='https://example.com/1'),
+            LocatorFactory.create(url='https://example.com/2')
+        ])
+
+        # When editing to remove one URL:
+        note.text = 'Lolwut https://example.com/2 https://example.com/3'
+        note.save()
+        note.extract_subject()
+
+        # Then we have 1 URL
+        self.assertEqual([x.url for x in note.subjects.all()], ['https://example.com/2', 'https://example.com/3'])
+        self.assertFalse(note.subjects.all()[0].via)
 
     def test_returns_false_if_no_urls(self):
         note = NoteFactory.create(text='Banana frappé')
@@ -178,6 +194,15 @@ class TestNoteExtractSubjects(TestCase):
         self.assertTrue(result)
         self.assertEqual(note.text, '')
         self.assertEqual({x.name for x in note.tags.all()}, {'tokyocameraclub', 'japan', 'torii'})
+
+    def test_deletes_unwanted_tags(self):
+        note = NoteFactory.create(tags=['bimble', 'unwanted'], text='Lol #wimble #bimble')
+
+        result = note.extract_subject()
+
+        self.assertTrue(result)
+        self.assertEqual(note.text, 'Lol')
+        self.assertEqual({x.name for x in note.tags.all()}, {'wimble', 'bimble'})
 
 
 class TestNoteTextWithLinks(TestCase):
@@ -210,7 +235,6 @@ class TestNoteTextWithLinks(TestCase):
         self.assertEqual(
             note.text_with_links(),
             'Hello, world\n\nhttps://example.com/1\n via https://example.com/2\n via https://example.com/3')
-
 
 
 class TestLocatorFetchPageUpdate(TransactionTestCase):
