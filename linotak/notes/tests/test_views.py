@@ -164,17 +164,7 @@ class TestNoteUpdateView(TestCase):
         r = self.client.post('/new', {
             'series': str(self.series.pk),  # From intitial
             'author': str(self.author.pk),
-            'text': 'NOTE TEXT',
-            'subj-TOTAL_FORMS': '1',
-            'subj-INITIAL_FORMS': '0',
-            'subj-MIN_NUM_FORMS': '0',
-            'subj-MAX_NUM_FORMS': '1000',
-            'subj-0-url': 'https://example.com/NOTE-URL',
-            'subj-0-title': '',
-            'subj-0-text': '',
-            'subj-0-published': '',
-            'subj-0-ORDER': '',
-            'subj-0-id': '',
+            'text': 'NOTE TEXT https://example.com/NOTE-URL',
         }, HTTP_HOST='eg.example.com', follow=True)
 
         self.assertFalse('form' in r.context and r.context['form'].errors)

@@ -1,115 +1,69 @@
 """Forms for use in the notes app."""
 
-from django.forms import (
-    Form, ModelForm, formset_factory,
-    CharField, DateTimeField, URLField,
-    HiddenInput, Textarea,
-)
+from django.forms import Form, CharField, ModelChoiceField, HiddenInput, Textarea
 
-from .models import Note, Locator, NoteSubject
+from .models import Person, Series, Note
 
 
-class NoteForm(ModelForm):
-    """Form for creating or editing a note."""
+class NoteForm(Form):
+    """Form for creating or editing a note.
 
-    class Meta:
-        model = Note
-        fields = ['text', 'series', 'author']
+    Not using modelform because we munge the text field.
+    """
 
-        widgets = {
-            'text': Textarea(attrs={'cols': 80, 'rows': 3}),
-            'series': HiddenInput(),
-        }
+    series = ModelChoiceField(
+        queryset=Series.objects.all(),
+        widget=HiddenInput,
+    )
+    text = CharField(
+        required=True,
+        widget=Textarea(attrs={'cols': 80, 'rows': 5}),
+    )
+    author = ModelChoiceField(
+        required=True,
+        queryset=Person.objects.none(),
+    )
 
-    def __init__(self, login, **kwargs):
-        # Want to cnstrain author choices to editors of series of note.
+    def __init__(self, login, initial=None, instance=None, **kwargs):
+        # Want to constrain author choices to editors of series of note.
         # Must have series in the initial data or else.
-        initial = kwargs.get('initial')
-        series = initial and initial.get('series')
-        if series:
-            queryset = series.editors.filter(login=login)
-            if not initial.get('author'):
-                initial['author'] = queryset[0]
+        series = instance and instance.series or initial and initial.get('series')
+        if not series:
+            raise ValueError('must specify series or supply instance with series')
 
-        super().__init__(**kwargs)
+        if instance:
+            self.instance = instance
+            object_data = {
+                'text': instance.text_with_links(),  # Pull URLs and tags back in to the text.
+                'author': instance.author,
+            }
+        else:
+            self.instance = Note(series=series)
+            object_data = {
+                'text': '',
+                'author': None,
+            }
+        if initial:
+            object_data.update(initial)
+        object_data['series'] = series
+
+        queryset = series.editors.filter(login=login)
+        if not object_data.get('author'):
+            object_data['author'] = queryset[0]
+
+        super().__init__(initial=object_data, **kwargs)
 
         if series:
             self.fields['author'].queryset = queryset
 
-        self.subjects_formset = LocatorFormset(
-            prefix='subj',
-            data=kwargs.get('data'),
-            initial=[
-                {'url': x.url, 'title': x.title, 'text': x.text, 'published': x.published}
-                for x in self.instance.subjects.order_by('notesubject__sequence')
-            ] if self.instance and self.instance.pk else [],
-        )
-
-    def clean(self):
-        """Validate the subjects as well."""
-        self.subjects_formset.clean()
-        return super().clean()
-
-    def is_valid(self):
-        return super().is_valid() and self.subjects_formset.is_valid()
-
     def save(self, **kwargs):
         """Ensure subject locators are copied to the form."""
-        instance = super().save(
-            **kwargs)
+        self.instance.author = self.cleaned_data['author']
+        self.instance.text = self.cleaned_data['text']
+        is_new = not self.instance.pk
+        if is_new:
+            self.instance.save()  # Needed before extract_subject to allow subjects to be added.
+        if self.instance.extract_subject() or is_new:
+            self.instance.save()
+        return self.instance
 
-        subject_forms = (
-            sorted(self.subjects_formset.initial_forms, key=lambda f: int(f.cleaned_data['ORDER']))
-            + [f for f in self.subjects_formset.extra_forms if f.has_changed()])
-        subject_forms = [f for f in subject_forms if not f.cleaned_data['DELETE']]
-        for i, locator in enumerate(x.save(**kwargs) for x in subject_forms):
-            arc, is_new = NoteSubject.objects.get_or_create(note=instance, locator=locator, defaults={'sequence': i})
-            if not is_new and arc.sequence != i:
-                arc.sequence = i
-                arc.save()
-        if instance.extract_subject():
-            instance.save()
-        return instance
-
-
-class LocatorForm(Form):
-    url = URLField(label='URL', max_length=Locator._meta.get_field('url').max_length)
-    title = CharField(label='Title (optional)', required=False, max_length=Locator._meta.get_field('title').max_length)
-    text = CharField(label='Text (optional)', required=False, widget=Textarea)
-    published = DateTimeField(label='Published (if known)', required=False)
-
-    def __init__(self, data=None, instance=None, **kwargs):
-        self.instance = instance
-        super().__init__(data, **kwargs)
-
-    def save(self):
-        if self.errors:
-            raise ValueError("The locator could not be created/changed because the data didn't validate.")
-        defaults = {
-            'title': self.cleaned_data['title'],
-            'text': self.cleaned_data['text'],
-            'published': self.cleaned_data['published'],
-        }
-        locator, is_new = Locator.objects.get_or_create(url=self.cleaned_data['url'], defaults=defaults)
-        if not is_new:
-            dirty = False
-            for k, v in defaults.items():
-                if v:
-                    setattr(locator, k, v)
-                    dirty = True
-            if dirty:
-                locator.save()
-        return locator
-
-    @classmethod
-    def initial_from_instance(cls, locator):
-        """Get a suitable value for initial argument to constructor from this Locator instance."""
-        return {
-            'url': locator.url,
-            'title': locator.title,
-            'text': locator.text,
-            'published': locator.published,
-        }
-
-
-LocatorFormset = formset_factory(LocatorForm, extra=0, can_order=True, can_delete=True)
