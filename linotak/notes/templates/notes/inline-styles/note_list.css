@@ -1,3 +1,9 @@
+
+.drafts-link-bar {
+    width: 100%;
+    height: 30px;
+}
+
 .drafts-link {
     margin: 0 10px 5px;
     font-size: 13px;

@@ -38,7 +38,8 @@
         {% endblock %}
 
         <footer>
-            <a href="{% url 'about:page' name='privacy' %}" class="link">Privacy policy</a>
+            <a href="{% url 'about:index' %}" class="link">About {{ series.title }}</a>
+            · <a href="{% url 'about:page' name='privacy' %}" class="link">Privacy policy</a>
         </footer>
 
 

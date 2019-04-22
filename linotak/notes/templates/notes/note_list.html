@@ -21,26 +21,24 @@
 
 {% block content %}
         <header class="note-list-header">
-            <div>
                 <h1>
                     {% if drafts %}DRAFTS{% elif series %}{{ series.title }}{% else %}ooble.uk{% endif %}
                 </h1>
-                {% if can_edit_as %}
-                    {% if drafts %}
-                        <a href="{% note_list_url drafts=False page=1 %}" class="link drafts-link">Show {{ series.title }}</a>
-                    {% else %}
-                        <a href="{% note_list_url drafts=True page=1 %}" class="link drafts-link">Show drafts</a>
-                    {% endif %}
-                {% endif %}
+            <div class="action-bar">
+                <a href="{% url 'about:index' %}" class="link action-link">About</a>
+        {% if can_edit_as %}
+                {% for person in can_edit_as %}
+                <a href="{% note_list_url 'new' %}" class="action-btn" title="Create a new note as {{ person.native_name }}">+</a>
+                {% endfor %}
+        {% endif %}
             </div>
-                <div class="action-bar">
-                    <a href="{% url 'about:index' %}" class="link action-link">About</a>
-            {% if can_edit_as %}
-                    {% for person in can_edit_as %}
-                    <a href="{% note_list_url 'new' %}" class="action-btn" title="Create a new note as {{ person.native_name }}">Create</a>
-                    {% endfor %}
-            {% endif %}
-                </div>
+            <div class="drafts-link-bar">
+        {% if drafts %}
+                    <a href="{% note_list_url drafts=False page=1 %}" class="link drafts-link">Show {{ series.title }}</a>
+        {% elif can_edit_as %}
+                    <a href="{% note_list_url drafts=True page=1 %}" class="link drafts-link">Show drafts</a>
+        {% endif %}
+            </div>
         </header>
 
         {% if series.desc %}

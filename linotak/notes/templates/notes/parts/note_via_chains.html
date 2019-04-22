@@ -2,6 +2,6 @@
                     {% for locator in note.subjects.all %}
                         {% if locator.via %}
                             <p class="note-via-chain">({% for via in locator.via_chain %}{% if forloop.first %}Via{% else %} via{% endif %}
-                                <a href="{{ via.url }}">{% firstof via.title via.author.native_name via.url %}</a>{% endfor %})</p>
+                                <a href="{{ via.url }}" class="link">{% firstof via.title via.author.native_name via.url %}</a>{% endfor %})</p>
                         {% endif %}
                     {% endfor %}
