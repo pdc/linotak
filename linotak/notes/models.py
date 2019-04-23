@@ -169,8 +169,18 @@ class LocatorImage(models.Model):
 
 
 class Series(models.Model):
+    # Sizes of site (fav)icon recommended for Windows and for Android devices.
+    ICON_SIZES = 16, 32, 48, 128, 192
+
     editors = models.ManyToManyField(  # Links to persons (who have logins) who can create & update notes
         Person,
+    )
+    icon = models.ForeignKey(
+        Image,
+        models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='Optional favicon. Can use transparency. GIF or PNG.'
     )
     name = models.SlugField(
         max_length=63,
@@ -196,6 +206,15 @@ class Series(models.Model):
 
     def get_absolute_url(self):
         return reverse('notes:list', kwargs={'series_name': self.name})
+
+    def icon_representations(self):
+        """Return sequence if image representations for use as favicons."""
+        if self.icon:
+            return [
+                r
+                for r in (self.icon.find_square_representation(s) for s in Series.ICON_SIZES)
+                if r
+            ]
 
 
 class TagManager(models.Manager):

@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from ...matchers_for_mocks import DateTimeTimestampMatcher
 from ...images.models import Image, wants_data
@@ -25,6 +25,36 @@ class TestFactories(TestCase):
 
         self.assertTrue(note.author.native_name)
         self.assertTrue(note.series.editors.filter(pk=note.author.pk).exists())
+
+
+class TestSeriesIconRepresentations(TestCase):
+
+    def test_without_icon_there_are_no_representations_duh(self):
+        subject = SeriesFactory.create(icon=None)
+
+        result = subject.icon_representations()
+
+        self.assertFalse(result)
+
+    def test_with_large_image_returns_longish_list(self):
+        image = Image.objects.create(data_url='https://example.com/x.png')
+        subject = SeriesFactory.create(icon=image)
+        with patch.object(image, 'find_square_representation') as find_square_representation:
+            find_square_representation.side_effect = lambda size: 'R(%s)' % size
+
+            result = subject.icon_representations()
+
+        self.assertEqual(set(result), {'R(%d)' % x for x in [16, 32, 48, 128, 192]})
+
+    def test_omits_unavailable_representations(self):
+        image = Image.objects.create(data_url='https://example.com/x.png')
+        subject = SeriesFactory.create(icon=image)
+        with patch.object(image, 'find_square_representation') as find_square_representation:
+            find_square_representation.side_effect = lambda size: 'R(%s)' % size if size < 48 else None
+
+            result = subject.icon_representations()
+
+        self.assertEqual(set(result), {'R(%d)' % x for x in [16, 32]})
 
 
 class TestNoteTitle(TestCase):

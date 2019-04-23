@@ -16,6 +16,9 @@
         {% if is_paginated and page_obj.has_previous %}
         <link rel="prev" href="{% note_list_url page=page_obj.previous_page_number %}">
         {% endif %}
+        {% for rep in series.icon_representations %}
+        <link rel="icon" href="{{ rep.content.url }}" sizes="{{ rep.width }}x{{ rep.height }}" type="{{ rep.media_type }}">
+        {% endfor %}
         {% block links %}{% endblock %}
     </head>
     <body>
@@ -41,7 +44,6 @@
             <a href="{% url 'about:index' %}" class="link">About {{ series.title }}</a>
             · <a href="{% url 'about:page' name='privacy' %}" class="link">Privacy policy</a>
         </footer>
-
 
         <link rel=stylesheet href="{% static 'notes/vars.css' %}">
         <link rel=stylesheet href="{% static 'notes/nav.css' %}">

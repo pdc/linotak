@@ -35,6 +35,13 @@ class SeriesFactory(factory.django.DjangoModelFactory):
             person = PersonFactory.create()
             self.editors.add(person)
 
+    @factory.post_generation
+    def icon(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            self.icon = extracted
+
 
 class TagFactory(factory.django.DjangoModelFactory):
     class Meta:
