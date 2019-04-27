@@ -42,6 +42,13 @@ class SeriesFactory(factory.django.DjangoModelFactory):
         if extracted:
             self.icon = extracted
 
+    @factory.post_generation
+    def apple_touch_icon(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            self.apple_touch_icon = extracted
+
 
 class TagFactory(factory.django.DjangoModelFactory):
     class Meta:

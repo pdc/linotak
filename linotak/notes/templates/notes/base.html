@@ -17,7 +17,10 @@
         <link rel="prev" href="{% note_list_url page=page_obj.previous_page_number %}">
         {% endif %}
         {% for rep in series.icon_representations %}
-        <link rel="icon" href="{{ rep.content.url }}" sizes="{{ rep.width }}x{{ rep.height }}" type="{{ rep.media_type }}">
+        <link rel="icon" href="{{ rep.content.url }}"{% if not forloop.first %} sizes="{{ rep.width }}x{{ rep.height }}"{% endif %} type="{{ rep.media_type }}">
+        {% endfor %}
+        {% for rep in series.apple_touch_icon_representations %}
+        <link rel="apple-touch-icon" href="{{ rep.content.url }}"{% if not forloop.first %} sizes="{{ rep.width }}x{{ rep.height }}"{% endif %} type="{{ rep.media_type }}">
         {% endfor %}
         {% block links %}{% endblock %}
     </head>

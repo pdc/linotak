@@ -7,7 +7,7 @@ from .models import Person, Profile, Series, Tag, Note, NoteSubject, Locator, Lo
 
 class SeriesAdmin(admin.ModelAdmin):
     list_display = ['name', 'title', 'created', 'modified']
-    raw_id_fields = ['icon']
+    raw_id_fields = ['icon', 'apple_touch_icon']
 
 
 class TagAdmin(admin.ModelAdmin):

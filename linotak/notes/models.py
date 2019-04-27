@@ -170,7 +170,8 @@ class LocatorImage(models.Model):
 
 class Series(models.Model):
     # Sizes of site (fav)icon recommended for Windows and for Android devices.
-    ICON_SIZES = 16, 32, 48, 128, 192
+    ICON_SIZES = 16, 32, 48, 64, 128, 192
+    APPLE_TOUCH_ICON_SIZES = 120, 180, 152, 167
 
     editors = models.ManyToManyField(  # Links to persons (who have logins) who can create & update notes
         Person,
@@ -180,7 +181,16 @@ class Series(models.Model):
         models.SET_NULL,
         null=True,
         blank=True,
-        help_text='Optional favicon. Can use transparency. GIF or PNG.'
+        help_text='Optional favicon. Can use transparency. GIF or PNG.',
+    )
+    apple_touch_icon = models.ForeignKey(
+        Image,
+        models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='apple_touch_series_set',
+        related_query_name='apple_touch_series',
+        help_text='Optional apple-touch-icon. Not transparent.',
     )
     name = models.SlugField(
         max_length=63,
@@ -209,12 +219,21 @@ class Series(models.Model):
 
     def icon_representations(self):
         """Return sequence if image representations for use as favicons."""
-        if self.icon:
-            return [
-                r
-                for r in (self.icon.find_square_representation(s) for s in Series.ICON_SIZES)
-                if r
-            ]
+        return icon_representations(self.icon, self.ICON_SIZES)
+
+    def apple_touch_icon_representations(self):
+        """Return sequence if image representations for use as favicons."""
+        return icon_representations(self.apple_touch_icon, self.APPLE_TOUCH_ICON_SIZES)
+
+
+def icon_representations(image, sizes):
+    """Return list of representations of this icon, or None."""
+    if image:
+        return [
+            rep
+            for rep in (image.find_square_representation(size) for size in sizes)
+            if rep
+        ]
 
 
 class TagManager(models.Manager):
