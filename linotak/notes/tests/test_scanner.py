@@ -25,7 +25,7 @@ class TestLinksMixin(ScanMixin, TestCase):
 
         self.assertFalse(stuff)
 
-    def test_grabs_links(self):
+    def test_grabs_links_in_html(self):
         stuff = self.scan("""
             <head>
                 <link rel=webmention href="https://webmention.io/indiewebcamp/webmention">

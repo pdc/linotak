@@ -9,7 +9,7 @@ from unittest.mock import patch
 from ...images.models import Image
 from ..models import Locator, LocatorImage
 from ..updating import fetch_page_update_locator, update_locator_with_stuff
-from ..scanner import Title, HCard, HEntry, Img
+from ..scanner import Title, HCard, HEntry, Img, Link
 from .. import updating
 
 
@@ -66,6 +66,31 @@ class TestFetchPageUpdateLocator(TestCase):
 
             self.assertFalse(result)
             self.assertFalse(cls.called)
+
+
+class TestFetchPageLinks(TestCase):
+
+    @httpretty.activate(allow_net_connect=False)
+    def test_returns_links_as_stuff(self):
+        locator = Locator.objects.create(url='https://example.com/1')
+        with patch.object(updating, 'PageScanner') as cls, patch.object(updating, 'update_locator_with_stuff') as mock_update:
+            page_scanner = cls.return_value
+            httpretty.register_uri(
+                httpretty.GET, 'https://example.com/1',
+                adding_headers={
+                    'Link': '</test/1/webmention>; rel=webmention, </2>; rel=next, </>; rel="top"; hreflang="en"'
+                }
+            )
+            page_scanner.stuff = ['**STUFF**']
+
+            result = fetch_page_update_locator(locator, if_not_scanned_since=None)
+
+            mock_update.assert_called_once_with(locator, [
+                Link('webmention', 'https://example.com/test/1/webmention'),
+                Link('next', 'https://example.com/2'),
+                Link('top', 'https://example.com/'),
+                '**STUFF**',
+            ])
 
 
 class TestUpdateLocatorWithStuff(TestCase):

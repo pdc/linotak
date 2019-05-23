@@ -1,13 +1,14 @@
 """ROutines for updating information about external resources."""
 
-import requests
-
 from django.db import transaction
 from django.utils import timezone
+import re
+import requests
+from urllib.parse import urljoin
 
 from ..images.models import Image
 from .models import LocatorImage
-from .scanner import PageScanner, Title, HEntry, Img
+from .scanner import PageScanner, Title, HEntry, Img, Link
 
 
 @transaction.atomic
@@ -30,15 +31,42 @@ def fetch_page_update_locator(locator, if_not_scanned_since):
     # Setting it early should help prevent simultanous processing of the same page.
 
     with requests.get(locator.url, stream=True) as r:
+        stuff = parse_link_header(locator.url, r.headers.get('Link', ''))
         scanner = PageScanner(locator.url)
         for chunk in r.iter_content(10_000, decode_unicode=True):
             scanner.feed(chunk)
         scanner.close()
-        stuff = scanner.stuff
+        stuff += scanner.stuff
 
     update_locator_with_stuff(locator, stuff)
     locator.save()
     return True
+
+
+COMMA = re.compile(r'\s*,\s*')
+SEMICOLON = re.compile(r'\s*;\s*')
+EQUALS = re.compile(r'\s*=\s*')
+LINK_HREF = re.compile(r'^<(.*)>$')
+QUOTED = re.compile(r'^"(.*)"$')
+
+
+def parse_link_header(base_url, comma_separated):
+    """Given a base URL and a Link header value, return list of Link instancecs."""
+    links = []
+    for link_spec in COMMA.split(comma_separated.strip()):
+        if not link_spec:
+            continue
+        href_part, *parts = SEMICOLON.split(link_spec)
+        href = urljoin(base_url, LINK_HREF.sub(r'\1', href_part))
+        for part in parts:
+            prop, val = EQUALS.split(part, 1)
+            if prop == 'rel':
+                rel = QUOTED.sub(r'\1', val)
+                break
+        else:
+            rel = None
+        links.append(Link(rel, href))
+    return links
 
 
 def update_locator_with_stuff(locator, stuff):
