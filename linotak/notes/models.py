@@ -170,7 +170,7 @@ class LocatorImage(models.Model):
 
 class Series(models.Model):
     # Sizes of site (fav)icon recommended for Windows and for Android devices.
-    ICON_SIZES = 16, 32, 48, 64, 128, 192
+    ICON_SIZES = 16, 32, 48, 64, 192
     APPLE_TOUCH_ICON_SIZES = 120, 180, 152, 167
 
     editors = models.ManyToManyField(  # Links to persons (who have logins) who can create & update notes

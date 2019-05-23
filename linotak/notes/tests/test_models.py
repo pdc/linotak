@@ -44,7 +44,7 @@ class TestSeriesIconRepresentations(TestCase):
 
             result = subject.icon_representations()
 
-        self.assertEqual(set(result), {'R(%d)' % x for x in [16, 32, 48, 64, 128, 192]})
+        self.assertEqual(set(result), {'R(%d)' % x for x in [16, 32, 48, 64, 192]})
 
     def test_also_does_apple_touch_icons(self):
         image = Image.objects.create(data_url='https://example.com/x.png')
