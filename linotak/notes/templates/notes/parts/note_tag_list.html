@@ -1,0 +1,12 @@
+{% load tag_filters %}
+{% load note_lists %}
+
+            {% if note.tags %}
+            <ul class="tag-list">
+                {% for tag in note.tags.all %}
+                <li class="tag">
+                    <a class="tag-link" href="{% note_list_url tag_filter=tag_filter|with_included:tag page=1 %}">{{ tag.label }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}

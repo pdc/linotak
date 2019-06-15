@@ -1,0 +1,17 @@
+
+.nav {
+    margin: 10px;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+}
+
+.nav-link {
+    position: relative;
+    padding: 0 10px 0 5px;
+    min-width: 3em;
+
+    text-align: center;
+    text-decoration: none;
+    line-height: 2;
+}

@@ -1,0 +1,38 @@
+{% load image_representations %}
+
+                    {% if note.subjects.count %}
+                    <ul class="loc-list note-subjects">
+                        {% for locator in note.subjects.all %}
+                        <li class="note-subject-item loc-item loc-p{{ puff }}{% if forloop.first %}A{% else %}B{% endif %}">
+                            <a class="note-subject loc" href="{{ locator.url }}">
+                                {% if puff >= 4 and forloop.first %}
+                                    {{ locator.main_image|with_class:"loc-img"|representation:"800x600 min 2:3 max 16:9" }}
+                                {% elif puff >= 4 or puff >= 3 and forloop.first %}
+                                    {{ locator.main_image|with_class:"loc-img"|square_representation:80 }}
+                                {% endif %}
+                                <div class="loc-text">
+                                    {% if locator.title %}
+                                    <span class="loc-hdg">
+                                        <b class="loc-title">{{ locator.title }}</b>
+                                    </span>
+                                    {% elif locator.author %}
+                                    <span class="loc-hdg">
+                                        <b class="loc-title">{{ locator.author.native_name }}</b>
+                                        {% for profile in locator.author.profiles.all|slice:":1" %}
+                                            <small class="loc-profile">{{ profile.label }}</small>
+                                        {% endfor %}
+                                    </span>
+                                    {% endif %}
+                                    {% if locator.text %}
+                                    <span class="loc-quote">
+                                        {{ locator.text }}</span>
+                                    {% endif %}
+                                    {% if not locator.text and not locator.title %}
+                                    <span class="loc-url">{{ locator.url }}</span>
+                                    {% endif %}
+                                </div>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}

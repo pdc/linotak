@@ -1,0 +1,40 @@
+{% extends 'notes/base.html' %}
+{% load note_lists %}
+
+{% block title %}#{{ note.pk }} – {{ series.title }}{% endblock %}
+
+{% block styles %}
+        <style>
+            {% include 'notes/inline-styles/note_detail.css' %}
+            {% include 'notes/inline-styles/nav.css' %}
+            {% include 'notes/inline-styles/subject_list.css' %}
+            {% include 'notes/inline-styles/tag_list.css' %}
+        </style>
+{% endblock %}
+
+{% block links %}
+        <link rel=canonical href="{% note_url tag_filter=False with_host=True %}">
+{% endblock %}
+
+{% block content %}
+        <header class="note-detail-header">
+            <nav class="nav">
+                <a class="nav-link nav-link-back" href="{% note_list_url %}">{{ series.title }}</a>
+            </nav>
+            <h1>{{ note.id }}</h1>
+        </header>
+
+        <article class="h-entry note-detail p{{ puff }}">
+            <p class="e-content p-name note-text">{{ note.text }}</p>
+            {% include 'notes/parts/note_via_chains.html' %}
+            {% include 'notes/parts/note_subject_list.html' %}
+            <small class="note-metadata">
+                {% include 'notes/parts/note_metadata.html' %}
+                {% if user.is_staff %}
+                <a class="link" href="{% url 'admin:notes_note_change' object_id=note.pk %}" title="Edit this note in the Admin app">Admin</a>
+                {% endif %}
+                {% include 'notes/parts/note_tag_list.html' %}
+            </small>
+        </article>
+
+{% endblock %}

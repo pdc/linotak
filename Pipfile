@@ -1,0 +1,20 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django = "*"
+django-environ = "*"
+celery = "*"
+httpretty = "*"
+requests = "*"
+"psycopg2" = "*"
+markdown = "*"
+
+[dev-packages]
+tblib = "*"
+factory-boy = "*"
+
+[requires]
+python_version = "3.6"

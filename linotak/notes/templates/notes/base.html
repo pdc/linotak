@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+{% load static %}
+{% load note_lists %}
+<html lang="en">
+    <head>
+        <meta charset=UTF-8>
+        <title>{% block title %}Notes{% endblock %}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            {% include 'notes/inline-styles/base.css' %}
+        </style>
+        {% block styles %}{% endblock %}
+        {% if is_paginated and page_obj.has_next %}
+        <link rel="next" href="{% note_list_url page=page_obj.next_page_number %}">
+        {% endif %}
+        {% if is_paginated and page_obj.has_previous %}
+        <link rel="prev" href="{% note_list_url page=page_obj.previous_page_number %}">
+        {% endif %}
+        {% for rep in series.icon_representations %}
+        <link rel="icon" href="{{ rep.content.url }}"{% if not forloop.first %} sizes="{{ rep.width }}x{{ rep.height }}"{% endif %} type="{{ rep.media_type }}">
+        {% endfor %}
+        {% for rep in series.apple_touch_icon_representations %}
+        <link rel="apple-touch-icon" href="{{ rep.content.url }}"{% if not forloop.first %} sizes="{{ rep.width }}x{{ rep.height }}"{% endif %} type="{{ rep.media_type }}">
+        {% endfor %}
+        {% block links %}{% endblock %}
+    </head>
+    <body>
+        <script>
+            (function (hour) {
+                if (hour < 6 || 18 <= hour) {
+                    document.body.classList.add('dark');
+                }
+            })(new Date().getHours());
+        </script>
+        {% if messages %}
+        <ul class="message-list">
+            {% for message in messages %}
+            <li class="message{% if message.tags %} {{ message.tags }}{% endif %}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+
+        <footer>
+            <a href="{% url 'about:index' %}" class="link">About {{ series.title }}</a>
+            · <a href="{% url 'about:page' name='privacy' %}" class="link">Privacy policy</a>
+        </footer>
+
+        <link rel=stylesheet href="{% static 'notes/vars.css' %}">
+        <link rel=stylesheet href="{% static 'notes/nav.css' %}">
+        <link rel=stylesheet href="{% static 'notes/notes.css' %}">
+        <link href="https://fonts.googleapis.com/css?family=Abril+Fatface|Fira+Sans:400,500" rel="stylesheet">
+
+    </body>
+</html>
+

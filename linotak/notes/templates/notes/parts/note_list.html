@@ -1,0 +1,23 @@
+{% load note_lists %}
+
+        <div class="notes-wrapper">
+            {% if is_paginated and page_obj.has_previous %}
+            <div class="note-list-pagination-prev nav">
+                <a class="nav-link nav-link-back" href="{% note_list_url page=page_obj.previous_page_number %}">Newer</a>
+            </div>
+            {% endif %}
+
+            <ul class="note-list">
+                {% for note in note_list %}
+                    {% with puff=3 %}
+                        {% include 'notes/parts/note_item.html' %}
+                    {% endwith %}
+                {% endfor %}
+            </ul>
+
+            {% if is_paginated and page_obj.has_next %}
+            <div class="note-list-pagination-next nav">
+                <a class="nav-link nav-link-fwd" href="{% note_list_url page=page_obj.next_page_number %}">Older</a>
+            </div>
+            {% endif %}
+        </div>

@@ -1,0 +1,133 @@
+
+.drafts-link-bar {
+    width: 100%;
+    height: 30px;
+}
+
+.drafts-link {
+    margin: 0 10px 5px;
+    font-size: 13px;
+}
+
+.action-bar {
+    padding: 0 10px;
+
+    display: flex;
+    flex-flow: row wrap;
+}
+
+.action-btn {
+    padding: 0 10px;
+    line-height: 2;
+
+    text-decoration: none;
+    border-width: 2px;
+    border-style: groove;
+}
+
+.action-link {
+    padding: 2px 12px;
+    line-height: 2;
+
+    text-decoration: none;
+}
+
+.series-desc {
+    margin: 10px;
+}
+
+.filter {
+    margin: 10px 0;
+    display: flex;
+    flex-flow: row wrap;
+    align-items: baseline;
+}
+
+.filter-wrapper {
+    margin: 5px 10px 0;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: baseline;
+}
+
+.filter-tag-heading {
+
+}
+
+.filter-tag-list {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-flow: row wrap;
+}
+
+.filter-tag {
+    list-style-type: none;
+    margin: 5px 0 0 10px;
+    padding: 0;
+}
+
+.filter-tag-link:hover,
+.filter-tag-link:active {
+    text-decoration: line-through wavy;
+}
+
+.filter-hint {
+    margin: 5px 10px 5px;
+    font-size: 13px;
+}
+
+
+
+@media (min-width: 640px) {
+    .notes-wrapper {
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .note-list-pagination-next {
+        align-self: flex-end;
+    }
+}
+
+.note-list {
+    margin: 0;
+    padding: 0;
+}
+
+@media (min-width: 640px) and (max-width: 1280px) {
+    .note-list {
+        width: 640px;
+    }
+}
+
+@media (min-width: 1280px) {
+    .note-list {
+        width: 640px;
+    }
+}
+
+.note {
+    display: block;
+    margin: 0;
+    padding: 0 0 25px;
+}
+
+.note-text {
+    margin: 10px 10px 5px;
+}
+
+.note-via-chain {
+    margin: 5px 10px;
+    font-size: 13px;
+}
+
+.note-metadata {
+    display: block;
+    margin: 5px 10px;
+    font-size: 13px;
+    line-height: 1.25;
+}
+

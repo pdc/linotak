@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+{% load note_lists %}
+<html lang="en">
+    <head>
+        <meta charset=UTF-8>
+        <title>{{ page.title }} – {{ series.title|default:"Ooble" }}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            {% include 'notes/inline-styles/nav.css' %}
+            {% include 'about/inline-styles/about.css' %}
+        </style>
+    </head>
+    <body>
+        <script>
+            (function (hour) {
+                if (hour < 6 || 18 <= hour) {
+                    document.body.classList.add('dark');
+                }
+            })(new Date().getHours());
+        </script>
+        <nav class="nav">
+            {% if page.name %}
+            <a href="{% url 'about:index' %}" class="nav-link nav-link-back">About {{ series.title|default:"Ooble" }}</a>
+            {% elif series  %}
+            <a href="{% note_list_url %}" class="nav-link nav-link-back">{{ series.title }}</a>
+            {% endif %}
+        </nav>
+        <main>
+            {{ page.formatted }}
+        </main>
+        <footer>
+            <ul class="ftr-links">
+                {% if page.name != 'privacy' %}
+                <li class="ftr-item">
+                    <a href="{% url 'about:page' name='privacy' %}">Privacy policy</a>
+                </li>
+                {% endif %}
+                <li class="ftr-item">
+                    <a href="https://github.com/pdc/linotak">GitHub repo</a>
+                </li>
+            </ul>
+        </footer>
+        <link href="https://fonts.googleapis.com/css?family=Playfair+Display:900i|Fira+Sans:300,600" rel="stylesheet">
+        <link rel=stylesheet href="{% static 'notes/vars.css' %}">
+        <link rel=stylesheet href="{% static 'notes/nav.css' %}">
+        <link rel="stylesheet" href="{% static 'about/base.css' %}">
+    </body>
+</html>

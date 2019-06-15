@@ -1,0 +1,81 @@
+{% extends 'notes/base.html' %}
+{% load tag_filters %}
+{% load note_lists %}
+
+{% block title %}{{ series.title }}{% endblock %}
+
+{% block styles %}
+        <style>
+            {% include 'notes/inline-styles/note_list.css' %}
+            {% include 'notes/inline-styles/nav.css' %}
+            {% include 'notes/inline-styles/subject_list.css' %}
+            {% include 'notes/inline-styles/tag_list.css' %}
+        </style>
+{% endblock %}
+
+{% block links %}
+        {% if not drafts %}
+        <link rel="alternate" type="application/atom+xml" href="{% note_list_url 'feed' %}">
+        {% endif %}
+{% endblock %}
+
+{% block content %}
+        <header class="note-list-header">
+                <h1>
+                    {% if drafts %}DRAFTS{% elif series %}{{ series.title }}{% else %}ooble.uk{% endif %}
+                </h1>
+            <div class="action-bar">
+                <a href="{% url 'about:index' %}" class="link action-link">About</a>
+        {% if can_edit_as %}
+                {% for person in can_edit_as %}
+                <a href="{% note_list_url 'new' %}" class="action-btn" title="Create a new note as {{ person.native_name }}">+</a>
+                {% endfor %}
+        {% endif %}
+            </div>
+            <div class="drafts-link-bar">
+        {% if drafts %}
+                    <a href="{% note_list_url drafts=False page=1 %}" class="link drafts-link">Show {{ series.title }}</a>
+        {% elif can_edit_as %}
+                    <a href="{% note_list_url drafts=True page=1 %}" class="link drafts-link">Show drafts</a>
+        {% endif %}
+            </div>
+        </header>
+
+        {% if series.desc %}
+            <p class="series-desc">{{ series.desc }}</p>
+        {% endif %}
+
+        {% if tag_filter %}
+            <div class="filter">
+                {% if tag_filter.included %}
+                <div class="filter-wrapper filter-included">
+                    <div class="filter-tag-heading">Showing posts tagged</div>
+                    <ul class="filter-tag-list">
+                        {% for tag_name in tag_filter.included_sorted %}
+                        <li class="filter-tag">
+                            <a href="{% note_list_url tag_filter=tag_filter|without_included:tag_name page=1 %}" class="link filter-tag-link" >{{ tag_name }}</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% if tag_filter.excluded %}
+                <div class="filter-wrapper filter-excluded">
+                    <div class="filter-tag-heading">
+                        {% if tag_filter.included %}but not tagged{% else %}Showing notes NOT tagged{% endif %}</div>
+                    <ul class="filter-tag-list">
+                        {% for tag_name in tag_filter.excluded_sorted %}
+                        <li class="filter-tag">
+                            <a href="{% note_list_url tag_filter=tag_filter|without_excluded:tag_name page=1 %}" class="link filter-tag-link" >{{ tag_name }}</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                <p class="filter-hint">Click on tags to remove them from the filter.</p>
+            </div>
+        {% endif %}
+
+    {% include 'notes/parts/note_list.html' %}
+
+{% endblock %}

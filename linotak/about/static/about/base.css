@@ -1,0 +1,33 @@
+:root {
+    font-family: "Fira Sans", "Trebuchet MS", sans-serif;
+    color: var(--ink);
+    background-color: var(--paper);
+}
+
+h1 {
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    color: rgba(187, 0, 170, 0.48);
+    color: var(--hdg);
+}
+
+strong {
+    font-weight: 600;
+}
+
+a:link {
+    color: #007FFF;
+    color: var(--link);
+}
+
+a:visited {
+    color: #003366;
+    color: var(--visited);
+}
+
+a:hover,
+a:active {
+    color: #007FFF;
+    color: var(--link);
+    background-color: var(--ui-bg);
+}

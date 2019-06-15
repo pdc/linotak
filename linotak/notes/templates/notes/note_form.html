@@ -1,0 +1,37 @@
+{% extends 'notes/base.html' %}
+
+{% block title %}{% if form.instance.pk %}Edit note{% else %}New note{% endif %}{% endblock %}
+
+{% block styles %}
+        <style>
+            {% include 'notes/inline-styles/form.css' %}
+        </style>
+{% endblock %}
+
+{% block content %}
+
+        {% if form.errors %}
+            <p>Your username and password didn't match. Please try again.</p>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+            <ul class="form-item-list">
+                {{ form.as_ul }}
+            </ul>
+
+            {{ form.subjects_formset.management_form }}
+
+            {% for subform in form.subjects_formset %}
+            <ul class="form-item-list">
+                {{ subform.as_ul }}
+            </ul>
+            {% endfor %}
+
+            <div class="form-action-bar">
+                <input class="form-action" type="submit" value="Save">
+                <input class="form-action" type="submit" name="publish_now" value="Publish">
+            </div>
+        </form>
+
+{% endblock %}

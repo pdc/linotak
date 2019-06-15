@@ -1,0 +1,37 @@
+
+.note-detail-header {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+    align-items:  center;
+}
+
+.note-detail {
+    margin:  0 auto 40px;
+    max-width: 1440px;
+}
+
+.note-text {
+    margin: 10px;
+    min-width: 220px;
+    max-width: 620px;
+}
+
+.note-via-chain {
+    margin: 5px 10px 10px;
+    font-size: 13px;
+}
+
+@media (max-width: 640px) {
+    .note-detail .loc-img {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+.note-metadata {
+    display: block;
+    margin: 5px 10px;
+    font-size: 13px;
+    line-height: 1.25;
+}

@@ -1,0 +1,43 @@
+{% extends 'notes/base.html' %}
+
+{% block title %}Please log in{% endblock %}
+
+{% block styles %}
+        <style>
+            {% include 'notes/inline-styles/form.css' %}
+        </style>
+{% endblock %}
+
+{% block content %}
+
+        {% if form.errors %}
+            <p>Your username and password didn't match. Please try again.</p>
+        {% endif %}
+
+        {% if next %}
+            {% if user.is_authenticated %}
+                <p>
+                    Your account doesn't have access to this page. To proceed,
+                    please login with an account that has access.
+                </p>
+            {% else %}
+                <p>Please login to see this page.</p>
+            {% endif %}
+        {% endif %}
+
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+
+            <ul class="form-item-list">
+                {{ form.as_ul }}
+            </ul>
+
+            <div class="form-action-bar">
+                <input class="form-action" type="submit" value="Log in">
+            </div>
+        </form>
+
+        <p><a href="{% url 'password_reset' %}">Lost password?</a></p>
+
+{% endblock %}
