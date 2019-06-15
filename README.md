@@ -1,7 +1,7 @@
 Linotak: Link-Note Taker
 ========================
 
-In other words, yet another micro-blogging app! This one powers [pdc.oobke.uk][].
+In other words, yet another micro-blogging app! This one powers [pdc.ooble.uk][].
 
 
 
