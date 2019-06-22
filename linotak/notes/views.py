@@ -106,18 +106,57 @@ class IndexView(ListView):
     template_name = 'notes/index.html'
 
 
+class Link:
+    """Link to another resource to be included on page."""
+
+    def __init__(self, rel, href, media_type=None):
+        self.rel = rel
+        self.href = href
+        self.media_type = media_type
+
+    def to_link_header(self):
+        if self.media_type:
+            return '<%s>; rel=%s; type=%s' % (self.href, self.rel, self.media_type)
+        return '<%s>; rel=%s' % (self.href, self.rel)
+
+    def to_unique(self):
+        if self.media_type:
+            return self.rel, self.href, self.media_type
+        return self.rel, self.href
+
+    def __eq__(self, other):
+        return isinstance(other, Link) and self.to_unique() == other.to_unique()
+
+    def __repr__(self):
+        return 'Link%r' % (self.to_unique(),)
+
+    def __str__(self):
+        return self.to_link_header()
+
+
 class LinksMixin:
     """Mixin to add Link header to response."""
 
     def get_links(self):
-        """Override to add (rel, href) pairs."""
+        """Override to add Link instances."""
         return []
 
     def dispatch(self, request, *args, **kwargs):
         """Called to dispatch a request. Adds pagination links if needed."""
         response = super().dispatch(request, args, kwargs)
-        response['Link'] = ', '.join('<%s>; rel=%s' % (href, rel) for rel, href in self.get_links())
+        response['Link'] = ', '.join(x.to_link_header() for x in self.get_links())
         return response
+
+    def get_context_data(self, **kwargs):
+        """Get context data, and also add links to context.
+
+        Returns a factory function so as to defer until actually needed in template.
+        This is because some get_links methods call get_context_data and
+        we want to avoid mutual recursion!
+        """
+        context = super().get_context_data(**kwargs)
+        context['links'] = lambda: self.get_links()
+        return context
 
 
 class NoteListView(TaggedMixin, SeriesMixin, LinksMixin, ListView):
@@ -139,9 +178,11 @@ class NoteListView(TaggedMixin, SeriesMixin, LinksMixin, ListView):
         page_obj = context.get('page_obj')
         if 'page_obj':
             if page_obj.has_next():
-                self.links.append(('next', note_list_url(context, page=page_obj.next_page_number())))
+                self.links.append(Link('next', note_list_url(context, page=page_obj.next_page_number())))
             if page_obj.has_previous():
-                self.links.append(('prev', note_list_url(context, page=page_obj.previous_page_number())))
+                self.links.append(Link('prev', note_list_url(context, page=page_obj.previous_page_number())))
+        if not self.kwargs.get('drafts'):
+            self.links.append(Link('alternate', note_list_url(context, 'feed'), 'application/atom+xml'))
 
         return context
 

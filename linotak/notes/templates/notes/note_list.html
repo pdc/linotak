@@ -13,12 +13,6 @@
         </style>
 {% endblock %}
 
-{% block links %}
-        {% if not drafts %}
-        <link rel="alternate" type="application/atom+xml" href="{% note_list_url 'feed' %}">
-        {% endif %}
-{% endblock %}
-
 {% block content %}
         <header class="note-list-header">
                 <h1>
