@@ -153,6 +153,19 @@ class TestNoteListUrl(TestCase):
 
         self.assertEqual(result, 'https://zerg.example.org/new')
 
+    def test_can_specify_feed(self):
+        result = note_list_url(
+            {
+                'series': SeriesFactory.create(name='spof'),
+                'tag_filter': TagFilter.parse('-sad'),
+                'drafts': False,
+                'page_obj': MagicMock(number=42)
+            },
+            'feed',
+        )
+
+        self.assertEqual(result, '/tagged/-sad/atom/')
+
 
 @override_settings(NOTES_DOMAIN='example.org')
 class TestNoteUrl(TestCase):

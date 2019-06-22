@@ -26,7 +26,7 @@ def note_list_url(context, view=None, series=None, tag_filter=None, drafts=None,
     if series is None:
         series = context_series
     kwargs = {}
-    if view and view != 'list':
+    if view and view not in ('list', 'feed'):
         path = reverse('notes:%s' % view, kwargs=kwargs)
     else:
         if tag_filter is None:
@@ -37,10 +37,10 @@ def note_list_url(context, view=None, series=None, tag_filter=None, drafts=None,
             page = context.get('page_obj')
         if page and hasattr(page, 'number'):
             page = page.number
-        path = reverse('notes:list', kwargs={
+        path = reverse('notes:%s' % (view or 'list'), kwargs={
             'tags': tag_filter.unparse() if tag_filter else '',
             'drafts': drafts or False,
-            'page': page or 1,
+            'page': (page or 1) if not view or view == 'list' else 1,
         })
     if with_host or series != context_series:
         return 'https://%s.%s%s' % (series.name if hasattr(series, 'name') else series, settings.NOTES_DOMAIN, path)

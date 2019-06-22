@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from ..models import Locator
 from ..tag_filter import TagFilter
-from ..views import NoteListView, NoteDetailView
+from ..views import Link, NoteListView, NoteDetailView
 from .factories import SeriesFactory, PersonFactory, NoteFactory
 
 
@@ -78,13 +78,30 @@ class TestNoteListView(TestCase):
     def test_fitered_by_tag_if_specified(self):
         series = SeriesFactory.create(name='alpha')
         note1 = NoteFactory.create(series=series, tags=['foo', 'bar', 'baz'], published=timezone.now())
-        note2 = NoteFactory.create(series=series, tags=['bar', 'baz'], published=timezone.now())
+        NoteFactory.create(series=series, tags=['bar', 'baz'], published=timezone.now())
         note3 = NoteFactory.create(series=series, tags=['qux', 'foo', 'bar'], published=timezone.now())
 
         r = self.client.get('/tagged/foo+bar/', HTTP_HOST='alpha.example.com')
 
         self.assertEqual(list(r.context['object_list']), [note3, note1])
         self.assertEqual(r.context['tag_filter'], TagFilter(['foo', 'bar']))
+        self.assertIn(Link('alternate', '/tagged/bar+foo/atom/', 'application/atom+xml'), r.context['links']())
+
+    def test_includes_tags_in_atom_link(self):
+        SeriesFactory.create(name='alpha')
+
+        r = self.client.get('/tagged/foo+bar/', HTTP_HOST='alpha.example.com')
+
+        self.assertIn(Link('alternate', '/tagged/bar+foo/atom/', 'application/atom+xml'), r.context['links']())
+
+    def test_omits_atom_link_from_drafts(self):
+        author = PersonFactory.create()
+        SeriesFactory.create(name='bar', editors=[author])
+        self.given_logged_in_as(author)
+
+        r = self.client.get('/drafts/', HTTP_HOST='bar.example.com')
+
+        self.assertNotIn('alternate', {x.rel for x in r.context['links']()})
 
     def given_logged_in_as(self, person):
         self.client.login(username=person.login.username, password='secret')
@@ -158,13 +175,22 @@ class TestNoteListPagination(TestCase):
         r = self.client.get('/', HTTP_HOST='bar.example.com')
 
         self.assertEqual(list(r.context['note_list']), self.notes[:30])
-        self.assertEqual(r['Link'], '</page2/>; rel=next')
+        frags = {x.strip() for x in r['Link'].split(',')}
+        self.assertIn('</page2/>; rel=next', frags)
+        self.assertIn(Link('next', '/page2/'), r.context['links']())
 
     def test_adds_both_links_in_middle(self):
         r = self.client.get('/page2/', HTTP_HOST='bar.example.com')
 
         self.assertEqual(list(r.context['note_list']), self.notes[30:60])
-        self.assertEqual({x.strip() for x in r['Link'].split(',')}, {'</>; rel=prev', '</page3/>; rel=next'})
+        frags = {x.strip() for x in r['Link'].split(',')}
+        self.assertIn('</>; rel=prev', frags)
+        self.assertIn('</page3/>; rel=next', frags)
+
+    def test_omits_page_numebr_from_feed_link(self):
+        r = self.client.get('/page2/', HTTP_HOST='bar.example.com')
+
+        self.assertIn(Link('alternate', '/atom/', 'application/atom+xml'), r.context['links']())
 
 
 @override_settings(NOTES_DOMAIN='example.com', ALLOWED_HOSTS=['.example.com'])
