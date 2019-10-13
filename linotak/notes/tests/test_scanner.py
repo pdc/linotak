@@ -130,7 +130,7 @@ class TestLinksMixin(ScanMixin, TestCase):
 
         self.assertEqual(stuff, [Img('https://jeena.net/avatar.jpg', classes=['u-photo'])])
 
-    def test_img(self):
+    def test_img_2(self):
         stuff = self.scan("""
             <img src="https://example.com/img" width="120" height="60" alt="" />
         """)
