@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'linotak.notes.apps.NotesConfig',
     'linotak.images.apps.ImagesConfig',
     'linotak.about.apps.AboutConfig',
+    'linotak.mentions.apps.MentionsConfig',
 ]
 
 MIDDLEWARE = [
