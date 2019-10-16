@@ -1,8 +1,10 @@
-"""Signals that may be set."""
+"""Signals that may be sent."""
 
-from django.conf import settings
+from django.dispatch import Signal
 
 
-def on_locator_post_save(sender, instance, created, **kwargs):
-    if created and settings.NOTES_FETCH_LOCATORS:
-        instance.queue_fetch()
+# Signal sent when a locator is scanned.
+# Extra parameters --
+#     instance -- the Locator instance in question
+#     stuff -- list of pieces of information about the resource at this location
+post_locator_scanned = Signal(providing_args=["instance", "stuff"])

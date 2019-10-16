@@ -10,6 +10,7 @@ from ...images.models import Image
 from ..models import Locator, LocatorImage
 from ..updating import fetch_page_update_locator, update_locator_with_stuff
 from ..scanner import Title, HCard, HEntry, Img, Link
+from ..signals import post_locator_scanned
 from .. import updating
 
 
@@ -38,7 +39,9 @@ class TestFetchPageUpdateLocator(TestCase):
 
     def assert_requests_data_when(self, locator_scanned, if_not_scanned_since):
         locator = Locator.objects.create(url='https://example.com/1', scanned=locator_scanned)
-        with patch.object(updating, 'PageScanner') as cls, patch.object(updating, 'update_locator_with_stuff') as mock_update:
+        with patch.object(updating, 'PageScanner') as cls,  \
+                patch.object(updating, 'update_locator_with_stuff') as mock_update, \
+                patch.object(post_locator_scanned, 'send') as post_locator_scanned_send:
             page_scanner = cls.return_value
             httpretty.register_uri(
                 httpretty.GET, 'https://example.com/1',
@@ -53,7 +56,9 @@ class TestFetchPageUpdateLocator(TestCase):
             page_scanner.feed.assert_called_with('CONTENT OF PAGE')
             page_scanner.close.assert_called_with()
 
+            post_locator_scanned_send.assert_called_once_with(Locator, locator=locator, stuff=['**STUFF**'])
             mock_update.assert_called_once_with(locator, ['**STUFF**'])
+
             updated = Locator.objects.get(pk=locator.pk)
             self.assertTrue(updated.scanned)
 

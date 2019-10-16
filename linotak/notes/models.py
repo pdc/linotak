@@ -359,11 +359,25 @@ class Note(models.Model):
         ]
         return '\n\n'.join(x for x in parts if x)
 
-    def get_absolute_url(self):
-        return reverse('notes:detail', kwargs={
-            'pk': self.id,
-            'drafts': not self.published,
-        })
+    def get_absolute_url(self, view=None, tag_filter=None, drafts=None, with_host=False):
+        """Return URL for this note.
+
+        Arguments (all optional) --
+            view -- edit' to return URL for editing this node; default 'detail'
+            tag_filter -- TagFilter instance, or None
+            with_host -- add scheme and domain parts
+        """
+        path = reverse(
+            'notes:%s' % (view or 'detail'),
+            kwargs={
+                'pk': self.id,
+                'tags': tag_filter.unparse() if tag_filter else '',
+                'drafts': drafts if drafts is not None else not self.published,
+            }
+        )
+        if with_host:
+            return 'https://%s.%s%s' % (self.series.name, settings.NOTES_DOMAIN, path)
+        return path
 
     subject_re = re.compile(r"""
         (
@@ -433,3 +447,10 @@ class NoteSubject(models.Model):
 
     def __str__(self):
         return self.locator.url
+
+
+def on_locator_post_save(sender, instance, created, **kwargs):
+    """Signal handler for when a locator is saved."""
+    if created and settings.NOTES_FETCH_LOCATORS:
+        instance.queue_fetch()
+

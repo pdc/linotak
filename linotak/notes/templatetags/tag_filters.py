@@ -10,6 +10,7 @@ register = template.Library()
 
 
 def expects_tag_name(func):
+    """Decorator for these filter defintions that apply to a tag."""
     @wraps(func)
     def wrapped_func(value, arg):
         tag_name = arg.name if hasattr(arg, 'name') else arg

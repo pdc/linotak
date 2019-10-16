@@ -6,6 +6,7 @@ from unittest.mock import patch, Mock
 from ...matchers_for_mocks import DateTimeTimestampMatcher
 from ...images.models import Image, wants_data
 from ..models import Locator, LocatorImage, Tag, Note
+from ..tag_filter import TagFilter
 from .. import tasks
 from .factories import NoteFactory, SeriesFactory, LocatorFactory
 
@@ -275,6 +276,31 @@ class TestNoteTextWithLinks(TestCase):
         self.assertEqual(
             note.text_with_links(),
             'Hello, world\n\nhttps://example.com/1\n via https://example.com/2\n via https://example.com/3')
+
+
+class TestNoteAbsoluteUrl(TestCase):
+    # These tests test the URL patterns so they will need amending if the URL patterns change!
+
+    def test_works_without_extra_args(self):
+        note = NoteFactory.create(published=timezone.now())
+
+        self.assertEqual(note.get_absolute_url(), '/%d' % note.pk)
+
+    def test_allows_replacing_view(self):
+        note = NoteFactory.create()
+
+        self.assertEqual(note.get_absolute_url(view='edit'), '/drafts/%d.edit' % note.pk)
+
+    def test_can_add_tags(self):
+        note = NoteFactory.create()
+
+        self.assertEqual(note.get_absolute_url(tag_filter=TagFilter.parse('foo+bar')), '/tagged/bar+foo/drafts/%d' % note.pk)
+
+    def test_can_make_include_host(self):
+        note = NoteFactory.create(series__name='bomp', published=timezone.now())
+
+        with self.settings(NOTES_DOMAIN='notes.example.org'):
+            self.assertEqual(note.get_absolute_url(with_host=True), 'https://bomp.notes.example.org/%d' % note.pk)
 
 
 class TestLocatorFetchPageUpdate(TransactionTestCase):

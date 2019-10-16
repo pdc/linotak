@@ -68,12 +68,5 @@ def note_url(context, view=None, note=None, tag_filter=None, drafts=None, with_h
         tag_filter = context.get('tag_filter')
     if drafts is None:
         drafts = context.get('drafts')
+    return note.get_absolute_url(view=view, tag_filter=tag_filter, drafts=(drafts or False), with_host=(with_host or note.series != context_series))
 
-    path = reverse('notes:%s' % (view or 'detail'), kwargs={
-        'pk': note.pk,
-        'tags': tag_filter.unparse() if tag_filter else '',
-        'drafts': drafts or False,
-    })
-    if with_host or note.series != context_series:
-        return 'https://%s.%s%s' % (note.series.name, settings.NOTES_DOMAIN, path)
-    return path

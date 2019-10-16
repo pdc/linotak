@@ -7,8 +7,9 @@ import requests
 from urllib.parse import urljoin
 
 from ..images.models import Image
-from .models import LocatorImage
+from .models import Locator, LocatorImage
 from .scanner import PageScanner, Title, HEntry, Img, Link
+from .signals import post_locator_scanned
 
 
 @transaction.atomic
@@ -40,6 +41,7 @@ def fetch_page_update_locator(locator, if_not_scanned_since):
 
     update_locator_with_stuff(locator, stuff)
     locator.save()
+    post_locator_scanned.send(Locator, locator=locator, stuff=stuff)
     return True
 
 
