@@ -161,7 +161,7 @@ class LinksMixin:
 
 class NoteListView(TaggedMixin, SeriesMixin, LinksMixin, ListView):
 
-    paginate_by = 5
+    paginate_by = 9
     paginate_orphans = 3
     links = None
 
