@@ -26,6 +26,7 @@ env = environ.Env(
     NOTES_FETCH_LOCATORS=(bool, False),
     NOTES_DOMAIN=(str, None),
     IMAGES_FETCH_DATA=(bool, False),
+    MENTIONS_POST_NOTIFICATIONS=(bool, False),
 )
 environ.Env.read_env()
 
@@ -177,7 +178,9 @@ CELERY_BROKER_URL = not TEST and env('CELERY_BROKER_URL')
 # Suppressed during most tests to avoid network traffic during testing.
 NOTES_FETCH_LOCATORS = not TEST and env('NOTES_FETCH_LOCATORS')
 IMAGES_FETCH_DATA = not TEST and env('IMAGES_FETCH_DATA')
+MENTIONS_POST_NOTIFICATIONS = not TEST and env('MENTIONS_POST_NOTIFICATIONS')
 
 NOTES_DOMAIN = env('NOTES_DOMAIN')
 if NOTES_DOMAIN:
     ALLOWED_HOSTS.append('.' + NOTES_DOMAIN.split(':', 1)[0])
+

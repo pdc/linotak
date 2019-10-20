@@ -1,5 +1,6 @@
 """Database models for app Linotak Mentions."""
 
+from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
 import requests
@@ -84,10 +85,21 @@ def handle_locator_scanned(sender, locator, stuff, **kwargs):
             break
     else:
         receiver = None
-    Outgoing.objects.filter(target=locator, discovered__isnull=True).update(receiver=receiver, discovered=timezone.now())
+    if receiver:
+        from .tasks import notify_outgoing_webmention_receiver
+
+        now = timezone.now()
+        for mention in Outgoing.objects.filter(target=locator, discovered__isnull=True):
+            mention.receiver = receiver
+            mention.discovered = now
+            mention.save()
+            if settings.MENTIONS_POST_NOTIFICATIONS:
+                transaction.on_commit(lambda: notify_outgoing_webmention_receiver.delay(mention.pk))
+    else:
+        Outgoing.objects.filter(target=locator, discovered__isnull=True).update(receiver=receiver, discovered=timezone.now())
 
 
-def notify_outgoing_mention(mention):
+def notify_webmention_receiver(mention):
     """Called from task to make HTTP requests to this mention of a locator."""
     if mention.notified:
         # Already done so no action required.
@@ -97,7 +109,7 @@ def notify_outgoing_mention(mention):
             # Mark as done prematurely to prevent accidental concurrent notifications.
             mention.notified = timezone.now()
             mention.save()
-            r = requests.get(mention.receiver.url, {
+            r = requests.post(mention.receiver.url, data={
                 'source': mention.source.get_absolute_url(with_host=True),
                 'target': mention.target.url
             })
