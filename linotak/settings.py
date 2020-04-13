@@ -25,6 +25,7 @@ env = environ.Env(
     CELERY_BROKER_URL=(str, 'pyamqp://localhost/'),
     NOTES_FETCH_LOCATORS=(bool, False),
     NOTES_DOMAIN=(str, None),
+    NOTES_DOMAIN_INSECURE=(bool, False),
     IMAGES_FETCH_DATA=(bool, False),
     MENTIONS_POST_NOTIFICATIONS=(bool, False),
 )
@@ -177,10 +178,18 @@ CELERY_BROKER_URL = not TEST and env('CELERY_BROKER_URL')
 # Whether we fetch pages for subjects when they are added to the database.
 # Suppressed during most tests to avoid network traffic during testing.
 NOTES_FETCH_LOCATORS = not TEST and env('NOTES_FETCH_LOCATORS')
+
+# Whether we downloaad images to ascertain their dimensions and create thumbnails.
 IMAGES_FETCH_DATA = not TEST and env('IMAGES_FETCH_DATA')
+
+# Whether we contact WebMention endpoints of pages we mention in notes.
 MENTIONS_POST_NOTIFICATIONS = not TEST and env('MENTIONS_POST_NOTIFICATIONS')
 
+# Common parent domain to all series. Series domain is $SERIES_NAMAE.$NOTES_DOMAIN.
 NOTES_DOMAIN = env('NOTES_DOMAIN')
 if NOTES_DOMAIN:
     ALLOWED_HOSTS.append('.' + NOTES_DOMAIN.split(':', 1)[0])
 
+# Whether to use `http` instead of `https` in series & note URLs.
+# NOT used in production: only used for the development web site.
+NOTES_DOMAIN_INSECURE = not TEST and env('NOTES_DOMAIN_INSECURE')

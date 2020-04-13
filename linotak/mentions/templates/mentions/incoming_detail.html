@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+{% load image_representations %}
+<html>
+    <head>
+        <title>Incoming Webmention #{{ incoming.pk }}</title>
+        <style>
+            :root {
+                font-family: "Helvetica Neue", "arial", "Helvetica", sans-serif;
+                color: rgba(0, 0, 0, 0.85);
+                background-color: #FFF;
+            }
+
+            @media screen and (prefers-color-scheme: dark) {
+                :root {
+                    color: rgba(255, 255, 255, 0.85);
+                    background-color: #000;
+                }
+
+                :link {
+                    color: rgba(255, 128, 128, 0.86);
+                    background-color: rgba(200, 200, 255, 0.05);
+                }
+            }
+
+        </style>
+    </head>
+    <body>
+        <h1>Incoming Webmention #{{ incoming.pk }}</h1>
+
+        <p>The Webmention has not yet been verified.</p>
+
+        <h2>Source</h2>
+        <p>
+            A Webmention notification was received on behalf of this page:
+        </p>
+
+        {% if incoming.source %}
+            {% with locator=incoming.source %}
+            <a class="note-subject loc" href="{{ locator.url }}" rel="nofollow">
+                {{ locator.main_image|with_class:"loc-img"|square_representation:80 }}
+                <div class="loc-text">
+                    {% if locator.title %}
+                    <span class="loc-hdg">
+                        <b class="loc-title">{{ locator.title }}</b>
+                    </span>
+                    {% elif locator.author %}
+                    <span class="loc-hdg">
+                        <b class="loc-title">{{ locator.author.native_name }}</b>
+                        {% for profile in locator.author.profiles.all|slice:":1" %}
+                            <small class="loc-profile">{{ profile.label }}</small>
+                        {% endfor %}
+                    </span>
+                    {% endif %}
+                    {% if locator.text %}
+                    <span class="loc-quote">
+                        {{ locator.text }}</span>
+                    {% endif %}
+                    {% if not locator.text and not locator.title %}
+                    <span class="loc-url">{{ locator.url }}</span>
+                    {% endif %}
+                </div>
+            </a>
+            {% endwith %}
+        {% else %}
+            <code>{{ incoming.source_url }}</code>
+        {% endif %}
+
+        <h2>Target</h2>
+        <p>
+            Associated with this note:
+        </p>
+        <a href="{{ incoming.target.get_absolute_url }}">{{ incoming.target }}</a>
+
+        <h2>Details</h2>
+
+        <dl>
+            <dt>Received</dt>
+            <dd>{{ incoming.created }}</dd>
+            <dt>User agent</dt>
+            <dd>{{ incoming.user_agent }}</dd>
+        </dl>
+
+
+
+    </body>
+</html>

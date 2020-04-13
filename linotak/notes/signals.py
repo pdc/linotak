@@ -7,4 +7,4 @@ from django.dispatch import Signal
 # Extra parameters --
 #     instance -- the Locator instance in question
 #     stuff -- list of pieces of information about the resource at this location
-post_locator_scanned = Signal(providing_args=["instance", "stuff"])
+locator_post_scanned = Signal(providing_args=["instance", "stuff"])

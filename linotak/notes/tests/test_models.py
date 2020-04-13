@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 
 from ...matchers_for_mocks import DateTimeTimestampMatcher
 from ...images.models import Image, wants_data
@@ -301,6 +301,12 @@ class TestNoteAbsoluteUrl(TestCase):
 
         with self.settings(NOTES_DOMAIN='notes.example.org'):
             self.assertEqual(note.get_absolute_url(with_host=True), 'https://bomp.notes.example.org/%d' % note.pk)
+
+    def test_can_suppress_HTTPS_for_test_server(self):
+        note = NoteFactory.create(series__name='bomp', published=timezone.now())
+
+        with self.settings(NOTES_DOMAIN='notes.example.org', NOTES_DOMAIN_INSECURE=True):
+            self.assertEqual(note.get_absolute_url(with_host=True), 'http://bomp.notes.example.org/%d' % note.pk)
 
 
 class TestLocatorFetchPageUpdate(TransactionTestCase):

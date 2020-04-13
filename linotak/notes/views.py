@@ -187,7 +187,11 @@ class NoteListView(TaggedMixin, SeriesMixin, LinksMixin, ListView):
         return context
 
 
-class NoteDetailView(SeriesMixin, DetailView):
+class NoteDetailView(SeriesMixin, LinksMixin, DetailView):
+
+    def get_links(self):
+        """Add link to Webmention endpoint."""
+        return super().get_links() + [Link('webmention', reverse('webmention'))]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

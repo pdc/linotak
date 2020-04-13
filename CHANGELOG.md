@@ -4,6 +4,8 @@ Change log
 develop
 -------
 
+- Added mentions app to send and receive WebMention notifications.
+    - Records incoming mentions but does not process them further yet.
 - Links to prev, next, and feed are duplicated in the HTTP headers.
 
 

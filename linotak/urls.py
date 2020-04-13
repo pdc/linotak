@@ -23,5 +23,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('about/', include('linotak.about.urls')),
+    path('mentions/', include('linotak.mentions.urls')),
     path('', include('linotak.notes.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

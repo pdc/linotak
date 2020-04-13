@@ -3,16 +3,18 @@
 from datetime import timedelta
 from django.db import transaction
 from django.test import TestCase, TransactionTestCase
+from django.urls import reverse
 from django.utils import timezone
 import factory
 import httpretty
 from unittest.mock import patch
 
-from ..notes.models import Locator
-from ..notes.tests.factories import LocatorFactory, NoteFactory
+from ..notes.models import Locator, Note
+from ..notes.tests.factories import SeriesFactory, LocatorFactory, NoteFactory
 from ..notes.scanner import Link
 
-from .models import Receiver, Outgoing, handle_locator_scanned, notify_webmention_receiver
+from .forms import IncomingForm
+from .models import Receiver, LocatorReceiver, Outgoing, Incoming, handle_note_post_save, handle_locator_post_scanned, notify_webmention_receiver
 from . import tasks
 
 
@@ -29,55 +31,96 @@ class OutgoingFactory(factory.django.DjangoModelFactory):
 
     source = factory.SubFactory(NoteFactory)
     target = factory.SubFactory(LocatorFactory)
-    receiver = factory.SubFactory(ReceiverFactory)
+
+    @factory.post_generation
+    def receiver(obj, created, extracted, **kwargs):
+        receiver = extracted if extracted else ReceiverFactory(**kwargs) if kwargs else None
+        if receiver:
+            LocatorReceiver.objects.create(locator=obj.target, receiver=receiver)
+
+
+class TestHandleNotePostSave(TestCase):
+    """Test handle_note_post_save."""
+
+    def setUp(self):
+        self.note = NoteFactory()
+        self.target_url = 'https://example.com/blog/1'
+        self.note.add_subject(self.target_url)
+
+    def test_does_nothing_if_raw(self):
+        # No mentions should already be created but delete them anyway for clarity.
+        Outgoing.objects.all().delete()
+
+        handle_note_post_save(Note, self.note, True, True)
+
+        self.assertFalse(Outgoing.objects.filter(target__url=self.target_url).exists())
+
+    def test_does_nothing_if_unpublished(self):
+        # No mentions should already be created but delete them anyway for clarity.
+        Outgoing.objects.all().delete()
+
+        handle_note_post_save(Note, self.note, False, False)
+
+        self.assertFalse(Outgoing.objects.filter(target__url=self.target_url).exists())
+
+    def test_creates_mention_if_published(self):
+        # No mentions should already be created but delete them anyway for clarity.
+        Outgoing.objects.all().delete()
+
+        self.note.published = timezone.now()
+        self.note.save()  # This fires the signal that calls the handler!
+
+        outgoing = Outgoing.objects.get(target__url=self.target_url)
+        self.assertEqual(outgoing.source, self.note)
+        self.assertEqual(outgoing.target.url, self.target_url)
 
 
 class TestHandleLocatorScanned(TestCase):
-    """Test handle_locator_scanned."""
+    """Test handle_locator_post_scanned."""
 
-    def test_when_no_links_mark_outgoing_mentions_done(self):
-        mention = Outgoing.objects.create(source=NoteFactory.create(), target=LocatorFactory.create())
+    def test_sets_recevier_to_null_when_no_link(self):
+        locator = LocatorFactory()
 
-        handle_locator_scanned(Locator, locator=mention.target, stuff=[])
+        handle_locator_post_scanned(Locator, locator=locator, stuff=[])
 
-        mention.refresh_from_db()
-        self.assertFalse(mention.receiver)
-        self.assertTrue(mention.discovered)
+        result = LocatorReceiver.objects.get(locator=locator)
+        self.assertFalse(result.receiver)
 
-    def test_does_not_change_already_processed_mentions(self):
-        then = timezone.now()
-        mention = Outgoing.objects.create(source=NoteFactory.create(), target=LocatorFactory.create(), discovered=then)
+    def test_uses_first_link_found(self):
+        locator = LocatorFactory()
 
-        handle_locator_scanned(Locator, locator=mention.target, stuff=[])
-
-        mention.refresh_from_db()
-        self.assertFalse(mention.receiver)
-        self.assertEqual(mention.discovered, then)
-
-    def test_applies_first_link_found(self):
-        mention = Outgoing.objects.create(source=NoteFactory.create(), target=LocatorFactory.create())
-
-        handle_locator_scanned(Locator, locator=mention.target, stuff=[
+        handle_locator_post_scanned(Locator, locator=locator, stuff=[
+            Link('other', 'https://example.com/0'),
             Link('webmention', 'https://example.com/1'),
             Link('webmention', 'https://example.com/2'),
         ])
 
-        mention.refresh_from_db()
-        self.assertEqual(mention.receiver.url, 'https://example.com/1')
-        self.assertTrue(mention.discovered)
+        result = LocatorReceiver.objects.get(locator=locator)
+        self.assertEqual(result.receiver.url, 'https://example.com/1')
+
+    def test_updates_existing(self):
+        locator = LocatorFactory()
+        LocatorReceiver.objects.create(locator=locator, receiver=ReceiverFactory())
+
+        handle_locator_post_scanned(Locator, locator=locator, stuff=[
+            Link('webmention', 'https://example.com/new'),
+        ])
+
+        result = LocatorReceiver.objects.get(locator=locator)
+        self.assertEqual(result.receiver.url, 'https://example.com/new')
 
 
 class TestHandleLocatorScannedTriggersNotification(TransactionTestCase):
-    """Test handle_locator_scanned triggerss notification."""
+    """Test handle_locator_post_scanned triggers notification."""
 
-    def test_queues_fetch_when_locator_created(self):
-        """Test handle_locator_scanned queues fetch when receiver found."""
-        mention = Outgoing.objects.create(source=NoteFactory.create(), target=LocatorFactory.create())
+    def test_queues_fetch_when_locator_scanned_in_published_note_after_mention_created(self):
+        """Test handle_locator_post_scanned queues fetch when receiver found."""
+        mention = Outgoing.objects.create(source=NoteFactory(published=timezone.now()), target=LocatorFactory())
 
         with self.settings(MENTIONS_POST_NOTIFICATIONS=True), \
                 patch.object(tasks, 'notify_outgoing_webmention_receiver') as notify_outgoing_webmention_receiver:
             with transaction.atomic():
-                handle_locator_scanned(Outgoing, locator=mention.target, stuff=[
+                handle_locator_post_scanned(Outgoing, locator=mention.target, stuff=[
                     Link('webmention', 'https://example.com/1'),
                 ])
 
@@ -85,6 +128,28 @@ class TestHandleLocatorScannedTriggersNotification(TransactionTestCase):
                 # Not queued during the transaction to avoid race condition.
 
             notify_outgoing_webmention_receiver.delay.assert_called_once_with(mention.pk)
+            mention.refresh_from_db()
+            self.assertEqual(mention.receiver, mention.target.mentions_info.receiver)
+
+    def test_queues_fetch_when_note_published_after_locator_scanned(self):
+        source = NoteFactory()
+        target = LocatorFactory()
+        source.add_subject(target)
+        LocatorReceiver.objects.create(locator=target, receiver=ReceiverFactory())  # Simulate relevant part of scanning
+
+        with self.settings(MENTIONS_POST_NOTIFICATIONS=True), \
+                patch.object(tasks, 'notify_outgoing_webmention_receiver') as notify_outgoing_webmention_receiver:
+            with transaction.atomic():
+                source.published = timezone.now()
+                source.save()
+
+                self.assertFalse(notify_outgoing_webmention_receiver.delay.called)
+                # Not queued during the transaction to avoid race condition.
+
+            notify_outgoing_webmention_receiver.delay.assert_called_once()
+            mention_pk, = notify_outgoing_webmention_receiver.delay.call_args.args
+            mention = Outgoing.objects.get(pk=mention_pk)
+            self.assertEqual(mention.receiver, mention.target.mentions_info.receiver)
 
 
 class TestNotifyReceiver(TestCase):
@@ -95,7 +160,7 @@ class TestNotifyReceiver(TestCase):
     @httpretty.activate(allow_net_connect=False)
     def test_does_nothing_when_already_notified(self):
         then = timezone.now() + timedelta(days=-1)
-        mention = OutgoingFactory.create(notified=then)
+        mention = OutgoingFactory(notified=then)
 
         notify_webmention_receiver(mention)
 
@@ -105,7 +170,7 @@ class TestNotifyReceiver(TestCase):
 
     @httpretty.activate(allow_net_connect=False)
     def test_calls_webmention_endpoints_on_outgoing_mentions(self):
-        mention = OutgoingFactory.create(
+        mention = OutgoingFactory(
             source__series__name='alpha',
             source__published=timezone.now(),
             target__url='https://blog.example.com/2019/10/16',
@@ -130,7 +195,7 @@ class TestNotifyReceiver(TestCase):
 
     @httpretty.activate(allow_net_connect=False)
     def test_includes_querey_string_params_of_endpoint(self):
-        mention = OutgoingFactory.create(
+        mention = OutgoingFactory(
             receiver__url='https://example.com/webmention-endpoint?this=that',
         )
         httpretty.register_uri(
@@ -148,3 +213,79 @@ class TestNotifyReceiver(TestCase):
     def response_callback(self, request, uri, response_headers):
         self.calls.append((dict(request.querystring), request.parsed_body))
         return 202, response_headers, ''
+
+
+class TestIncomingForm(TestCase):
+
+    def test_doesnt_create_source_locator_if_cannot_find_target_note(self):
+        source_url = 'https://example.com/blog/1'
+        target_url = 'https://alpha.notes.example.org/blah/blah'
+        form = IncomingForm({
+            'source': source_url,
+            'target': target_url,
+        })
+        self.assertTrue(form.is_valid())
+
+        with self.settings(NOTES_DOMAIN='notes.example.org'):
+            result = form.save(http_user_agent='Agent/69 (like Netscape Navigator)')
+
+        self.assertEqual(result.source_url, source_url)
+        self.assertEqual(result.target_url, target_url)
+        self.assertEqual(result.user_agent, 'Agent/69 (like Netscape Navigator)')
+        self.assertFalse(result.source)
+        self.assertFalse(result.target)
+
+    def test_doesnt_process_note_if_URL_origin_doesnt_match(self):
+        series = SeriesFactory(name='alpha')
+        note = NoteFactory(series=series)
+
+        source_url = 'https://example.com/blog/1'
+        target_url = 'https://wrong.example.org/tagged/froth/page5/%s' % note.pk
+        form = IncomingForm({
+            'source': source_url,
+            'target': target_url,
+        })
+        self.assertTrue(form.is_valid())
+
+        with self.settings(NOTES_DOMAIN='notes.example.org'):
+            result = form.save(http_user_agent='Agent/69 (like Netscape Navigator)')
+
+        self.assertEqual(result.source_url, source_url)
+        self.assertEqual(result.target_url, target_url)
+        self.assertEqual(result.user_agent, 'Agent/69 (like Netscape Navigator)')
+        self.assertFalse(result.source)
+        self.assertFalse(result.target)
+
+    def test_creates_source_locator_and_links_to_existing_note(self):
+        series = SeriesFactory(name='alpha')
+        note = NoteFactory(series=series)
+
+        source_url = 'https://example.com/blog/1'
+        target_url = 'https://alpha.notes.example.org/tagged/froth/page5/%s' % note.pk
+        form = IncomingForm({
+            'source': source_url,
+            'target': target_url,
+        })
+        self.assertTrue(form.is_valid())
+
+        with self.settings(NOTES_DOMAIN='notes.example.org'):
+            result = form.save(http_user_agent='Agent/69')
+
+        self.assertEqual(result.source.url, source_url)
+        self.assertEqual(result.target, note)
+
+
+class TestWebmentionEndpoint(TestCase):
+
+    def test_processes_form_when_URLs_posted(self):
+        series = SeriesFactory(name='alpha')
+        note = NoteFactory(series=series)
+
+        self.client.post(reverse('webmention'), {
+            'source': 'http://example.com/blog/1',
+            'target': 'https://alpha.notes.example.org/%d' % note.pk,
+        })
+
+        incoming = Incoming.objects.get(source_url='http://example.com/blog/1')
+        self.assertEqual(incoming.target_url, 'https://alpha.notes.example.org/%d' % note.pk)
+

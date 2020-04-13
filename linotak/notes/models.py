@@ -72,7 +72,8 @@ class Locator(models.Model):
         related_name='occurences',
         related_query_name='occurrence',
     )
-    via = models.ForeignKey('self',
+    via = models.ForeignKey(
+        'self',
         models.SET_NULL,
         related_name='destinatons',
         related_query_name='destination',
@@ -320,7 +321,7 @@ class Note(models.Model):
         """Add a subject locator."""
         if via_url:
             via, is_new = Locator.objects.get_or_create(url=via_url)
-            kwargs['via'] =  via
+            kwargs['via'] = via
         locator, is_new = Locator.objects.get_or_create(url=url, defaults=kwargs)
         NoteSubject.objects.get_or_create(note=self, locator=locator, defaults={
             'sequence': 1 + len(self.subjects.all()),
@@ -349,7 +350,6 @@ class Note(models.Model):
         return '%s…' % title[:30] if pos < 0 else '%s …' % title[:pos]
 
     def text_with_links(self):
-
         parts = [
             self.text.strip(),
             ' '.join('#' + x.as_camel_case() for x in self.tags.all()),
@@ -376,7 +376,8 @@ class Note(models.Model):
             }
         )
         if with_host:
-            return 'https://%s.%s%s' % (self.series.name, settings.NOTES_DOMAIN, path)
+            scheme = 'http' if settings.NOTES_DOMAIN_INSECURE else 'https'
+            return '%s://%s.%s%s' % (scheme, self.series.name, settings.NOTES_DOMAIN, path)
         return path
 
     subject_re = re.compile(r"""
