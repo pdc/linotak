@@ -21,8 +21,8 @@ def fetch_page_update_locator(locator, if_not_scanned_since):
         if_not_scanned_since: datetime last known to be scanned,
             or None if presumed to be new
 
-    The idea of the if_not_scanned_since paramerter is you pass it as
-    an argument when queuening a call to this function,
+    The idea of the if_not_scanned_since parameter is you pass it as
+    an argument when queuing a call to this function,
     and it prevents double scanning of the page.
     """
     if locator.scanned and (not if_not_scanned_since or if_not_scanned_since < locator.scanned):

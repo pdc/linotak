@@ -88,13 +88,34 @@ class TestFetchPageLinks(TestCase):
             )
             page_scanner.stuff = ['**STUFF**']
 
-            result = fetch_page_update_locator(locator, if_not_scanned_since=None)
+            fetch_page_update_locator(locator, if_not_scanned_since=None)
 
             mock_update.assert_called_once_with(locator, [
                 Link('webmention', 'https://example.com/test/1/webmention'),
                 Link('next', 'https://example.com/2'),
                 Link('top', 'https://example.com/'),
                 '**STUFF**',
+            ])
+
+    @httpretty.activate(allow_net_connect=False)
+    def test_webmention_rocks_test_2(self):
+        locator = Locator.objects.create(url='https://example.com/1')
+        with patch.object(updating, 'PageScanner') as cls, patch.object(updating, 'update_locator_with_stuff') as mock_update:
+            page_scanner = cls.return_value
+            httpretty.register_uri(
+                httpretty.GET, 'https://example.com/1',
+                adding_headers={
+                    'Link': '<https://webmention.rocks/test/2/webmention?head=true>; rel=webmention'
+                }
+            )
+            page_scanner.stuff = ['*MORE*', '*STUFF*']
+
+            fetch_page_update_locator(locator, if_not_scanned_since=None)
+
+            mock_update.assert_called_once_with(locator, [
+                Link('webmention', 'https://webmention.rocks/test/2/webmention?head=true'),
+                '*MORE*',
+                '*STUFF*',
             ])
 
 
