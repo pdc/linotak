@@ -8,7 +8,7 @@ from django.utils import timezone
 import requests
 
 from ..notes.models import Locator, Note
-from ..notes.scanner import Link
+from ..notes.scanner import Link, HEntry
 
 
 class Receiver(models.Model):
@@ -201,10 +201,10 @@ def handle_note_post_save(sender, instance, created, raw, **kwargs):
 
 
 def handle_locator_post_scanned(sender, locator, stuff, **kwargs):
-    """Handler for locator_post_scanned signal."""
-    for thing in stuff:
-        if isinstance(thing, Link) and 'webmention' in thing.rel:
-            receiver, is_new = Receiver.objects.get_or_create(url=thing.href)
+    """Called after a loocator has been scanned. Look for webmention links.."""
+    for link in entry_links(stuff):
+        if 'webmention' in link.rel:
+            receiver, is_new = Receiver.objects.get_or_create(url=link.href)
             break
     else:
         receiver = None
@@ -220,6 +220,15 @@ def handle_locator_post_scanned(sender, locator, stuff, **kwargs):
     now = timezone.now()
     for mention in Outgoing.objects.filter(target=locator, discovered__isnull=True):
         mention.make_discovered(now, receiver)
+
+
+def entry_links(stuff):
+    """Given stuff gleaned from a locator, return links that might we webmention links."""
+    for thing in stuff:
+        if isinstance(thing, Link):
+            yield thing
+        if isinstance(thing, HEntry):
+            yield from thing.links
 
 
 def notify_webmention_receiver(mention):

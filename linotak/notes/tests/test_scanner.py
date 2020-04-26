@@ -367,6 +367,24 @@ class TestHEntryMixin(ScanMixin, TestCase):
             ),
             stuff)
 
+    def test_includes_wewbmention_link(self):
+        stuff = self.scan("""
+            <div class="post-container h-entry">
+                <div class="post-main has-responses">
+                <div class="right">
+                  <h1 class="p-name"><a href="/test/5">Discovery Test #5</a></h1>
+                  <div class="e-content">This post advertises its <a rel="webmention" href="/test/5/webmention">Webmention endpoint</a> with an HTML <code>&lt;a&gt;</code> tag in the body. The URL is relative, so this will also test whether your discovery code properly resolves the relative URL.</div>
+        """)
+
+        self.assertIn(
+            HEntry(
+                None,
+                'Discovery Test #5',
+                classes=['post-container', 'h-entry'],
+                links=[Link('webmention', 'https://example.com/test/5/webmention', text='Webmention endpoint')]
+            ),
+            stuff)
+
 
 class TestOGEntryCapture(ScanMixin, TestCase):
 

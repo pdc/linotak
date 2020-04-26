@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from ..notes.models import Locator, Note
 from ..notes.tests.factories import SeriesFactory, LocatorFactory, NoteFactory
-from ..notes.scanner import Link
+from ..notes.scanner import Link, HEntry
 
 from .forms import IncomingForm
 from .models import Receiver, LocatorReceiver, Outgoing, Incoming, handle_note_post_save, handle_locator_post_scanned, notify_webmention_receiver
@@ -97,6 +97,21 @@ class TestHandleLocatorScanned(TestCase):
 
         result = LocatorReceiver.objects.get(locator=locator)
         self.assertEqual(result.receiver.url, 'https://example.com/1')
+
+    def test_uses_link_from_entry_matching_page(self):
+        locator = LocatorFactory()
+
+        handle_locator_post_scanned(Locator, locator=locator, stuff=[
+            HEntry(
+                None,
+                'Discovery Test #5',
+                classes=['post-container', 'h-entry'],
+                links=[Link('webmention', 'https://example.com/test/5/webmention', text='Webmention endpoint')]
+            ),
+        ])
+
+        result = LocatorReceiver.objects.get(locator=locator)
+        self.assertEqual(result.receiver and result.receiver.url, 'https://example.com/test/5/webmention')
 
     def test_updates_existing(self):
         locator = LocatorFactory()

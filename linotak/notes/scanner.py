@@ -234,10 +234,14 @@ class HCard(StuffBase):
         return self.name, self.url, self.photo, self.classes, self.short_name
 
 
+# Links with these rel attributes in an entry are considered to be links about the entry, not mentioned in the entry.
+RELS_FOR_ENTRY_LINKS = {'webmention'}
+
+
 class HEntry(StuffBase):
     """An h-entry instance, representing a blog entry or similar."""
 
-    def __init__(self, href=None, name=None, summary=None, author=None, classes=None, role=None, images=None):
+    def __init__(self, href=None, name=None, summary=None, author=None, classes=None, role=None, images=None, links=None):
         self.href = href
         self.name = name
         self.summary = summary
@@ -245,12 +249,13 @@ class HEntry(StuffBase):
         self.classes = classes or []
         self.role = role
         self.images = images or []
+        self.links = links or []
 
     def __str__(self):
         return self.name
 
     def to_tuple(self):
-        return self.href, self.name, self.summary, self.author, self.classes, self.role, self.images
+        return self.href, self.name, self.summary, self.author, self.classes, self.role, self.images, self.links
 
 
 # Recognizers will be called by the scanner when various HTML things are parsed.
@@ -469,7 +474,7 @@ class HSomethingRecognizer:
         return HSomething(h_class, classes, stuff)
 
     def make_h_entry(self, tag, classes, stuff):
-        link = tag.pop_stuff(Link, 'u-url')
+        link = tag.pop_stuff_strictly(Link, 'u-url')
         name_prop = tag.pop_stuff_strictly(Property, 'p-name')
         summary_prop = tag.pop_stuff_strictly(Property, 'p-summary')
         author_card = tag.pop_stuff(HCard, 'p-author')
@@ -480,7 +485,8 @@ class HSomethingRecognizer:
         summary = summary_prop.value if summary_prop else link.text if link else None
         role = tag.get('role')
         images = [x for x in stuff if isinstance(x, Img)]
-        return HEntry(href, name, summary, author=author, classes=tag.classes, role=role, images=images)
+        links = [x for x in stuff if isinstance(x, Link) and (x.rel & RELS_FOR_ENTRY_LINKS)]
+        return HEntry(href, name, summary, author=author, classes=tag.classes, role=role, images=images, links=links)
 
     def make_h_card(self, tag, classes, stuff):
         link = _pop_stuff(stuff, Link, 'u-url')
