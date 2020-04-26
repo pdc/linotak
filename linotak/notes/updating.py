@@ -63,7 +63,7 @@ def parse_link_header(base_url, comma_separated):
         for part in parts:
             prop, val = EQUALS.split(part, 1)
             if prop == 'rel':
-                rel = QUOTED.sub(r'\1', val)
+                rel = QUOTED.sub(r'\1', val).split()
                 break
         else:
             rel = None
