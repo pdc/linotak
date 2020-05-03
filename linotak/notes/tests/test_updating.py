@@ -37,17 +37,50 @@ class TestFetchPageUpdateLocator(TestCase):
         then = timezone.now() - timedelta(days=8)
         self.assert_doesnt_request_data_when(locator_scanned=then, if_not_scanned_since=None)
 
+    @httpretty.activate(allow_net_connect=False)
+    def test_follows_redirects(self):
+        locator = Locator.objects.create(url='https://example.com/1')
+        with patch.object(updating, 'PageScanner') as cls,  \
+                patch.object(updating, 'update_locator_with_stuff') as mock_update, \
+                patch.object(locator_post_scanned, 'send') as locator_post_scanned_send:
+            page_scanner = cls.return_value
+            page_scanner.stuff = ['**STUFF**']
+
+            httpretty.register_uri(
+                httpretty.GET, 'https://example.com/1',
+                body='REDIRECT',
+                status=302,
+                adding_headers={'Location': 'https://example.com/2'}
+            )
+            httpretty.register_uri(
+                httpretty.GET, 'https://example.com/2',
+                body='CONTENT OF PAGE',
+            )
+
+            result = fetch_page_update_locator(locator, if_not_scanned_since=None)
+
+            self.assertTrue(result)
+            cls.assert_called_with('https://example.com/1')
+            page_scanner.feed.assert_called_with('CONTENT OF PAGE')
+            page_scanner.close.assert_called_with()
+
+            locator_post_scanned_send.assert_called_once_with(Locator, locator=locator, stuff=['**STUFF**'])
+            mock_update.assert_called_once_with(locator, ['**STUFF**'])
+
+            updated = Locator.objects.get(pk=locator.pk)
+            self.assertTrue(updated.scanned)
+
     def assert_requests_data_when(self, locator_scanned, if_not_scanned_since):
         locator = Locator.objects.create(url='https://example.com/1', scanned=locator_scanned)
         with patch.object(updating, 'PageScanner') as cls,  \
                 patch.object(updating, 'update_locator_with_stuff') as mock_update, \
                 patch.object(locator_post_scanned, 'send') as locator_post_scanned_send:
             page_scanner = cls.return_value
+            page_scanner.stuff = ['**STUFF**']
             httpretty.register_uri(
                 httpretty.GET, 'https://example.com/1',
                 body='CONTENT OF PAGE',
             )
-            page_scanner.stuff = ['**STUFF**']
 
             result = fetch_page_update_locator(locator, if_not_scanned_since=if_not_scanned_since)
 

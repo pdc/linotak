@@ -201,7 +201,7 @@ def handle_note_post_save(sender, instance, created, raw, **kwargs):
 
 
 def handle_locator_post_scanned(sender, locator, stuff, **kwargs):
-    """Called after a loocator has been scanned. Look for webmention links.."""
+    """Called after a locator has been scanned. Look for webmention links."""
     for link in entry_links(stuff):
         if 'webmention' in link.rel:
             receiver, is_new = Receiver.objects.get_or_create(url=link.href)
