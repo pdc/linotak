@@ -28,6 +28,8 @@ env = environ.Env(
     NOTES_DOMAIN_INSECURE=(bool, False),
     IMAGES_FETCH_DATA=(bool, False),
     MENTIONS_POST_NOTIFICATIONS=(bool, False),
+    LOGGING=(str, None),
+    LOG_LEVEL=(str, 'WARNING'),
 )
 environ.Env.read_env()
 
@@ -193,3 +195,26 @@ if NOTES_DOMAIN:
 # Whether to use `http` instead of `https` in series & note URLs.
 # NOT used in production: only used for the development web site.
 NOTES_DOMAIN_INSECURE = not TEST and env('NOTES_DOMAIN_INSECURE')
+
+
+# LOGGING if defined contains JSON-encoded logging configuration
+# LOG_LEVEL if defined specifies a logging level (WARNMING,. IONFO< DENUIG)
+LOGGING = env('LOGGING')
+if LOGGING:
+    import json
+
+    LOGGING = json.loads(LOGGING)
+else:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+            },
+        },
+        'root': {
+            'handlers': ['console'],
+            'level': env('LOG_LEVEL'),
+        },
+    }
