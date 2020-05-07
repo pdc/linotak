@@ -11,7 +11,7 @@ from django.views.generic import DetailView, ListView
 from django.views.generic.edit import CreateView, UpdateView
 
 from .forms import NoteForm
-from .models import Series, Note, Locator
+from .models import Person, Series, Note, Locator
 from .tag_filter import TagFilter
 from .templatetags.note_lists import note_list_url
 
@@ -226,3 +226,10 @@ class NoteUpdateView(LoginRequiredMixin, SeriesMixin, NoteFormMixin, UpdateView)
         if not form.instance.published and self.request.POST.get('publish_now'):
             form.instance.published = timezone.now()
         return super().form_valid(form)
+
+
+class PersonDetailView(DetailView):
+    """Information about a person (who must have a slug)."""
+
+    model = Person
+    # template_name = 'notes/person_detail.html'

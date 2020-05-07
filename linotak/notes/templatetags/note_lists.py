@@ -43,7 +43,8 @@ def note_list_url(context, view=None, series=None, tag_filter=None, drafts=None,
             'page': (page or 1) if not view or view == 'list' else 1,
         })
     if with_host or series != context_series:
-        return 'https://%s.%s%s' % (series.name if hasattr(series, 'name') else series, settings.NOTES_DOMAIN, path)
+        scheme = 'http' if settings.NOTES_DOMAIN_INSECURE else 'https'
+        return f"{scheme}://{series.name if hasattr(series, 'name') else series}.{settings.NOTES_DOMAIN}{path}"
     return path
 
 
