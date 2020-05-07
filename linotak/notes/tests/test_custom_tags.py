@@ -19,7 +19,7 @@ class TestNoteListUrl(TestCase):
             drafts=True,
             page=13)
 
-        self.assertEqual(result, 'https://zerg.example.org/tagged/bar+foo/drafts/page13/')
+        self.assertEqual(result, '//zerg.example.org/tagged/bar+foo/drafts/page13/')
 
     def test_omits_domain_if_same_as_series(self):
         zerg = SeriesFactory.create(name='zerg')
@@ -40,7 +40,7 @@ class TestNoteListUrl(TestCase):
             drafts=True,
             page=1)
 
-        self.assertEqual(result, 'https://zerg.example.org/tagged/bar+foo/drafts/')
+        self.assertEqual(result, '//zerg.example.org/tagged/bar+foo/drafts/')
 
     def test_omits_drafts_if_false(self):
         result = note_list_url(
@@ -50,7 +50,7 @@ class TestNoteListUrl(TestCase):
             drafts=False,
             page=10)
 
-        self.assertEqual(result, 'https://zerg.example.org/tagged/bar+foo/page10/')
+        self.assertEqual(result, '//zerg.example.org/tagged/bar+foo/page10/')
 
     def test_omits_tag_filter_if_false(self):
         result = note_list_url(
@@ -60,7 +60,7 @@ class TestNoteListUrl(TestCase):
             drafts=False,
             page=10)
 
-        self.assertEqual(result, 'https://zerg.example.org/page10/')
+        self.assertEqual(result, '//zerg.example.org/page10/')
 
     def test_omits_tag_filter_if_omitted(self):
         result = note_list_url(
@@ -70,7 +70,7 @@ class TestNoteListUrl(TestCase):
             drafts=False,
             page=10)
 
-        self.assertEqual(result, 'https://zerg.example.org/page10/')
+        self.assertEqual(result, '//zerg.example.org/page10/')
 
     def test_shows_just_the_series_if_page_1(self):
         result = note_list_url(
@@ -80,7 +80,7 @@ class TestNoteListUrl(TestCase):
             drafts=False,
             page=1)
 
-        self.assertEqual(result, 'https://zerg.example.org/')
+        self.assertEqual(result, '//zerg.example.org/')
 
     def test_shows_just_the_series_if_no_page(self):
         result = note_list_url(
@@ -90,7 +90,7 @@ class TestNoteListUrl(TestCase):
             drafts=False,
             page=None)
 
-        self.assertEqual(result, 'https://zerg.example.org/')
+        self.assertEqual(result, '//zerg.example.org/')
 
     def test_root_if_same_series_and_if_page_1(self):
         result = note_list_url(
@@ -109,7 +109,7 @@ class TestNoteListUrl(TestCase):
             drafts=False,
             page=69)
 
-        self.assertEqual(result, 'https://example.org/*/tagged/wat/page69/')
+        self.assertEqual(result, '//example.org/*/tagged/wat/page69/')
 
     def test_aquires_arguments_from_context(self):
         result = note_list_url(
@@ -137,7 +137,7 @@ class TestNoteListUrl(TestCase):
             page=41,
         )
 
-        self.assertEqual(result, 'https://glog.example.org/page41/')
+        self.assertEqual(result, '//glog.example.org/page41/')
 
     def test_can_specify_view_in_which_case_tags_and_draft_ignored(self):
         result = note_list_url(
@@ -151,7 +151,7 @@ class TestNoteListUrl(TestCase):
             series=SeriesFactory.create(name='zerg'),
         )
 
-        self.assertEqual(result, 'https://zerg.example.org/new')
+        self.assertEqual(result, '//zerg.example.org/new')
 
     def test_can_specify_feed(self):
         result = note_list_url(
@@ -177,7 +177,7 @@ class TestNoteUrl(TestCase):
             tag_filter=TagFilter.parse('foo+bar'),
             drafts=True)
 
-        self.assertEqual(result, 'https://zerg.example.org/tagged/bar+foo/drafts/69')
+        self.assertEqual(result, '//zerg.example.org/tagged/bar+foo/drafts/69')
 
     def test_can_pass_view_name(self):
         result = note_url(
@@ -187,7 +187,7 @@ class TestNoteUrl(TestCase):
             tag_filter=TagFilter.parse('foo+bar'),
             drafts=True)
 
-        self.assertEqual(result, 'https://zerg.example.org/tagged/bar+foo/drafts/69.edit')
+        self.assertEqual(result, '//zerg.example.org/tagged/bar+foo/drafts/69.edit')
 
     def test_omits_domain_if_same_as_series(self):
         zerg = SeriesFactory.create(name='zerg')
@@ -206,7 +206,7 @@ class TestNoteUrl(TestCase):
             tag_filter=TagFilter.parse('foo+bar'),
             drafts=False)
 
-        self.assertEqual(result, 'https://zerg.example.org/tagged/bar+foo/69')
+        self.assertEqual(result, '//zerg.example.org/tagged/bar+foo/69')
 
     def test_omits_tag_filter_if_false(self):
         result = note_url(
@@ -215,7 +215,7 @@ class TestNoteUrl(TestCase):
             tag_filter=TagFilter(),
             drafts=False)
 
-        self.assertEqual(result, 'https://zerg.example.org/69')
+        self.assertEqual(result, '//zerg.example.org/69')
 
     def test_omits_tag_filter_if_omitted(self):
         result = note_url(
@@ -224,7 +224,7 @@ class TestNoteUrl(TestCase):
             tag_filter=None,
             drafts=False)
 
-        self.assertEqual(result, 'https://zerg.example.org/69')
+        self.assertEqual(result, '//zerg.example.org/69')
 
     def test_root_if_same_series(self):
         zerg = SeriesFactory.create(name='zerg')
@@ -263,5 +263,4 @@ class TestNoteUrl(TestCase):
             drafts=False,
         )
 
-        self.assertEqual(result, 'https://glog.example.org/69')
-
+        self.assertEqual(result, '//glog.example.org/69')

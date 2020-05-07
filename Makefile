@@ -28,4 +28,4 @@ tests:
 	$(PYTHON) manage.py test --keep --fail
 
 requirements.txt: Pipfile Pipfile.lock
-	pipenv -r > $@
+	pipenv lock -r > $@
