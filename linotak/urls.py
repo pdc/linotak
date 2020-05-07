@@ -20,7 +20,7 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('=admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('about/', include('linotak.about.urls')),
     path('mentions/', include('linotak.mentions.urls')),
