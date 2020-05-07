@@ -27,4 +27,5 @@ app_name = 'notes'
 urlpatterns = [
     path('', include(tagged_paged)),
     path('new', views.NoteCreateView.as_view(), name='new'),
+    path('<slug:slug>', views.PersonDetailView.as_view(), name='person'),
 ]

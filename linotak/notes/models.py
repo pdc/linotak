@@ -16,8 +16,8 @@ MAX_LENGTH = 4000
 class Person(models.Model):
     """A person referred to as the author of some resource.
 
-    May be associated with a login (for notes on this sytem),
-    or a person whose profiles are all elsewhere.
+    *May* be associated with a login (for notes on this sytem),
+    or may be a person whose profiles are all elsewhere.
     """
 
     login = models.ForeignKey(
@@ -29,6 +29,16 @@ class Person(models.Model):
     native_name = models.CharField(
         max_length=250,
         help_text='How this user’s name is presented.'
+    )
+    slug = models.SlugField(
+        max_length=64,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text='Identifies profile page for this person.'
+    )
+    description = models.TextField(
+        blank=True,
     )
 
     def __str__(self):

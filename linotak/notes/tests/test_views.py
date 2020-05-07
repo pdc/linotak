@@ -226,3 +226,15 @@ class TestNoteUpdateView(TestCase):
         self.assertEqual(note.text, 'NOTE TEXT')
         self.assertTrue(note.subjects.all())
         self.assertEqual(note.subjects.all()[0].url, 'https://example.com/NOTE-URL')
+
+
+@override_settings(NOTES_DOMAIN='example.com', ALLOWED_HOSTS=['.example.com'])
+class TestAuthorProfileView(TestCase):
+
+    def test_redirects_to_about_page_if_no_series(self):
+        author = PersonFactory(slug='some-slug')
+
+        r = self.client.get('/some-slug', HTTP_HOST='example.com')
+
+        self.assertEqual(r.context['object'], author)
+        self.assertEqual(r.context['person'], author)

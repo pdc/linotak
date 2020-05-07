@@ -1,0 +1,51 @@
+{% extends 'notes/base.html' %}
+{% load static %}
+{% load note_lists %}
+
+{% block styles %}
+        <style>
+    {% include 'notes/inline-styles/person.css' %}
+
+@font-face {
+    font-family: "Margo";
+    font-weight: 400;
+    src: url({% static 'notes/Margo_Condensed_v0.1-Medium.woff2' %}) format('woff2');
+}
+
+        </style>
+{% endblock %}
+
+{% block stylesheets %}
+        <link rel=stylesheet href="{% static 'notes/vars.css' %}">
+        <link rel=stylesheet href="{% static 'notes/base.css' %}">
+        <link rel=stylesheet href="{% static 'notes/nav.css' %}">
+        <link href="https://fonts.googleapis.com/css?family=Fira+Sans:400,500" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+        <main class="h-card">
+            <header class="note-list-header">
+                <h1 class="p-name">{{ person.native_name }}</h1>
+            </header>
+
+            <div class="main-waffle">
+                <div  class="description">
+                    <p class="description">
+                        {{ person.description }}
+                    </p>
+                </div>
+
+                <ul>
+    {% for series in person.series_set.all %}
+                    <li><a class="link" href="{% note_list_url series=series with_host=True %}">{{ series.title }}</a></li>
+    {% endfor %}
+                </ul>
+
+                <ul>
+    {% for profile in person.profiles.all %}
+                    <li><a rel="me" class="link" href="{{ profile.url }}">{{ profile.label }}</a></li>
+    {% endfor %}
+                </ul>
+            </div>
+        </main>
+{% endblock %}
