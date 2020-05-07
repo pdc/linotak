@@ -12,13 +12,6 @@
         </style>
     </head>
     <body>
-        <script>
-            (function (hour) {
-                if (hour < 6 || 18 <= hour) {
-                    document.body.classList.add('dark');
-                }
-            })(new Date().getHours());
-        </script>
         <nav class="nav">
             {% if page.name %}
             <a href="{% url 'about:index' %}" class="nav-link nav-link-back">About {{ series.title|default:"Ooble" }}</a>

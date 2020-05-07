@@ -1,0 +1,10 @@
+
+h1 {
+    margin: 10px;
+    height: 1.25em;
+
+    font-size: 1.25em;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
