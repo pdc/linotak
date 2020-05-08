@@ -33,6 +33,10 @@
                     <p class="description">
                         {{ person.description }}
                     </p>
+                    <p>
+    {% url 'notes:person' slug=person.slug as path %}
+                        <a href="{{ request.scheme }}://{{ request.get_host }}{{ path }}" class="self-link u-url u-uid">{{ request.scheme }}://{{ request.get_host }}{{ path }}</a>
+                    </p>
                 </div>
 
                 <ul>
@@ -43,7 +47,7 @@
 
                 <ul>
     {% for profile in person.profiles.all %}
-                    <li><a rel="me" class="link" href="{{ profile.url }}">{{ profile.label }}</a></li>
+                    <li><a rel="me" class="link u-url" href="{{ profile.url }}">{{ profile.label }}</a></li>
     {% endfor %}
                 </ul>
             </div>

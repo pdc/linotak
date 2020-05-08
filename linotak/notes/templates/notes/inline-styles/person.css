@@ -4,9 +4,22 @@ body {
     grid-template-columns: 1fr;
 }
 
+
+@media (min-width: 640px) {
+    header {
+        width: 640px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+.u-uid {
+    font-size: 13px;
+    color: var(--muted);
+}
+
 h1 {
     margin: 1em 10px 0.5em;
-
     font-family: "Margo", serif;
     font-size: 2em;
     color: #55BBFF;
@@ -16,15 +29,6 @@ h1 {
 @media (min-height: 480px) {
     h1 {
         font-size: 4em;
-    }
-}
-
-@media (min-width: 640px) {
-    h1 {
-        padding: 0 10px;
-        width: 620px;
-        margin-left: auto;
-        margin-right: auto;
     }
 }
 
