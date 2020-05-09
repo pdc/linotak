@@ -43,8 +43,7 @@ def note_list_url(context, view=None, series=None, tag_filter=None, drafts=None,
             'page': (page or 1) if not view or view == 'list' else 1,
         })
     if with_host or series != context_series:
-        scheme = 'http' if settings.NOTES_DOMAIN_INSECURE else 'https'
-        return f"{scheme}://{series.name if hasattr(series, 'name') else series}.{settings.NOTES_DOMAIN}{path}"
+        return series.make_absolute_url(path)
     return path
 
 
@@ -70,4 +69,11 @@ def note_url(context, view=None, note=None, tag_filter=None, drafts=None, with_h
     if drafts is None:
         drafts = context.get('drafts')
     return note.get_absolute_url(view=view, tag_filter=tag_filter, drafts=(drafts or False), with_host=(with_host or note.series != context_series))
+
+
+@register.simple_tag(takes_context=True)
+def profile_url(context, person=None, series=None):
+    """Link to the profile of this person (or the subject of this page if no person specified)."""
+    path = reverse('notes:person', kwargs={'slug': (person or context['person']).slug})
+    return (series or context['series']).make_absolute_url(path)
 

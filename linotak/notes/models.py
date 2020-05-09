@@ -228,6 +228,11 @@ class Series(models.Model):
     def get_absolute_url(self):
         return reverse('notes:list', kwargs={'series_name': self.name})
 
+    def make_absolute_url(self, path):
+        """Given a path (starting with a slash) return a complate URL."""
+        scheme = 'http' if settings.NOTES_DOMAIN_INSECURE else 'https'
+        return f"{scheme}://{self.name}.{settings.NOTES_DOMAIN}{path}"
+
     def icon_representations(self):
         """Return sequence if image representations for use as favicons."""
         return icon_representations(self.icon, self.ICON_SIZES)
@@ -386,8 +391,7 @@ class Note(models.Model):
             }
         )
         if with_host:
-            scheme = 'http' if settings.NOTES_DOMAIN_INSECURE else 'https'
-            return '%s://%s.%s%s' % (scheme, self.series.name, settings.NOTES_DOMAIN, path)
+            return self.series.make_absolute_url(path)
         return path
 
     subject_re = re.compile(r"""

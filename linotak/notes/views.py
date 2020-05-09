@@ -16,33 +16,7 @@ from .tag_filter import TagFilter
 from .templatetags.note_lists import note_list_url
 
 
-class NotesQuerysetMixin:
-    """Get notes as the main query set with correct visibility and ordering."""
-
-    def get_queryset(self, **kwargs):
-        """Acquire the relevant series and return the notes in that series."""
-        notes = (
-            Note.objects
-            .order_by(
-                F('published').desc(),
-                F('created').desc())
-            .prefetch_related(
-                Prefetch('subjects', queryset=Locator.objects.order_by('notesubject__sequence'))))
-        if self.kwargs.get('drafts') and self.request.user.is_authenticated:
-            series = Series.objects.filter(editors__login=self.request.user)
-            notes = notes.filter(published__isnull=True, series__in=series)
-        else:
-            notes = notes.filter(published__isnull=False)
-        return notes
-
-    def get_context_data(self, **kwargs):
-        """Add the series to the context."""
-        context = super().get_context_data(**kwargs)
-        context['drafts'] = self.kwargs.get('drafts', False)
-        return context
-
-
-class SeriesMixin(NotesQuerysetMixin):
+class SeriesMixin():
     """Mixin for view classes for when the URL includes the series name."""
 
     series_required = True
@@ -51,13 +25,7 @@ class SeriesMixin(NotesQuerysetMixin):
     def series(self):
         """The series of notes this page relates to."""
         series_name = getattr(self.request, 'series_name', None)
-        return None if not series_name or series_name == '*' else get_object_or_404(Series, name=series_name)
-
-    def get_queryset(self, **kwargs):
-        notes = super().get_queryset()
-        if self.series:
-            return notes.filter(series=self.series)
-        return notes
+        return None if not series_name else get_object_or_404(Series, name=series_name)
 
     def get_context_data(self, **kwargs):
         """Add the series to the context."""
@@ -73,6 +41,37 @@ class SeriesMixin(NotesQuerysetMixin):
         if self.series_required and not self.series:
             return HttpResponseRedirect(reverse('about:index'))
         return super().dispatch(request, *args, **kwargs)
+
+
+class NotesMixin(SeriesMixin):
+    """Get notes as the main query set with correct visibility and ordering.
+
+    (Includes SeriesMixin hence also acquires series from request.)
+    """
+
+    def get_queryset(self, **kwargs):
+        """Acquire the relevant series and return the notes in that series."""
+        notes = (
+            Note.objects
+            .order_by(
+                F('published').desc(),
+                F('created').desc())
+            .prefetch_related(
+                Prefetch('subjects', queryset=Locator.objects.order_by('notesubject__sequence'))))
+        if self.series:
+            notes = notes.filter(series=self.series)
+        if self.kwargs.get('drafts') and self.request.user.is_authenticated:
+            series_list = Series.objects.filter(editors__login=self.request.user)
+            notes = notes.filter(published__isnull=True, series__in=series_list)
+        else:
+            notes = notes.filter(published__isnull=False)
+        return notes
+
+    def get_context_data(self, **kwargs):
+        """Add the series to the context."""
+        context = super().get_context_data(**kwargs)
+        context['drafts'] = self.kwargs.get('drafts', False)
+        return context
 
 
 class TaggedMixin:
@@ -159,7 +158,7 @@ class LinksMixin:
         return context
 
 
-class NoteListView(TaggedMixin, SeriesMixin, LinksMixin, ListView):
+class NoteListView(TaggedMixin, NotesMixin, LinksMixin, ListView):
 
     paginate_by = 9
     paginate_orphans = 3
@@ -187,7 +186,7 @@ class NoteListView(TaggedMixin, SeriesMixin, LinksMixin, ListView):
         return context
 
 
-class NoteDetailView(SeriesMixin, LinksMixin, DetailView):
+class NoteDetailView(NotesMixin, LinksMixin, DetailView):
 
     def get_links(self):
         """Add link to Webmention endpoint."""
@@ -215,12 +214,12 @@ class NoteFormMixin:
         return kwargs
 
 
-class NoteCreateView(LoginRequiredMixin, SeriesMixin, NoteFormMixin, CreateView):
+class NoteCreateView(LoginRequiredMixin, NotesMixin, NoteFormMixin, CreateView):
     def form_valid(self, form):
         return super().form_valid(form)
 
 
-class NoteUpdateView(LoginRequiredMixin, SeriesMixin, NoteFormMixin, UpdateView):
+class NoteUpdateView(LoginRequiredMixin, NotesMixin, NoteFormMixin, UpdateView):
 
     def form_valid(self, form):
         if not form.instance.published and self.request.POST.get('publish_now'):
@@ -228,8 +227,7 @@ class NoteUpdateView(LoginRequiredMixin, SeriesMixin, NoteFormMixin, UpdateView)
         return super().form_valid(form)
 
 
-class PersonDetailView(DetailView):
-    """Information about a person (who must have a slug)."""
+class PersonDetailView(SeriesMixin, DetailView):
+    """Information about a person (only allowed if that person has a slug)."""
 
     model = Person
-    # template_name = 'notes/person_detail.html'

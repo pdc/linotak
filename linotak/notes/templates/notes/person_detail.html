@@ -34,8 +34,7 @@
                         {{ person.description }}
                     </p>
                     <p>
-    {% url 'notes:person' slug=person.slug as path %}
-                        <a href="{{ request.scheme }}://{{ request.get_host }}{{ path }}" class="self-link u-url u-uid">{{ request.scheme }}://{{ request.get_host }}{{ path }}</a>
+                        <a href="{% profile_url %}" class="u-url u-uid">{% profile_url %}</a>
                     </p>
                 </div>
 

@@ -231,10 +231,12 @@ class TestNoteUpdateView(TestCase):
 @override_settings(NOTES_DOMAIN='example.com', ALLOWED_HOSTS=['.example.com'])
 class TestAuthorProfileView(TestCase):
 
-    def test_redirects_to_about_page_if_no_series(self):
+    def test_fetches_person_and_series(self):
         author = PersonFactory(slug='some-slug')
+        series = SeriesFactory(name='name-of-series', editors=[author])
 
-        r = self.client.get('/some-slug', HTTP_HOST='example.com')
+        r = self.client.get('/some-slug', HTTP_HOST='name-of-series.example.com')
 
         self.assertEqual(r.context['object'], author)
         self.assertEqual(r.context['person'], author)
+        self.assertEqual(r.context['series'], series)

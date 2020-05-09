@@ -7,10 +7,10 @@ from django.urls import reverse
 import io
 
 from ..xml_writer import Document
-from .views import TaggedMixin, SeriesMixin
+from .views import TaggedMixin, NotesMixin
 
 
-class NoteFeedView(TaggedMixin, SeriesMixin, BaseListView):
+class NoteFeedView(TaggedMixin, NotesMixin, BaseListView):
     """Generate XML feed in Atom format."""
 
     paginate_by = 30

@@ -4,8 +4,8 @@ from django.test import TestCase, override_settings
 from unittest.mock import MagicMock
 
 from ..tag_filter import TagFilter
-from ..templatetags.note_lists import note_list_url, note_url
-from .factories import SeriesFactory, NoteFactory
+from ..templatetags.note_lists import note_list_url, note_url, profile_url
+from .factories import SeriesFactory, NoteFactory, PersonFactory
 
 
 @override_settings(NOTES_DOMAIN='example.org')
@@ -131,7 +131,7 @@ class TestNoteListUrl(TestCase):
                 'drafts': True,
                 'page_obj': MagicMock(number=42)
             },
-            series='glog',
+            series=SeriesFactory.create(name='glog'),
             tag_filter=TagFilter(),
             drafts=False,
             page=41,
@@ -264,3 +264,23 @@ class TestNoteUrl(TestCase):
         )
 
         self.assertEqual(result, 'https://glog.example.org/69')
+
+
+@override_settings(NOTES_DOMAIN='example.org')
+class TestProfileUrl(TestCase):
+
+    def test_uses_slug(self):
+        person = PersonFactory(slug='slug-of-person')
+        series = SeriesFactory(name='name-of-series', editors=[person])
+
+        result = profile_url({'series': series}, person)
+
+        self.assertEqual(result, 'https://name-of-series.example.org/slug-of-person')
+
+    def test_defaults_to_subject_of_page(self):
+        person = PersonFactory(slug='slug-of-person')
+        series = SeriesFactory(name='name-of-series', editors=[person])
+
+        result = profile_url({'series': series, 'person': person})
+
+        self.assertEqual(result, 'https://name-of-series.example.org/slug-of-person')

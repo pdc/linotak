@@ -31,4 +31,4 @@ class SubdomainSeriesMiddleware:
 
     @classmethod
     def regex_from_domain(cls, domain):
-        return re.compile(r'^([a-z0-9]{1,63})\.' + re.escape(domain) + '$')
+        return re.compile(r'^([a-z0-9-]{1,63})\.' + re.escape(domain) + '$')
