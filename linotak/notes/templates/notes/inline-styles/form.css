@@ -1,6 +1,21 @@
+
+body {
+    display: grid;
+    grid-template-rows: 1fr auto;
+}
+
+@media (min-width: 640px) {
+    main {
+        margin:  auto;
+        width: 620px;
+
+    }
+}
+
 p {
     margin: 10px;
 }
+
 
 form {
     padding: 10px 0;
@@ -55,7 +70,8 @@ textarea {
 
     font-size: 1rem;
     line-height: normal;  /* Cannot unset this on some browsers */
-    border: 2px groove;
+    border-width: 1px;
+    border-style: outset;
 }
 
 .form-action + .form-action  {

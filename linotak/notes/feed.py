@@ -24,7 +24,7 @@ class NoteFeedView(TaggedMixin, NotesMixin, BaseListView):
 
     def get(self, request, *args, **kwargs):
         """Zum zub."""
-        paginator, page, object_list, is_paginated =  self.paginate()
+        paginator, page, object_list, is_paginated = self.paginate()
 
         doc = Document('feed', {'xml:lang': 'en-GB'}, prefix_namespaces={
             '': 'http://www.w3.org/2005/Atom',

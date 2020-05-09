@@ -43,7 +43,7 @@ textarea {
     background-color: rgba(153, 204, 255, 0.8);
     background-color: var(--ui2);
     border-color: rgba(153, 204, 255, 0.8);
-    border-color: var(--ui2);
+    border-color: var(--ui);
     border-radius: 4px;
 }
 

@@ -4,11 +4,14 @@
 
 {% block styles %}
         <style>
+            {% include 'notes/inline-styles/base.css' %}
             {% include 'notes/inline-styles/form.css' %}
         </style>
 {% endblock %}
 
 {% block content %}
+
+    <main>
 
         {% if form.errors %}
             <p>Your username and password didn't match. Please try again.</p>
@@ -38,6 +41,8 @@
             </div>
         </form>
 
-        <p><a href="{% url 'password_reset' %}">Lost password?</a></p>
+        <p><a href="{% url 'password_reset' %}" class="link">Lost password?</a></p>
+
+    </main>
 
 {% endblock %}

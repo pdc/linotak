@@ -19,10 +19,12 @@
 .action-btn {
     padding: 0 10px;
     line-height: 2;
+    min-width: 12px;
 
+    text-align: center;
     text-decoration: none;
-    border-width: 2px;
-    border-style: groove;
+    border-width: 1px;
+    border-style: outset;
 }
 
 .action-link {

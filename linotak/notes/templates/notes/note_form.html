@@ -10,6 +10,8 @@
 
 {% block content %}
 
+    <main>
+
         {% if form.errors %}
             <p>Your username and password didn't match. Please try again.</p>
         {% endif %}
@@ -33,5 +35,6 @@
                 <input class="form-action" type="submit" name="publish_now" value="Publish">
             </div>
         </form>
+    </main>
 
 {% endblock %}
