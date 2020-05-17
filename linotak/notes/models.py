@@ -64,8 +64,12 @@ class Person(models.Model):
             'og:url': make_absolute_url(self.get_absolute_url()),
         }
         if self.image:
-            representation = self.image.find_representation(SizeSpec(800, 800, min_ratio=(2, 3), max_ratio=(3, 2)))
-            props['og:image'] = representation.content.url
+            representation = self.image.find_representation(SizeSpec(1080, 1080, min_ratio=(2, 3), max_ratio=(3, 2)))
+            props.update({
+                'og:image': representation.content.url,
+                'og:image:width': representation.width,
+                'og:image:height': representation.height,
+            })
         return props
 
 
