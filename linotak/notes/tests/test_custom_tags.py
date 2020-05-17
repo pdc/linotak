@@ -269,13 +269,13 @@ class TestNoteUrl(TestCase):
 @override_settings(NOTES_DOMAIN='example.org')
 class TestProfileUrl(TestCase):
 
-    def test_uses_slug(self):
+    def test_uses_slug_and_not_series(self):
         person = PersonFactory(slug='slug-of-person')
         series = SeriesFactory(name='name-of-series', editors=[person])
 
         result = profile_url({'series': series}, person)
 
-        self.assertEqual(result, 'https://name-of-series.example.org/slug-of-person')
+        self.assertEqual(result, 'https://example.org/slug-of-person')
 
     def test_defaults_to_subject_of_page(self):
         person = PersonFactory(slug='slug-of-person')
@@ -283,4 +283,4 @@ class TestProfileUrl(TestCase):
 
         result = profile_url({'series': series, 'person': person})
 
-        self.assertEqual(result, 'https://name-of-series.example.org/slug-of-person')
+        self.assertEqual(result, 'https://example.org/slug-of-person')

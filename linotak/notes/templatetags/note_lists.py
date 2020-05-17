@@ -1,8 +1,9 @@
 """Template tags for image representations."""
 
 from django import template
-from django.conf import settings
 from django.urls import reverse
+
+from ..models import make_absolute_url
 
 
 register = template.Library()
@@ -72,8 +73,8 @@ def note_url(context, view=None, note=None, tag_filter=None, drafts=None, with_h
 
 
 @register.simple_tag(takes_context=True)
-def profile_url(context, person=None, series=None):
+def profile_url(context, person=None):
     """Link to the profile of this person (or the subject of this page if no person specified)."""
     path = reverse('notes:person', kwargs={'slug': (person or context['person']).slug})
-    return (series or context['series']).make_absolute_url(path)
+    return make_absolute_url(path)
 

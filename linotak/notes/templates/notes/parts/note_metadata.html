@@ -3,7 +3,7 @@
 {% if note.published %}
                 <a class="u-url u-uid link" href="{% note_url 'detail' %}">Noted</a> by
     {% if note.author.slug %}
-                <a href="{% url 'notes:person' slug=note.author.slug %}" class="link p-author">{{ note.author.native_name }}</a>
+                <a href="{% profile_url note.author %}" class="link p-author">{{ note.author.native_name }}</a>
     {% else %}
                 <span class="p-author">{{ note.author.native_name }}</span>
     {% endif %}

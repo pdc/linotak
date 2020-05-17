@@ -3,6 +3,14 @@
 {% load note_lists %}
 {% load image_representations %}
 
+{% block title %}{{ person.native_name }}{% if series %} ({{ series }}){% endif %}{% endblock %}
+
+{% block meta %}
+    {% for property, content in person.open_graph.items %}
+        <meta property="{{ property }}" content="{{ content }}">
+    {% endfor %}
+{% endblock %}
+
 {% block styles %}
         <style>
     {% include 'notes/inline-styles/person.css' %}
@@ -32,19 +40,11 @@
     {% if person.image %}
             <div class="profile-image">
                 {{ person.image|with_class:"u-photo"|square_representation:160 }}
-
                 <svg width="0" height="0">
-                    <defs>
                     <clipPath id="userpic-clip" >
                         <path d="M80,0 c80,0 80,0 80,80 s0,80 -80,80 -80,0 -80,-80 0,-80 80,-80z"/>
                     </clipPath>
-                </defs>
                 </svg>
-                <style>
-                    .u-photo {
-                        clip-path: url(#userpic-clip);
-                    }
-                </style>
             </div>
     {% endif %}
 

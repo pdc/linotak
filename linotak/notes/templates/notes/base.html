@@ -19,6 +19,7 @@
         <link rel="apple-touch-icon" href="{{ rep.content.url }}"{% if not forloop.first %} sizes="{{ rep.width }}x{{ rep.height }}"{% endif %} type="{{ rep.media_type }}">
         {% endfor %}
         {% block links %}{% endblock %}
+        {% block meta %}{% endblock %}
     </head>
     <body>
         {% if messages %}

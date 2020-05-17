@@ -233,10 +233,11 @@ class TestAuthorProfileView(TestCase):
 
     def test_fetches_person_and_series(self):
         author = PersonFactory(slug='some-slug')
-        series = SeriesFactory(name='name-of-series', editors=[author])
 
-        r = self.client.get('/some-slug', HTTP_HOST='name-of-series.example.com')
+        r = self.client.get('/some-slug', HTTP_HOST='example.com')
 
         self.assertEqual(r.context['object'], author)
         self.assertEqual(r.context['person'], author)
-        self.assertEqual(r.context['series'], series)
+        self.assertFalse(r.context['series'])
+
+

@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ..images.models import Image
+from ..images.size_spec import SizeSpec
 from .tag_filter import canonicalize_tag_name, wordify, camel_from_words
 
 
@@ -50,6 +51,22 @@ class Person(models.Model):
 
     def __str__(self):
         return self.native_name
+
+    def get_absolute_url(self):
+        """Return path to this person’s profile page."""
+        return reverse('notes:person', kwargs={'slug': self.slug})
+
+    def open_graph(self):
+        """Dictionary of OpenGraph properties (as used by Facebook and sometimes Twitter)."""
+        props = {
+            'og:title': self.native_name,
+            'og:type': 'profile',
+            'og:url': make_absolute_url(self.get_absolute_url()),
+        }
+        if self.image:
+            representation = self.image.find_representation(SizeSpec(800, 800, min_ratio=(2, 3), max_ratio=(3, 2)))
+            props['og:image'] = representation.content.url
+        return props
 
 
 class Profile(models.Model):
@@ -247,6 +264,12 @@ class Series(models.Model):
     def apple_touch_icon_representations(self):
         """Return sequence if image representations for use as favicons."""
         return icon_representations(self.apple_touch_icon, self.APPLE_TOUCH_ICON_SIZES)
+
+
+def make_absolute_url(path):
+    """Create absolute URL for path that does NOT want a series."""
+    scheme = 'http' if settings.NOTES_DOMAIN_INSECURE else 'https'
+    return f'{scheme}://{settings.NOTES_DOMAIN}{path}'
 
 
 def icon_representations(image, sizes):

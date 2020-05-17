@@ -1,4 +1,4 @@
-"""Views fro notes."""
+"""Views for notes."""
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import F, Prefetch
@@ -11,15 +11,13 @@ from django.views.generic import DetailView, ListView
 from django.views.generic.edit import CreateView, UpdateView
 
 from .forms import NoteForm
-from .models import Person, Series, Note, Locator
+from .models import Person, Series, Note, Locator, make_absolute_url
 from .tag_filter import TagFilter
 from .templatetags.note_lists import note_list_url
 
 
 class SeriesMixin():
     """Mixin for view classes for when the URL includes the series name."""
-
-    series_required = True
 
     @cached_property
     def series(self):
@@ -37,16 +35,18 @@ class SeriesMixin():
             and self.series.editors.filter(login=self.request.user))
         return context
 
+
+class SeriesRequiredMixin(SeriesMixin):
     def dispatch(self, request, *args, **kwargs):
-        if self.series_required and not self.series:
+        if not self.series:
             return HttpResponseRedirect(reverse('about:index'))
         return super().dispatch(request, *args, **kwargs)
 
 
-class NotesMixin(SeriesMixin):
+class NotesMixin(SeriesRequiredMixin):
     """Get notes as the main query set with correct visibility and ordering.
 
-    (Includes SeriesMixin hence also acquires series from request.)
+    (Includes SeriesRequiredMixin hence also acquires series from request.)
     """
 
     def get_queryset(self, **kwargs):
@@ -231,3 +231,10 @@ class PersonDetailView(SeriesMixin, DetailView):
     """Information about a person (only allowed if that person has a slug)."""
 
     model = Person
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.series:
+            path = reverse('notes:person', kwargs=kwargs)
+            url = make_absolute_url(path)
+            return HttpResponseRedirect(url)
+        return super().dispatch(request, *args, **kwargs)

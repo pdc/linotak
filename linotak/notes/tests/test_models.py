@@ -8,7 +8,7 @@ from ...images.models import Image, wants_data
 from ..models import Locator, LocatorImage, Tag, Note
 from ..tag_filter import TagFilter
 from .. import tasks
-from .factories import NoteFactory, SeriesFactory, LocatorFactory
+from .factories import NoteFactory, SeriesFactory, LocatorFactory, PersonFactory
 
 
 class TestFactories(TestCase):
@@ -435,3 +435,17 @@ class TestTag(TestCase):
         tag = Tag.objects.get_tag('fooBAR')
 
         self.assertEqual(tag.label, 'foo BAR')
+
+
+class TestPerson(TestCase):
+
+    def test_open_graph(self):
+        subject = PersonFactory(native_name="Alice de Winter", slug="alice")
+
+        with self.settings(NOTES_DOMAIN='example.com'):
+            result = subject.open_graph()
+
+        self.assertEqual(result['og:title'], 'Alice de Winter')
+        self.assertEqual(result['og:type'], 'profile')
+        self.assertEqual(result['og:url'], 'https://example.com/alice')
+        #self.assertEqual(result['og:image'], '...')
