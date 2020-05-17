@@ -18,6 +18,7 @@ import sys
 
 import environ
 
+
 env = environ.Env(
     DEBUG=(bool, False),
     STATIC_ROOT=(str, None),
@@ -115,7 +116,7 @@ DATABASES = {
 
 AUTH_USER_MODEL = 'customuser.Login'
 
-LOGOUT_REDIRECT_URL = 'notes:index'
+LOGOUT_REDIRECT_URL = '/'
 
 
 # Password validation
