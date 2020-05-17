@@ -1,15 +1,36 @@
 body {
     display: grid;
-    grid-template-rows: 1fr max-content;
+    grid-template-rows: 1fr max-content; /* main, footer */
     grid-template-columns: 1fr;
+    --hap: 1rem;
 }
 
 
 @media (min-width: 640px) {
-    header {
-        width: 640px;
-        margin-left: auto;
-        margin-right: auto;
+    main {
+        display: grid;
+        grid-template-columns: max-content minmax(200px, 320px) minmax(200px, 320px);
+        grid-template-rows: repeat(3, max-content);
+        justify-content: center;
+        align-items: start;
+    }
+    header,
+    .profile-description {
+        grid-column: 2 / span 2
+    }
+    .profile-image {
+        grid-column: 1;
+        grid-row: 1 / span 3;
+        justify-self: end;
+    }
+    .u-photo {
+        margin-top: 4.5rem;
+    }
+    .profile-links-ooble {
+        grid-column: 2;
+    }
+    .profile-links-external {
+        grid-column: 3;
     }
 }
 
@@ -18,8 +39,14 @@ body {
     color: var(--muted);
 }
 
+.u-photo {
+    display: block;
+    margin-right: var(--hap);
+    margin-left: var(--hap);
+}
+
 h1 {
-    margin: 1em 10px 0.5em;
+    margin: 1em var(--hap) 0.5em;
     font-family: "Margo", serif;
     font-size: 2em;
     color: #55BBFF;
@@ -33,31 +60,13 @@ h1 {
 }
 
 p {
-    margin: 10px;
+    margin: var(--hap);
 }
 ul {
     margin: 0;
     padding: 0;
 }
 li {
-    margin: 10px 10px 10px 40px;
-}
-
-@media (min-width: 480px)  {
-
-    .main-waffle {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(240px, 320px));
-        justify-content: center;
-        align-content: flex-start;
-    }
-    .description {
-        grid-column: 1 / span 2;
-    }
-
-
-    ul {
-        grid-row: 2;
-    }
+    margin: var(--hap) var(--hap) var(--hap) 40px;
 }
 

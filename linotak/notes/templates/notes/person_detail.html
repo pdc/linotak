@@ -1,6 +1,7 @@
 {% extends 'notes/base.html' %}
 {% load static %}
 {% load note_lists %}
+{% load image_representations %}
 
 {% block styles %}
         <style>
@@ -28,9 +29,27 @@
                 <h1 class="p-name">{{ person.native_name }}</h1>
             </header>
 
-            <div class="main-waffle">
-                <div  class="description">
-                    <p class="description">
+    {% if person.image %}
+            <div class="profile-image">
+                {{ person.image|with_class:"u-photo"|square_representation:160 }}
+
+                <svg width="0" height="0">
+                    <defs>
+                    <clipPath id="userpic-clip" >
+                        <path d="M80,0 c80,0 80,0 80,80 s0,80 -80,80 -80,0 -80,-80 0,-80 80,-80z"/>
+                    </clipPath>
+                </defs>
+                </svg>
+                <style>
+                    .u-photo {
+                        clip-path: url(#userpic-clip);
+                    }
+                </style>
+            </div>
+    {% endif %}
+
+                <div  class="profile-description">
+                    <p>
                         {{ person.description }}
                     </p>
                     <p>
@@ -38,17 +57,16 @@
                     </p>
                 </div>
 
-                <ul>
+                <ul class="profile-link profile-links-ooble">
     {% for series in person.series_set.all %}
                     <li><a class="link" href="{% note_list_url series=series with_host=True %}">{{ series.title }}</a></li>
     {% endfor %}
                 </ul>
 
-                <ul>
+                <ul class="profile-link profile-links-external">
     {% for profile in person.profiles.all %}
                     <li><a rel="me" class="link u-url" href="{{ profile.url }}">{{ profile.label }}</a></li>
     {% endfor %}
                 </ul>
-            </div>
         </main>
 {% endblock %}

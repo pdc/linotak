@@ -26,6 +26,13 @@ class Person(models.Model):
         null=True,
         blank=True,
     )
+    image = models.ForeignKey(
+        Image,
+        models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='Depicts this user.'
+    )
     native_name = models.CharField(
         max_length=250,
         help_text='How this user’s name is presented.'

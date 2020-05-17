@@ -89,10 +89,13 @@ class ProfileInline(admin.TabularInline):
 
 
 class PersonAdmin(admin.ModelAdmin):
-    search_fields = ['native_name']
+    list_display = ['__str__', 'slug']
+    search_fields = ['native_name', 'description', 'slug']
     inlines = [
         ProfileInline
     ]
+    raw_id_fields = ['image']
+    readonly_fields = [image_thumbnail, image_size]
 
 
 admin.site.register(Series, SeriesAdmin)
