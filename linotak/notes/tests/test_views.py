@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 from django.test import Client, TestCase, override_settings
 from django.utils import timezone
+import logging
 from unittest.mock import patch
 
 from ..models import Locator
@@ -30,17 +31,6 @@ class TestNoteListView(TestCase):
         self.assertEqual(r.context['series'], series)
         self.assertEqual(list(r.context['object_list']), [note])
         self.assertEqual(list(r.context['note_list']), [note])
-
-    def xtest_doesnt_filter_by_series_if_star(self):
-        series1 = SeriesFactory.create()
-        note1 = NoteFactory.create(series=series1, published=timezone.now())
-        series2 = SeriesFactory.create()
-        note2 = NoteFactory.create(series=series2, published=timezone.now())
-
-        r = self.client.get('/*/')
-
-        self.assertFalse(r.context.get('series'))
-        self.assertEqual(set(r.context['object_list']), {note1, note2})
 
     def test_excludes_unpublished_notes(self):
         series = SeriesFactory.create(name='bar')
@@ -74,6 +64,25 @@ class TestNoteListView(TestCase):
         r = self.client.get('/drafts/', HTTP_HOST='bar.example.com')
 
         self.assertEqual(list(r.context['object_list']), [note])
+
+    def test_redirects_from_drafts_to_login_if_not_logged_in(self):
+        SeriesFactory.create(name='baz')
+
+        r = self.client.get('/drafts/', HTTP_HOST='baz.example.com', follow=True)
+
+        self.assertEqual(r.redirect_chain, [('/accounts/login/?next=/drafts/', 302)])
+
+    def test_returns_forbidden_if_not_editor(self):
+        # Unlike not being loggged in, this should not happen in normal circumstances.
+        SeriesFactory.create(name='baz')
+        not_editor = PersonFactory()
+        self.given_logged_in_as(not_editor)
+
+        logging.disable(logging.CRITICAL)
+        r = self.client.get('/drafts/', HTTP_HOST='baz.example.com')
+        logging.disable(logging.NOTSET)
+
+        self.assertEqual(r.status_code, 403)
 
     def test_fitered_by_tag_if_specified(self):
         series = SeriesFactory.create(name='alpha')

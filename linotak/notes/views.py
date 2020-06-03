@@ -1,6 +1,6 @@
 """Views for notes."""
 
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin
 from django.db.models import F, Prefetch
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -158,7 +158,16 @@ class LinksMixin:
         return context
 
 
-class NoteListView(TaggedMixin, NotesMixin, LinksMixin, ListView):
+class LoginRequiredIfDraftMixin(AccessMixin):
+    """Mixxin that checks user is logged in if the request is for draft notes."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.kwargs.get('drafts') and (not request.user.is_authenticated or not self.series.editors.filter(login=request.user).exists()):
+            return self.handle_no_permission()
+        return super().dispatch(request, *args, **kwargs)
+
+
+class NoteListView(LoginRequiredIfDraftMixin, TaggedMixin, NotesMixin, LinksMixin, ListView):
 
     paginate_by = 9
     paginate_orphans = 3
@@ -186,7 +195,7 @@ class NoteListView(TaggedMixin, NotesMixin, LinksMixin, ListView):
         return context
 
 
-class NoteDetailView(NotesMixin, LinksMixin, DetailView):
+class NoteDetailView(LoginRequiredIfDraftMixin, NotesMixin, LinksMixin, DetailView):
 
     def get_links(self):
         """Add link to Webmention endpoint."""
