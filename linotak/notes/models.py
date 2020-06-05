@@ -5,6 +5,7 @@ from django.db import models, transaction
 from django.db.models import F, Q
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from ..images.models import Image
 from ..images.size_spec import SizeSpec
@@ -24,30 +25,40 @@ class Person(models.Model):
     login = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         models.SET_NULL,
+        verbose_name=_('login'),
         null=True,
         blank=True,
+        help_text=_('If supplied, indicates this person  has an account on this system.'),
     )
     image = models.ForeignKey(
         Image,
         models.SET_NULL,
+        verbose_name=_('image'),
         null=True,
         blank=True,
         help_text='Depicts this user.'
     )
     native_name = models.CharField(
+        _('native name'),
         max_length=250,
-        help_text='How this user’s name is presented.'
+        help_text=_('How this user’s name is presented.'),
     )
     slug = models.SlugField(
+        _('slug'),
         max_length=64,
         unique=True,
         null=True,
         blank=True,
-        help_text='Identifies profile page for this person.'
+        help_text=_('Used in the URL for profile page for this person.'),
     )
     description = models.TextField(
+        _('description'),
         blank=True,
     )
+
+    class Meta:
+        verbose_name = _('person')
+        verbose_name_plural = _('persons')
 
     def __str__(self):
         return self.native_name
@@ -79,17 +90,24 @@ class Profile(models.Model):
     person = models.ForeignKey(
         Person,
         models.CASCADE,
+        verbose_name=_('person'),
         related_name='profiles',
         related_query_name='profile',
     )
 
     url = models.URLField(
+        _('URL'),
         max_length=MAX_LENGTH,
     )
     label = models.CharField(
+        _('label'),
         max_length=MAX_LENGTH,
-        help_text='How to display the username or equivalent for this person on this site. E.g., @damiancugley if on twitter.'
+        help_text=_('How to display the username or equivalent for this person on this site. E.g., @damiancugley if on twitter.'),
     )
+
+    class Meta:
+        verbose_name = _('profile')
+        verbose_name_plural = _('profiles')
 
     def __str__(self):
         return self.label
@@ -103,10 +121,12 @@ class Locator(models.Model):
         models.SET_NULL,
         null=True,
         blank=True,
+        verbose_name=_('author'),
     )
     images = models.ManyToManyField(
         Image,
         through='LocatorImage',
+        verbose_name='images',
         related_name='occurences',
         related_query_name='occurrence',
     )
@@ -117,32 +137,42 @@ class Locator(models.Model):
         related_query_name='destination',
         null=True,
         blank=True,
-        help_text='linm to another locator that referenced this one'
+        verbose_name='via',
+        help_text='Link to another locator that referenced this one'
     )
 
     url = models.URLField(
+        _('url'),
         max_length=MAX_LENGTH,
         unique=True,
     )
     title = models.CharField(
+        _('title'),
         max_length=MAX_LENGTH,
         blank=True,
     )
     text = models.TextField(
+        _('text'),
         blank=True,
-        help_text='Description, summary, or content of the linked-to resource'
+        help_text=_('Description, summary, or content of the linked-to resource'),
     )
     published = models.DateTimeField(
+        _('published'),
         null=True,
         blank=True,
     )  # As claimed by the resource.
     scanned = models.DateTimeField(
+        _('scanned'),
         null=True,
         blank=True,
     )
 
-    created = models.DateTimeField(default=timezone.now)
-    modified = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(_('created'), default=timezone.now)
+    modified = models.DateTimeField(_('modified'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('locator')
+        verbose_name_plural = _('locators')
 
     def __str__(self):
         return self.url
@@ -155,7 +185,7 @@ class Locator(models.Model):
         transaction.on_commit(lambda: tasks.fetch_locator_page.delay(self.pk, if_not_scanned_since=t))
 
     def main_image(self):
-        """Return the image with the largest source dimensions."""
+        """Return the image with the highest prominence or largest source dimensions."""
         for image in self.images.filter(Q(width__isnull=True) | Q(height__isnull=True)):
             image.wants_size()
         candidates = list(
@@ -193,11 +223,13 @@ class Locator(models.Model):
 class LocatorImage(models.Model):
     """Relationship between locator and an image it references."""
 
-    locator = models.ForeignKey(Locator, models.CASCADE)
-    image = models.ForeignKey(Image, models.CASCADE)
-    prominence = models.PositiveSmallIntegerField(default=0)
+    locator = models.ForeignKey(Locator, models.CASCADE, verbose_name=_('locator'))
+    image = models.ForeignKey(Image, models.CASCADE, verbose_name=_('image'))
+    prominence = models.PositiveSmallIntegerField(_('prominence'), default=0)
 
     class Meta:
+        verbose_name = 'locator image'
+        verbose_name_plural = 'locator images'
         ordering = ['-prominence']
         unique_together = [
             ['locator', 'image']
@@ -208,47 +240,56 @@ class LocatorImage(models.Model):
 
 
 class Series(models.Model):
+    """A series of notes usually by one editor. Each series gets its own subdomain."""
+
     # Sizes of site (fav)icon recommended for Windows and for Android devices.
     ICON_SIZES = 16, 32, 48, 64, 192
     APPLE_TOUCH_ICON_SIZES = 120, 180, 152, 167
 
     editors = models.ManyToManyField(  # Links to persons (who have logins) who can create & update notes
         Person,
+        verbose_name=_('editors'),
     )
     icon = models.ForeignKey(
         Image,
         models.SET_NULL,
         null=True,
         blank=True,
-        help_text='Optional favicon. Can use transparency. GIF or PNG.',
+        verbose_name=_('icon'),
+        help_text=_('Optional favicon. Can use transparency. GIF or PNG.'),
     )
     apple_touch_icon = models.ForeignKey(
         Image,
         models.SET_NULL,
         null=True,
         blank=True,
+        verbose_name=_('Apple touch icon'),
         related_name='apple_touch_series_set',
         related_query_name='apple_touch_series',
-        help_text='Optional apple-touch-icon. Not transparent.',
+        help_text=_('Optional apple-touch-icon. Not transparent.'),
     )
     name = models.SlugField(
+        _('name'),
         max_length=63,
-        help_text='Used in URLs',
+        help_text=_('Uniquely identifies this series. Used in subdomain.'),
     )
     title = models.CharField(
+        _('title'),
         max_length=MAX_LENGTH,
     )
     desc = models.TextField(
-        'description',
+        _('description'),
         blank=True,
-        help_text="Optional description.",
+        help_text=_('Optional description.'),
     )
-    created = models.DateTimeField(default=timezone.now)
-    modified = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(_('created'), default=timezone.now)
+    modified = models.DateTimeField(_('modified'), auto_now=True)
 
     class Meta:
         ordering = ['title']
-        verbose_name_plural = 'series'
+        verbose_name = _('series')
+        # Translator: plural
+        verbose_name_plural = _('series')
 
     def __str__(self):
         return self.title or self.name
@@ -262,7 +303,7 @@ class Series(models.Model):
         return f"{scheme}://{self.name}.{settings.NOTES_DOMAIN}{path}"
 
     def icon_representations(self):
-        """Return sequence if image representations for use as favicons."""
+        """Return sequence of image representations for use as favicons."""
         return icon_representations(self.icon, self.ICON_SIZES)
 
     def apple_touch_icon_representations(self):
@@ -306,25 +347,29 @@ class Tag(models.Model):
     """
 
     name = models.SlugField(
+        _('name'),
         max_length=MAX_LENGTH,
         blank=False,
         unique=True,
-        help_text='Internal name of the tag, as lowercase words separated by dashes.',
+        help_text=_('Internal name of the tag, as lowercase words smooshed together.'),
     )
     label = models.CharField(
+        _('label'),
         max_length=MAX_LENGTH,
         blank=False,
         unique=True,
         help_text='Conventional capitalization of this tag, as words separated by spaces.',
     )
 
-    created = models.DateTimeField(default=timezone.now)
-    modified = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(_('created'), default=timezone.now)
+    modified = models.DateTimeField(_('modified'), auto_now=True)
 
     objects = TagManager()
 
     class Meta:
         ordering = ['label']
+        verbose_name = _('tag')
+        verbose_name_plural = _('tags')
 
     def __str__(self):
         return self.label
@@ -334,16 +379,25 @@ class Tag(models.Model):
 
 
 class Note(models.Model):
+    """Short text with optionalk links written by an editor, possibly published on the site.
+
+    Editor enters text, hashtags, and subject URLs as one text.
+    This is parsed in to text content, Tag and Subject instances.
+    """
+
     series = models.ForeignKey(
         Series,
         models.CASCADE,
+        verbose_name=_('series'),
     )
     author = models.ForeignKey(
         Person,
         models.CASCADE,
+        verbose_name=_('author'),
     )
     tags = models.ManyToManyField(
         Tag,
+        verbose_name=_('tags'),
         related_name='occurences',
         related_query_name='occurrence',
         blank=True,
@@ -351,19 +405,23 @@ class Note(models.Model):
     subjects = models.ManyToManyField(
         Locator,
         through='NoteSubject',
+        verbose_name=_('subjects'),
         related_name='occurences',
         related_query_name='occurrence',
-        help_text='Web page or sites that is described or cited in this note.'
+        help_text=_('Web page or site that is described or cited in this note.'),
     )
     text = models.TextField(
+        _('text'),
         blank=True,
-        help_text="Content of note. May be omitted if it has subject links.",
+        help_text=_('Content of note. May be omitted if it has subject links.'),
     )
-    created = models.DateTimeField(default=timezone.now)
-    modified = models.DateTimeField(auto_now=True)
-    published = models.DateTimeField(null=True, blank=True)
+    created = models.DateTimeField(_('created'), default=timezone.now)
+    modified = models.DateTimeField(_('modified'), auto_now=True)
+    published = models.DateTimeField(_('published'), null=True, blank=True)
 
     class Meta:
+        verbose_name = _('note')
+        verbose_name_plural = _('notes')
         ordering = ['-published', '-created']
 
     def add_subject(self, url, via_url=None, **kwargs):
@@ -384,7 +442,7 @@ class Note(models.Model):
         """Return a title for this note.
 
         Since notes do not have a separate title, we draw one from the
-        first few words of the  first line (paragraph) of the text.
+        first few words of the first line (paragraph) of the text.
         If the line must be shortened, then attempts to break at a space
         and make something 30-odd characters long.
         """
@@ -399,6 +457,7 @@ class Note(models.Model):
         return '%s…' % title[:30] if pos < 0 else '%s …' % title[:pos]
 
     def text_with_links(self):
+        """Unparse note back in to text followed by tags and links."""
         parts = [
             self.text.strip(),
             ' '.join('#' + x.as_camel_case() for x in self.tags.all()),
@@ -412,7 +471,7 @@ class Note(models.Model):
         """Return URL for this note.
 
         Arguments (all optional) --
-            view -- edit' to return URL for editing this node; default 'detail'
+            view -- 'edit' to return URL for editing this node; default 'detail'
             tag_filter -- TagFilter instance, or None
             with_host -- add scheme and domain parts
         """
@@ -484,11 +543,13 @@ class Note(models.Model):
 class NoteSubject(models.Model):
     """Relationship between a note and one of its subjects."""
 
-    note = models.ForeignKey(Note, models.CASCADE)
-    locator = models.ForeignKey(Locator, models.CASCADE)
-    sequence = models.PositiveSmallIntegerField(default=0)
+    note = models.ForeignKey(Note, models.CASCADE, verbose_name=_('note'))
+    locator = models.ForeignKey(Locator, models.CASCADE, verbose_name=_('locator'))
+    sequence = models.PositiveSmallIntegerField(default=0, verbose_name=_('sequence'))
 
     class Meta:
+        verbose_name = 'note subject'
+        verbose_name_plural = 'note subjects'
         ordering = ['sequence']
         unique_together = [
             ['note', 'locator'],

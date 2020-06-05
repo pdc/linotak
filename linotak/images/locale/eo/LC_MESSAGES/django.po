@@ -1,0 +1,85 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: POEditor.com\n"
+"Project-Id-Version: linotak_images\n"
+"Language: eo\n"
+
+#: linotak/images/models.py:57
+msgid "data URL"
+msgstr "datuma URL"
+
+#: linotak/images/models.py:62 linotak/images/models.py:393
+msgid "media-type"
+msgstr "amaskomunikilaro"
+
+#: linotak/images/models.py:69
+msgid "MIME media-type for this image source, such as image/jpeg"
+msgstr "MIME-media speco por ĉi tiu bildfonto, kiel bildo / jpeg"
+
+#: linotak/images/models.py:72
+msgid "cached data"
+msgstr "datumoj en kaŝmemoro"
+
+#: linotak/images/models.py:76
+msgid "A copy of the image data from which we can generate scaled representations."
+msgstr "Kopio de la bildaj datumoj, de kiuj ni povas generi skalajn reprezentadojn."
+
+#: linotak/images/models.py:79 linotak/images/models.py:399
+msgid "width"
+msgstr "larĝeco"
+
+#: linotak/images/models.py:84 linotak/images/models.py:400
+msgid "height"
+msgstr "alteco"
+
+#: linotak/images/models.py:89 linotak/images/models.py:403
+msgid "etag"
+msgstr "etag"
+
+#: linotak/images/models.py:97
+msgid "retrieved"
+msgstr "retrovita"
+
+#: linotak/images/models.py:102 linotak/images/models.py:409
+msgid "created"
+msgstr "kreita"
+
+#: linotak/images/models.py:103 linotak/images/models.py:410
+msgid "modified"
+msgstr "modifita"
+
+#: linotak/images/models.py:386
+msgid "content"
+msgstr "enhavo"
+
+#: linotak/images/models.py:390
+msgid "Content of the image representation."
+msgstr "Enhavo de la bilda reprezentado."
+
+#: linotak/images/models.py:401
+msgid "is cropped"
+msgstr "estas kroĉita"
+
+#: linotak/images/models.py:406
+msgid "Hash of the image data when generated."
+msgstr "Hash de la bildaj datumoj kiam generitaj."
+
+#: linotak/images/admin.py:17
+msgid "Queue retrieval of image data"
+msgstr "Kola reakiro de bildaj datumoj"
+
+#: linotak/images/admin.py:35 linotak/images/admin.py:36
+msgid "Thumbnail"
+msgstr "Bildeto"
+
+#: linotak/images/models.py:106
+msgid "image"
+msgstr "bildo"
+
+#: linotak/images/models.py:107
+msgid "images"
+msgstr "bildoj"
+

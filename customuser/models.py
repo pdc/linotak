@@ -1,8 +1,10 @@
 """A custom user model."""
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager, UnicodeUsernameValidator
+from django.core.mail import send_mail
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 class Login(PermissionsMixin, AbstractBaseUser):
@@ -13,31 +15,31 @@ class Login(PermissionsMixin, AbstractBaseUser):
     username_validator = UnicodeUsernameValidator()
 
     username = models.CharField(
-        'username',
+        _('username'),
         max_length=150,
         unique=True,
         blank=False,
-        help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.',
+        help_text=_('Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'),
         validators=[username_validator],
         error_messages={
-            'unique': "A user with that username already exists.",
+            'unique': _("A user with that username already exists."),
         },
     )
-    email = models.EmailField('email address', blank=False, null=False)
+    email = models.EmailField(_('email address'), blank=False, null=False)
     is_staff = models.BooleanField(
-        'staff status',
+        _('staff status'),
         default=False,
-        help_text='Designates whether the user can log into this admin site.',
+        help_text=_('Designates whether the user can log into this admin site.'),
     )
     is_active = models.BooleanField(
-        'active',
+        _('active'),
         default=True,
-        help_text=(
+        help_text=_(
             'Designates whether this user should be treated as active. '
             'Unselect this instead of deleting accounts.'
         ),
     )
-    date_joined = models.DateTimeField('date joined', default=timezone.now)
+    date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
 
     objects = UserManager()
 
@@ -46,8 +48,8 @@ class Login(PermissionsMixin, AbstractBaseUser):
     REQUIRED_FIELDS = [EMAIL_FIELD]
 
     class Meta:
-        verbose_name = 'user'
-        verbose_name_plural = 'users'
+        verbose_name = _('login')
+        verbose_name_plural = _('logins')
 
     def clean(self):
         super().clean()

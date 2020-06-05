@@ -2,7 +2,8 @@
 
 Images have two main classes:
 
-    Image: the source data for an image
+    Image: the source data for an image.
+        In RDF terms, this is the resource.
     Representation: information about where we stored a
         scaled version of an image
 """
@@ -14,6 +15,7 @@ from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.db.models import F
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from hashlib import md5
 import io
 import logging
@@ -40,7 +42,7 @@ class CannotSniff(Exception):
 
 
 class Image(models.Model):
-    """The source data fro an image displayed in a note."""
+    """The source data for an image displayed in a note."""
 
     class NotSniffable(CannotSniff):
         """Raised if cannot sniff. Args are file_name and returncode & message from ImageMagick."""
@@ -52,32 +54,39 @@ class Image(models.Model):
     MAX_DATA = 10 * 1024 * 1024
 
     data_url = models.URLField(
+        _('data URL'),
         max_length=MAX_LENGTH,
         unique=True,
     )
     media_type = models.CharField(
+        _('media-type'),
         max_length=MAX_LENGTH,
         validators=[
             RegexValidator(r'^(image|application)/[\w.+-]+(;\s*\w+=.*)?$'),
         ],
         null=True,
         blank=True,
+        help_text=_('MIME media-type for this image source, such as image/jpeg'),
     )
     cached_data = models.FileField(
+        _('cached data'),
         upload_to='cached-images',
         null=True,
         blank=True,
-        help_text='A copy of the image data from which we can generate scaled representations.',
+        help_text=_('A copy of the image data from which we can generate scaled representations.'),
     )
     width = models.PositiveIntegerField(
+        _('width'),
         null=True,
         blank=True,
     )
     height = models.PositiveIntegerField(
+        _('height'),
         null=True,
         blank=True,
     )
     etag = models.BinaryField(
+        _('etag'),
         max_length=16,
         null=True,
         blank=True,
@@ -85,12 +94,17 @@ class Image(models.Model):
         help_text='Hash of the image data when retrieved.',
     )
     retrieved = models.DateTimeField(
+        _('retrieved'),
         null=True,
         blank=True,
     )
 
-    created = models.DateTimeField(default=timezone.now)
-    modified = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(_('created'), default=timezone.now)
+    modified = models.DateTimeField(_('modified'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('image')
+        verbose_name_plural = _('images')
 
     def __str__(self):
         last_part = self.data_url.rsplit('/', 1)[-1]
@@ -115,7 +129,7 @@ class Image(models.Model):
         if self.retrieved and (not if_not_retrieved_since or if_not_retrieved_since < self.retrieved):
             return
         self.retrieved = timezone.now()
-        self.save()  # This will be rolled back in case of error but settingit now avoids some race conditons.
+        self.save()  # This will be rolled back in case of error but setting it now avoids some race conditons.
 
         if self.data_url.startswith('data:'):
             media_type, rest = self.data_url.split(';', 1)
@@ -151,7 +165,7 @@ class Image(models.Model):
         """Presuming already has image data, guess width, height, and media_type."""
         with self.cached_data.open() as f:
             if not self.etag:
-                # GHappens if cached data is set outside of retrieve_data.
+                # Happens if cached data is set outside of retrieve_data.
                 hasher = md5()
                 chunk = f.read(10_240)
                 while chunk:
@@ -232,7 +246,7 @@ class Image(models.Model):
 
     @transaction.atomic
     def find_representation(self, spec):
-        """Return the best match for a square area of this size.
+        """Return the best match for an area of this size.
 
         If there is no exact match, fires signal.
         """
@@ -363,39 +377,44 @@ class Representation(models.Model):
     image = models.ForeignKey(
         Image,
         models.CASCADE,
+        verbose_name='representation',
         related_name='representations',
         related_query_name='representation',
     )
 
     content = models.FileField(
+        _('content'),
         upload_to='i',
         null=True,
         blank=True,
-        help_text='Content of the image representation.',
+        help_text=_('Content of the image representation.'),
     )
     media_type = models.CharField(
+        _('media-type'),
         max_length=MAX_LENGTH,
         validators=[
             RegexValidator(r'^(image|application)/\w+(;\s*\w+=.*)?$'),
         ],
     )
-    width = models.PositiveIntegerField()
-    height = models.PositiveIntegerField()
-    is_cropped = models.BooleanField()
+    width = models.PositiveIntegerField(_('width'))
+    height = models.PositiveIntegerField(_('height'))
+    is_cropped = models.BooleanField(_('is cropped'))
     etag = models.BinaryField(
+        _('etag'),
         max_length=16,
         editable=False,
-        help_text='Hash of the image data when generated.',
+        help_text=_('Hash of the image data when generated.'),
     )
 
-    created = models.DateTimeField(default=timezone.now)
-    modified = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(_('created'), default=timezone.now)
+    modified = models.DateTimeField(_('modified'), auto_now=True)
 
     class Meta:
+        verbose_name = 'representation'
+        verbose_name_plural = 'representations'
         unique_together = [
             ('image', 'width', 'is_cropped'),
         ]
 
     def __str__(self):
         return '%s (%dx%d)' % (self.image, self.width, self.height)
-

@@ -2,6 +2,7 @@
 
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 
 from .templatetags.image_representations import square_representation, representation
 from .models import Image
@@ -13,7 +14,7 @@ def queue_retrieve(model_admin, request, queryset):
         img.queue_retrieve_data()
 
 
-queue_retrieve.short_description = 'Queue retrieval of image data'
+queue_retrieve.short_description = _('Queue retrieval of image data')
 
 
 def small_thumbnail(image):
@@ -31,8 +32,8 @@ def large_thumbnail(image):
         representation=representation(image, '320x320') or '–')
 
 
-small_thumbnail.short_description = 'Thumbnail'
-large_thumbnail.short_description = 'Thumbnail'
+small_thumbnail.short_description = _('Thumbnail')
+large_thumbnail.short_description = _('Thumbnail')
 
 
 class ImageAdmin(admin.ModelAdmin):
