@@ -1,9 +1,10 @@
+{% load i18n %}
 {% load note_lists %}
 
         <div class="notes-wrapper">
             {% if is_paginated and page_obj.has_previous %}
             <div class="note-list-pagination-prev nav">
-                <a class="nav-link nav-link-back" href="{% note_list_url page=page_obj.previous_page_number %}">Newer</a>
+                <a class="nav-link nav-link-back" href="{% note_list_url page=page_obj.previous_page_number %}">{% trans "Newer" %}</a>
             </div>
             {% endif %}
 
@@ -17,7 +18,7 @@
 
             {% if is_paginated and page_obj.has_next %}
             <div class="note-list-pagination-next nav">
-                <a class="nav-link nav-link-fwd" href="{% note_list_url page=page_obj.next_page_number %}">Older</a>
+                <a class="nav-link nav-link-fwd" href="{% note_list_url page=page_obj.next_page_number %}">{% trans "Older" %}</a>
             </div>
             {% endif %}
         </div>

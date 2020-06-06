@@ -1,0 +1,620 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: POEditor.com\n"
+"Project-Id-Version: linotak\n"
+"Language: eo\n"
+
+#: linotak/images/models.py:57
+msgid "data URL"
+msgstr "datuma adreso"
+
+#: linotak/images/models.py:62 linotak/images/models.py:393
+msgid "media-type"
+msgstr "amaskomunikilaro"
+
+#: linotak/images/models.py:69
+msgid "MIME media-type for this image source, such as image/jpeg"
+msgstr "MIME-media speco por ĉi tiu bildfonto, kiel bildo / jpeg"
+
+#: linotak/images/models.py:72
+msgid "cached data"
+msgstr "datumoj en kaŝmemoro"
+
+#: linotak/images/models.py:76
+msgid "A copy of the image data from which we can generate scaled representations."
+msgstr "Kopio de la bildaj datumoj, de kiuj ni povas generi skalajn reprezentadojn."
+
+#: linotak/images/models.py:79 linotak/images/models.py:399
+msgid "width"
+msgstr "larĝeco"
+
+#: linotak/images/models.py:84 linotak/images/models.py:400
+msgid "height"
+msgstr "alteco"
+
+#: linotak/images/models.py:89 linotak/images/models.py:403
+msgid "etag"
+msgstr "etag"
+
+#: linotak/images/models.py:97
+msgid "retrieved"
+msgstr "retrovita"
+
+#: linotak/images/models.py:102 linotak/images/models.py:409
+#: linotak/mentions/models.py:24 linotak/mentions/models.py:55
+#: linotak/mentions/models.py:119 linotak/mentions/models.py:194
+#: linotak/notes/models.py:170 linotak/notes/models.py:285
+#: linotak/notes/models.py:364 linotak/notes/models.py:418
+msgid "created"
+msgstr "kreita"
+
+#: linotak/images/models.py:103 linotak/images/models.py:410
+#: linotak/notes/models.py:171 linotak/notes/models.py:286
+#: linotak/notes/models.py:365 linotak/notes/models.py:419
+msgid "modified"
+msgstr "modifita"
+
+#: linotak/images/models.py:386
+msgid "content"
+msgstr "enhavo"
+
+#: linotak/images/models.py:390
+msgid "Content of the image representation."
+msgstr "Enhavo de la bilda reprezentado."
+
+#: linotak/images/models.py:401
+msgid "is cropped"
+msgstr "estas kroĉita"
+
+#: linotak/images/models.py:406
+msgid "Hash of the image data when generated."
+msgstr "Hash de la bildaj datumoj kiam generitaj."
+
+#: linotak/images/admin.py:17
+msgid "Queue retrieval of image data"
+msgstr "Kola reakiro de bildaj datumoj"
+
+#: linotak/images/admin.py:35 linotak/images/admin.py:36
+msgid "Thumbnail"
+msgstr "Bildeto"
+
+#: linotak/images/models.py:106 linotak/notes/models.py:36
+#: linotak/notes/models.py:227
+msgid "image"
+msgstr "bildo"
+
+#: linotak/images/models.py:107
+msgid "images"
+msgstr "bildoj"
+
+#: customuser/models.py:18
+msgid "username"
+msgstr "uzantnomo"
+
+#: customuser/models.py:22
+msgid "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
+msgstr "Postulata. 150 signoj aŭ malpli Literoj, ciferoj kaj nur @ /. / + / - / _."
+
+#: customuser/models.py:25
+msgid "A user with that username already exists."
+msgstr "Uzanto kun tiu salutnomo jam ekzistas."
+
+#: customuser/models.py:28
+msgid "email address"
+msgstr "retpoŝta adreso"
+
+#: customuser/models.py:30
+msgid "staff status"
+msgstr "personaro"
+
+#: customuser/models.py:32
+msgid "Designates whether the user can log into this admin site."
+msgstr "Designa ĉu la uzanto povas ensaluti ĉi tiun administran retejon."
+
+#: customuser/models.py:35
+msgid "active"
+msgstr "aktiva"
+
+#: customuser/models.py:38
+msgid "Designates whether this user should be treated as active. Unselect this instead of deleting accounts."
+msgstr "Indikas ĉu ĉi tiu uzanto devas esti traktata kiel aktiva. Malelektu ĉi tion anstataŭ forigi kontojn."
+
+#: customuser/models.py:42
+msgid "date joined"
+msgstr "dato aliĝis"
+
+#: customuser/models.py:51 linotak/notes/models.py:28
+msgid "login"
+msgstr "Ensaluti"
+
+#: customuser/models.py:52
+msgid "logins"
+msgstr "ensalutiloj"
+
+#: linotak/about/templates/about/page.html:18
+msgid "About %(title)s"
+msgstr "Ĉirkaŭ%(title)s"
+
+#: linotak/about/templates/about/page.html:30
+#: linotak/notes/templates/notes/base.html:39
+msgid "Privacy policy"
+msgstr "Regularo pri privateco"
+
+#: linotak/about/templates/about/page.html:34
+msgid "GitHub repo"
+msgstr "GitHub repo"
+
+#: linotak/mentions/models.py:19 linotak/notes/models.py:99
+msgid "URL"
+msgstr "URL"
+
+#: linotak/mentions/models.py:27 linotak/mentions/models.py:51
+#: linotak/mentions/models.py:96
+msgid "receiver"
+msgstr "ricevilo"
+
+#: linotak/mentions/models.py:28
+msgid "receivers"
+msgstr "riceviloj"
+
+#: linotak/mentions/models.py:41 linotak/notes/models.py:174
+#: linotak/notes/models.py:226 linotak/notes/models.py:547
+msgid "locator"
+msgstr "lokalizilo"
+
+#: linotak/mentions/models.py:42
+msgid "Locator that is associated with receiver."
+msgstr "Lokilo, kiu estas asociita kun ricevilo."
+
+#: linotak/mentions/models.py:52
+msgid "Receiver handling mentions targeting the locator."
+msgstr "Mencioj pri uzado de riceviloj celantaj la lokalizilon."
+
+#: linotak/mentions/models.py:58
+msgid "locator receiver"
+msgstr "lokalizilo ricevilo"
+
+#: linotak/mentions/models.py:59
+msgid "locator receivers"
+msgstr "riceviloj de lokalizilo"
+
+#: linotak/mentions/models.py:80 linotak/mentions/models.py:164
+msgid "source"
+msgstr "fonto"
+
+#: linotak/mentions/models.py:81
+msgid "Mentions an external resource."
+msgstr "Mencias eksteran rimedon."
+
+#: linotak/mentions/models.py:89
+msgid "External resource mentioned in this note."
+msgstr "Ekstera rimedo menciita en ĉi tiu noto."
+
+#: linotak/mentions/models.py:97
+msgid "Receiver used when notifying this locator."
+msgstr "Ricevilo uzita dum sciigo pri ĉi tiu lokalizilo."
+
+#: linotak/mentions/models.py:101
+msgid "discovered"
+msgstr "malkovrita"
+
+#: linotak/mentions/models.py:104
+msgid "When the discovery phase of WebMention protocol concluded (successfully or otherwise)."
+msgstr "Kiam finiĝis la eltrova fazo de protokolo WebMention (sukcese aŭ alie)."
+
+#: linotak/mentions/models.py:107
+#, fuzzy
+msgid "notified"
+msgstr "modifita"
+
+#: linotak/mentions/models.py:110
+msgid "When the notification of the receiver concluded (successfully or otherwise)"
+msgstr "Kiam la sciigo pri la ricevilo finis (sukcese aŭ alie)"
+
+#: linotak/mentions/models.py:113
+msgid "response status"
+msgstr "responda stato"
+
+#: linotak/mentions/models.py:116
+msgid "HTTP status code returned by receiver when notified."
+msgstr "HTTP-statuskodo redonita de ricevilo kiam sciigita."
+
+#: linotak/mentions/models.py:165
+msgid "Location of a post that mentions one of our notes, if known."
+msgstr "Loko de afiŝo, kiu mencias unu el niaj notoj, se konata."
+
+#: linotak/mentions/models.py:172
+msgid "target"
+msgstr "celo"
+
+#: linotak/mentions/models.py:173
+msgid "The note that is mentioned by the source, if known."
+msgstr "La noto menciita de la fonto, se konata."
+
+#: linotak/mentions/models.py:177
+msgid "source URL"
+msgstr "fonto URL"
+
+#: linotak/mentions/models.py:179
+msgid "URL of a page mentioning oine of our notes, as supplied by caller."
+msgstr "URL de paĝo mencianta el niaj notoj, kiel provizitaj de alvokanto."
+
+#: linotak/mentions/models.py:182
+#, fuzzy
+msgid "targeet URL"
+msgstr "datuma URL"
+
+#: linotak/mentions/models.py:184
+msgid "URL of one of our notes, as supplied by caller."
+msgstr "URL de unu el niaj notoj, kiel provizita de vokanto."
+
+#: linotak/mentions/models.py:187
+msgid "user agent"
+msgstr "uzanto-agento"
+
+#: linotak/mentions/models.py:191
+msgid "What software the caller claims to be running."
+msgstr "Kiujn programojn la vokanto asertas funkcii."
+
+#: linotak/mentions/models.py:212
+msgid "incoming mention"
+msgstr "envenanta mencio"
+
+#: linotak/mentions/models.py:213
+msgid "incoming mentions"
+msgstr "alvenantaj mencioj"
+
+#: linotak/notes/models.py:31
+msgid "If supplied, indicates this person  has an account on this system."
+msgstr "Se provizita, indiku, ke ĉi tiu persono havas konton pri ĉi tiu sistemo."
+
+#: linotak/notes/models.py:42
+msgid "native name"
+msgstr "denaska nomo"
+
+#: linotak/notes/models.py:44
+msgid "How this user’s name is presented."
+msgstr "Kiel la nomo de ĉi tiu uzanto estas prezentita."
+
+#: linotak/notes/models.py:47
+msgid "slug"
+msgstr "sledo"
+
+#: linotak/notes/models.py:52
+msgid "Used in the URL for profile page for this person."
+msgstr "Uzita en la URL por profilpaĝo por ĉi tiu persono."
+
+#: linotak/notes/models.py:55 linotak/notes/models.py:281
+msgid "description"
+msgstr "Priskribo"
+
+#: linotak/notes/models.py:60 linotak/notes/models.py:93
+msgid "person"
+msgstr "persono"
+
+#: linotak/notes/models.py:61
+msgid "persons"
+msgstr "personoj"
+
+#: linotak/notes/models.py:103 linotak/notes/models.py:357
+msgid "label"
+msgstr "etikedo"
+
+#: linotak/notes/models.py:105
+msgid "How to display the username or equivalent for this person on this site. E.g., @damiancugley if on twitter."
+msgstr "Kiel aperigi la uzantnomon aŭ ekvivalenton por ĉi tiu persono sur ĉi tiu retejo. Ekz., @Damiancugley se en Twitter."
+
+#: linotak/notes/models.py:109
+msgid "profile"
+msgstr "Profilo"
+
+#: linotak/notes/models.py:110
+msgid "profiles"
+msgstr "profiloj"
+
+#: linotak/notes/models.py:124 linotak/notes/models.py:396
+msgid "author"
+msgstr "aŭtoro"
+
+#: linotak/notes/models.py:145
+msgid "url"
+msgstr "url"
+
+#: linotak/notes/models.py:150 linotak/notes/models.py:277
+msgid "title"
+msgstr "titolo"
+
+#: linotak/notes/models.py:155 linotak/notes/models.py:414
+msgid "text"
+msgstr "teksto"
+
+#: linotak/notes/models.py:157
+msgid "Description, summary, or content of the linked-to resource"
+msgstr "Priskribo, resumo, aŭ enhavo de la ligita rimedo"
+
+#: linotak/notes/models.py:160 linotak/notes/models.py:420
+msgid "published"
+msgstr "eldonita"
+
+#: linotak/notes/models.py:165
+msgid "scanned"
+msgstr "skanita"
+
+#: linotak/notes/models.py:175
+msgid "locators"
+msgstr "lokaliziloj"
+
+#: linotak/notes/models.py:228
+msgid "prominence"
+msgstr "eminenteco"
+
+#: linotak/notes/models.py:251
+msgid "editors"
+msgstr "redaktistoj"
+
+#: linotak/notes/models.py:258
+msgid "icon"
+msgstr "bildsimbolo"
+
+#: linotak/notes/models.py:259
+msgid "Optional favicon. Can use transparency. GIF or PNG."
+msgstr "Laŭvola retpaĝsimbolo. Povas uzi travideblecon. GIF aŭ PNG."
+
+#: linotak/notes/models.py:266
+msgid "Apple touch icon"
+msgstr "Retpaĝsimbolo por Apple tuŝo"
+
+#: linotak/notes/models.py:269
+msgid "Optional apple-touch-icon. Not transparent."
+msgstr "Laŭvola retpaĝsimbolo por iPhone kaj iPad tuŝo. Ne travidebla."
+
+#: linotak/notes/models.py:272 linotak/notes/models.py:350
+msgid "name"
+msgstr "nomo"
+
+#: linotak/notes/models.py:274
+msgid "Uniquely identifies this series. Used in subdomain."
+msgstr "Unike identigas ĉi tiun serion. Uzita en subdominio."
+
+#: linotak/notes/models.py:283
+msgid "Optional description."
+msgstr "Laŭvola priskribo."
+
+#: linotak/notes/models.py:290 linotak/notes/models.py:292
+#: linotak/notes/models.py:391
+msgid "series"
+msgstr "serio"
+
+#: linotak/notes/models.py:354
+msgid "Internal name of the tag, as lowercase words smooshed together."
+msgstr "Interna nomo de la etikedo, kiel minusklaj vortoj kunmoviĝis."
+
+#: linotak/notes/models.py:371
+#, fuzzy
+msgid "tag"
+msgstr "etag"
+
+#: linotak/notes/models.py:372 linotak/notes/models.py:400
+msgid "tags"
+msgstr "etikedoj"
+
+#: linotak/notes/models.py:408
+msgid "subjects"
+msgstr "subjektoj"
+
+#: linotak/notes/models.py:411
+msgid "Web page or site that is described or cited in this note."
+msgstr "Retpaĝo aŭ retejo priskribita aŭ citita en ĉi tiu noto."
+
+#: linotak/notes/models.py:416
+msgid "Content of note. May be omitted if it has subject links."
+msgstr "Enhavo de noto. Eblas preterlasi se ĝi havas subjektojn."
+
+#: linotak/notes/models.py:423 linotak/notes/models.py:546
+msgid "note"
+msgstr "noto"
+
+#: linotak/notes/models.py:424
+msgid "notes"
+msgstr "notoj"
+
+#: linotak/notes/models.py:548
+msgid "sequence"
+msgstr "sinsekvo"
+
+#: customuser/templates/registration/login.html:4
+msgid "Please log in"
+msgstr "Bonvolu ensaluti"
+
+#: customuser/templates/registration/login.html:18
+msgid "Your username and password didn’t match. Please try again."
+msgstr "Via uzantnomo kaj pasvorto ne kongruis. Bonvolu reprovi."
+
+#: customuser/templates/registration/login.html:24
+msgid "Your account doesn't have access to this page. To proceed, please login with an account that has access."
+msgstr "Via konto ne havas aliron al ĉi tiu paĝo. Por daŭrigi, bonvolu ensaluti per konto kiu havas aliron."
+
+#: customuser/templates/registration/login.html:27
+msgid "Please login to see this page."
+msgstr "Bonvolu ensaluti por vidi ĉi tiun paĝon."
+
+#: customuser/templates/registration/login.html:45
+msgid "Lost password?"
+msgstr "Ĉu vi perdis pasvorton?"
+
+#: linotak/mentions/templates/mentions/incoming_detail.html:29
+#, fuzzy
+msgid "Incoming Webmention #%(number)s"
+msgstr "alvenantaj mencioj"
+
+#: linotak/mentions/templates/mentions/incoming_detail.html:31
+msgid "The mention has not yet been verified."
+msgstr "La mencio ankoraŭ ne kontrolis."
+
+#: linotak/mentions/templates/mentions/incoming_detail.html:33
+msgid "Source web page"
+msgstr "Fonta retpaĝo"
+
+#: linotak/mentions/templates/mentions/incoming_detail.html:35
+msgid "A Webmention notification was received on behalf of the following web page:"
+msgstr "Ricevo de sciigo ricevis nome de la sekva retpaĝo:"
+
+#: linotak/mentions/templates/mentions/incoming_detail.html:69
+msgid "Target web page"
+msgstr "Celo retpaĝo"
+
+#: linotak/mentions/templates/mentions/incoming_detail.html:71
+msgid "Associated with the following note:"
+msgstr "Asociita kun la sekva noto:"
+
+#: linotak/mentions/templates/mentions/incoming_detail.html:75
+msgid "Details"
+msgstr "Detaloj"
+
+#: linotak/mentions/templates/mentions/incoming_detail.html:78
+#, fuzzy
+msgid "Received"
+msgstr "ricevilo"
+
+#: linotak/mentions/templates/mentions/incoming_detail.html:80
+#, fuzzy
+msgid "User agent"
+msgstr "uzanto-agento"
+
+#: linotak/mentions/templates/mentions/incoming_form.html:4
+msgid "Webmention endpoint"
+msgstr "Finpunkto de Webmention"
+
+#: linotak/notes/templates/notes/base.html:38
+#, fuzzy
+msgid "About %(series_title)s"
+msgstr "Pri %(title)s"
+
+#: linotak/notes/templates/notes/base.html:41
+msgid "Log out"
+msgstr "Elsaluti"
+
+#: linotak/notes/templates/notes/note_detail.html:36
+msgid "Edit this note in the Admin app"
+msgstr "Redaktu ĉi tiun noton en la administra programo"
+
+#: linotak/notes/templates/notes/note_detail.html:36
+msgid "Admin"
+msgstr "Admin"
+
+#: linotak/notes/templates/notes/note_form.html:5
+#, fuzzy
+msgid "Edit note"
+msgstr "noto"
+
+#: linotak/notes/templates/notes/note_form.html:5
+#, fuzzy
+msgid "New note"
+msgstr "noto"
+
+#: linotak/notes/templates/notes/note_form.html:36
+msgctxt "button"
+msgid "Save"
+msgstr "Savi"
+
+#: linotak/notes/templates/notes/note_form.html:38
+#, fuzzy
+msgctxt "button"
+msgid "Publish"
+msgstr "eldonita"
+
+#: linotak/notes/templates/notes/note_list.html:21
+msgid "DRAFTS"
+msgstr "DRAKTOJ"
+
+#: linotak/notes/templates/notes/note_list.html:24
+msgctxt "nav"
+msgid "About"
+msgstr "Pri"
+
+#: linotak/notes/templates/notes/note_list.html:26
+msgid "Create a new note"
+msgstr "Kreu novan noton"
+
+#: linotak/notes/templates/notes/note_list.html:31
+#, fuzzy
+msgid "Show %(series_title)s"
+msgstr "Pri %(title)s"
+
+#: linotak/notes/templates/notes/note_list.html:33
+msgid "Show drafts"
+msgstr "Montri projektojn"
+
+#: linotak/notes/templates/notes/note_list.html:46
+msgid "Showing posts tagged"
+msgstr "Montrante afiŝojn etikeditaj"
+
+#: linotak/notes/templates/notes/note_list.html:60
+msgid "but not tagged"
+msgstr "sed ne etikedita"
+
+#: linotak/notes/templates/notes/note_list.html:62
+msgid "Showing notes NOT tagged"
+msgstr "Montrante notojn NE etikeditaj"
+
+#: linotak/notes/templates/notes/note_list.html:74
+msgid "Click on tags to remove them from the filter."
+msgstr "Alklaku etikedojn por forigi ilin el la filtrilo."
+
+#: linotak/notes/templates/notes/parts/note_list.html:7
+msgid "Newer"
+msgstr "Pli novaj"
+
+#: linotak/notes/templates/notes/parts/note_list.html:21
+msgid "Older"
+msgstr "Maljunaj"
+
+#: linotak/notes/templates/notes/parts/note_metadata.html:8
+msgid "\n"
+"                <a class=\"u-url u-uid link\" href=\"%(detail_href)s\">Noted</a> by\n"
+"                <a href=\"%(author_href)s\" class=\"link p-author\">%(name)s</a>\n"
+"                <time class=\"dt-published\" datetime=\"%(when_iso)s\" title=\"%(when_date)s\">%(when_ago)s ago</time>.\n"
+"        "
+msgstr "\n"
+"                <a class=\"u-url u-uid link\" href=\"%(detail_href)s\">Notita</a> de\n"
+"                <a href=\"%(author_href)s\" class=\"link p-author\">%(name)s</a>\n"
+"                <time class = \"dt-published\" datetime = \"%(when_iso)s\" title = \"%(when_date)s\">%(when_ago)s antaŭ</time>.\n"
+"        "
+
+#: linotak/notes/templates/notes/parts/note_metadata.html:14
+msgid "\n"
+"                <a class=\"u-url u-uid link\" href=\"%(detail_href)s\">Noted</a> by\n"
+"                <span class=\"p-author\">%(name)s</span>\n"
+"                <time class=\"dt-published\" datetime=\"%(when_iso)s\" title=\"%(when_date)s\">%(when_ago)s ago</time>.\n"
+"        "
+msgstr "\n"
+"                <a class=\"u-url u-uid link\" href=\"%(detail_href)s\">Notita</a> de\n"
+"                <span class = \"p-author\">%(name)s</span>\n"
+"                <time class = \"dt-published\" datetime = \"%(when_iso)s\" title = \"%(when_date)s\">%(when_ago)s antaŭ</time>.\n"
+"        "
+
+#: linotak/notes/templates/notes/parts/note_metadata.html:21
+#, fuzzy
+msgid "Unpublished"
+msgstr "eldonita"
+
+#: linotak/notes/templates/notes/parts/note_metadata.html:22
+msgctxt "button"
+msgid "Edit"
+msgstr "Redakti"
+
+#: linotak/notes/templates/notes/parts/note_tag_list.html:9
+msgid "See notes tagged ‘%(tag_label)s’"
+msgstr "Vidu notojn etikeditaj \"%(tag_label)s\""
+
+#: linotak/notes/templates/notes/parts/note_via_chains.html:5
+msgid "Via"
+msgstr "Via"
+
+#: linotak/notes/templates/notes/parts/note_via_chains.html:5
+msgid "via"
+msgstr "vojo"
+

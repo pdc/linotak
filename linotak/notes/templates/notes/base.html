@@ -1,9 +1,10 @@
 <!DOCTYPE HTML>
+{% load i18n %}
 {% load static %}
 <html lang="en">
     <head>
         <meta charset=UTF-8>
-        <title>{% block title %}Notes{% endblock %}</title>
+        <title>{% block title %}Ooble{% endblock %}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
             {% include 'notes/inline-styles/base.css' %}
@@ -34,10 +35,10 @@
         {% endblock %}
 
         <footer>
-            <a href="{% url 'about:index' %}" class="link">About {{ series.title }}</a>
-            · <a href="{% url 'about:page' name='privacy' %}" class="link">Privacy policy</a>
+            <a href="{% url 'about:index' %}" class="link">{% blocktrans with series_title=series.title %}About {{ series_title }}{% endblocktrans %}</a>
+            · <a href="{% url 'about:page' name='privacy' %}" class="link">{% trans "Privacy policy" %}</a>
 {% if request.user.is_authenticated %}
-            · <a href="{% url 'logout' %}" class="action-btn">Log out</a>
+            · <a href="{% url 'logout' %}" class="action-btn">{% trans "Log out" context button %}</a>
 {% endif %}
         </footer>
 

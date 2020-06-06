@@ -1,14 +1,23 @@
+{% load i18n %}
 {% load note_lists %}
 
 {% if note.published %}
-                <a class="u-url u-uid link" href="{% note_url 'detail' %}">Noted</a> by
     {% if note.author.slug %}
-                <a href="{% profile_url note.author %}" class="link p-author">{{ note.author.native_name }}</a>
+        {% note_url 'detail' as detail_href %}
+        {% profile_url note.author as author_href %}
+        {% blocktrans with detail_href=detail_href author_href=author_href name=note.author.native_name when_iso=note.published|date:'c' when_date=note.published|date:'P l j F Y e' when_ago=note.published|timesince %}
+                <a class="u-url u-uid link" href="{{ detail_href }}">Noted</a> by
+                <a href="{{ author_href }}" class="link p-author">{{ name }}</a>
+                <time class="dt-published" datetime="{{ when_iso }}" title="{{ when_date }}">{{ when_ago }} ago</time>.
+        {% endblocktrans %}
     {% else %}
-                <span class="p-author">{{ note.author.native_name }}</span>
+        {% blocktrans with detail_href=detail_href name=note.author.native_name when_iso=note.published|date:'c' when_date=note.published|date:'P l j F Y e' when_ago=note.published|timesince %}
+                <a class="u-url u-uid link" href="{{ detail_href }}">Noted</a> by
+                <span class="p-author">{{ name }}</span>
+                <time class="dt-published" datetime="{{ when_iso }}" title="{{ when_date }}">{{ when_ago }} ago</time>.
+        {% endblocktrans %}
     {% endif %}
-                <time class="dt-published" datetime="{{ note.published|date:'c' }}" title="{{ note.published|date:'P l j F Y e' }}">{{ note.published|timesince }} ago</time>.
 {% else %}
-                <a class="link" href="{% note_url 'detail' %}"><strong>Unpublished</strong></a>
-                <a class="link" href="{% note_url 'edit' %}">Edit</a>
+                <a class="link" href="{% note_url 'detail' %}"><strong>{% trans "Unpublished" %}</strong></a>
+                <a class="link" href="{% note_url 'edit' %}">{% trans "Edit" context "button" %}</a>
 {% endif %}

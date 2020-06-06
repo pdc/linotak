@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load i18n %}
 {% load image_representations %}
 <html>
     <head>
@@ -25,13 +26,13 @@
         </style>
     </head>
     <body>
-        <h1>Incoming Webmention #{{ incoming.pk }}</h1>
+        <h1>{% blocktrans with number=incoming.pk %}Incoming Webmention #{{ number  }}{% endblocktrans %}</h1>
 
-        <p>The Webmention has not yet been verified.</p>
+        <p>{% trans "The mention has not yet been verified." %}</p>
 
-        <h2>Source</h2>
+        <h2>{% trans "Source web page" %}</h2>
         <p>
-            A Webmention notification was received on behalf of this page:
+            {% trans "A Webmention notification was received on behalf of the following web page:" %}
         </p>
 
         {% if incoming.source %}
@@ -65,22 +66,20 @@
             <code>{{ incoming.source_url }}</code>
         {% endif %}
 
-        <h2>Target</h2>
+        <h2>{% trans "Target web page" %}</h2>
         <p>
-            Associated with this note:
+            {% trans "Associated with the following note:" %}
         </p>
         <a href="{{ incoming.target.get_absolute_url }}">{{ incoming.target }}</a>
 
-        <h2>Details</h2>
+        <h2>{% trans "Details" %}</h2>
 
         <dl>
-            <dt>Received</dt>
+            <dt>{% trans "Received" %}</dt>
             <dd>{{ incoming.created }}</dd>
-            <dt>User agent</dt>
+            <dt>{% trans "User agent" %}</dt>
             <dd>{{ incoming.user_agent }}</dd>
         </dl>
-
-
 
     </body>
 </html>

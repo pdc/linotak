@@ -96,15 +96,6 @@ class TaggedMixin:
         return context
 
 
-class IndexView(ListView):
-
-    queryset = Series.objects.all()
-
-    paginate_by = 60
-    paginate_orphans = 3
-    template_name = 'notes/index.html'
-
-
 class Link:
     """Link to another resource to be included on page."""
 

@@ -1,4 +1,5 @@
 {% extends 'notes/base.html' %}
+{% load i18n %}
 {% load tag_filters %}
 {% load note_lists %}
 
@@ -17,21 +18,19 @@
 {% block content %}
         <header class="note-list-header">
                 <h1>
-                    {% if drafts %}DRAFTS{% elif series %}{{ series.title }}{% else %}ooble.uk{% endif %}
+                    {% if drafts %}{% trans "DRAFTS" %}{% elif series %}{{ series.title }}{% else %}ooble.uk{% endif %}
                 </h1>
             <div class="action-bar">
-                <a href="{% url 'about:index' %}" class="link action-link">About</a>
+                <a href="{% url 'about:index' %}" class="link action-link">{% trans "About" context "nav" %}</a>
         {% if can_edit_as %}
-                {% for person in can_edit_as %}
-                <a href="{% note_list_url 'new' %}" class="action-btn" title="Create a new note as {{ person.native_name }}">+</a>
-                {% endfor %}
+                <a href="{% note_list_url 'new' %}" class="action-btn" title="{% trans 'Create a new note' %}">+</a>
         {% endif %}
             </div>
             <div class="drafts-link-bar">
         {% if drafts %}
-                    <a href="{% note_list_url drafts=False page=1 %}" class="link drafts-link">Show {{ series.title }}</a>
+                    <a href="{% note_list_url drafts=False page=1 %}" class="link drafts-link">{% blocktrans with series_title=series.title %}Show {{ series_title }}{% endblocktrans %}</a>
         {% elif can_edit_as %}
-                    <a href="{% note_list_url drafts=True page=1 %}" class="link drafts-link">Show drafts</a>
+                    <a href="{% note_list_url drafts=True page=1 %}" class="link drafts-link">{% trans 'Show drafts' %}</a>
         {% endif %}
             </div>
         </header>
@@ -44,7 +43,7 @@
             <div class="filter">
                 {% if tag_filter.included %}
                 <div class="filter-wrapper filter-included">
-                    <div class="filter-tag-heading">Showing posts tagged</div>
+                    <div class="filter-tag-heading">{% trans 'Showing posts tagged' %}</div>
                     <ul class="filter-tag-list">
                         {% for tag_name in tag_filter.included_sorted %}
                         <li class="filter-tag">
@@ -57,7 +56,12 @@
                 {% if tag_filter.excluded %}
                 <div class="filter-wrapper filter-excluded">
                     <div class="filter-tag-heading">
-                        {% if tag_filter.included %}but not tagged{% else %}Showing notes NOT tagged{% endif %}</div>
+                        {% if tag_filter.included %}
+                            {% trans 'but not tagged' %}
+                        {% else %}
+                            {% trans 'Showing notes NOT tagged' %}
+                        {% endif %}
+                    </div>
                     <ul class="filter-tag-list">
                         {% for tag_name in tag_filter.excluded_sorted %}
                         <li class="filter-tag">
@@ -67,7 +71,7 @@
                     </ul>
                 </div>
                 {% endif %}
-                <p class="filter-hint">Click on tags to remove them from the filter.</p>
+                <p class="filter-hint">{% trans 'Click on tags to remove them from the filter.' %}</p>
             </div>
         {% endif %}
 
