@@ -23,6 +23,7 @@ deploy: tests requirements.txt
 	echo "$(prefix) pip install -r requirements.txt" | ssh ooble@spreadsite.org sh
 	echo "$(manage) migrate" | ssh ooble@spreadsite.org sh
 	echo "$(manage) collectstatic --noinput" | ssh ooble@spreadsite.org sh
+	echo "$(prefix) django-admin compilemessages" | ssh ooble@spreadsite.org sh
 
 tests:
 	$(PYTHON) manage.py test --keep --fail
