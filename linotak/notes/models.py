@@ -295,6 +295,7 @@ class Series(models.Model):
         return self.title or self.name
 
     def get_absolute_url(self):
+        """Return path on site for this series."""
         return reverse('notes:list', kwargs={'series_name': self.name})
 
     def make_absolute_url(self, path):

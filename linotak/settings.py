@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     'linotak.images.apps.ImagesConfig',
     'linotak.about.apps.AboutConfig',
     'linotak.mentions.apps.MentionsConfig',
+    'linotak.mastodon.apps.MastodonConfig',
 ]
 
 MIDDLEWARE = [
