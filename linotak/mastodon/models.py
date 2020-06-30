@@ -5,9 +5,9 @@ from django.utils.translation import gettext_lazy as _
 import requests_oauthlib
 import time
 
-from ..notes.models import Series
+from ..notes.models import Series, Note
 
-from .protocol import authorize_path, token_path, verify_credentials_path, necessary_scopes
+from .protocol import authorize_path, token_path, verify_credentials_path, statuses_path, necessary_scopes
 
 
 class Server(models.Model):
@@ -53,6 +53,10 @@ class Server(models.Model):
     @property
     def verify_credentials_url(self):
         return f'https://{self.name}{verify_credentials_path}'
+
+    @property
+    def statuses_url(self):
+        return f'https://{self.name}{statuses_path}'
 
 
 class Connection(models.Model):
@@ -118,4 +122,69 @@ class Connection(models.Model):
         self.expires_at = int(time.time() + float(token['expires_in'])) if 'expires_in' in token else None
         if save:
             self.save()
+
+
+class Post(models.Model):
+    """Link to an toot (post on mastodon) from one of our notes.
+
+    Mastodon API calls this a status.
+    """
+
+    connection = models.ForeignKey(
+        Connection,
+        models.SET_NULL,
+        null=True,  # Null means the connection was destroyed after post created.
+        verbose_name=_('connection'),
+        help_text=_('Mastodon instance where this note was created'),
+    )
+    note = models.ForeignKey(
+        Note,
+        models.SET_NULL,  # Even if we destroy the record of why we created the post the post still exists.
+        null=True,  # Null means the note was destroyed after post created.
+        verbose_name=_('note'),
+    )
+
+    their_id = models.CharField(
+        _('their ID'),
+        max_length=255,
+        help_text=_('Identifies the post in the scope of the instance'),
+    )
+    url = models.URLField(
+        _('URL'),
+        max_length=1024,
+        help_text=_('Canonical web page of the post')
+    )
+    posted = models.DateTimeField(_('posted'), null=True, blank=True)
+    created = models.DateTimeField(_('created'), default=timezone.now)
+    modified = models.DateTimeField(_('modified'), auto_now=True)
+
+    class Meta:
+        unique_together = (('connection', 'note'),)
+        ordering = ('-created',)
+        verbose_name = _('post')
+        verbose_name_plural = _('posts')
+
+    def __str__(self):
+        return f'{self.note} ({self.connection.server})'
+
+    def post_to_mastodon(self):
+        """Issue request to Mastodion instance to create a status."""
+        oauth = self.connection.make_oauth()
+        r = oauth.post(
+            self.connection.server.statuses_url,
+            data={
+                'status': self.note.text_with_links(),
+            },
+            headers={
+                'Accept': 'application/json',
+                'Idempotency-Key': self.note.get_absolute_url(with_host=True),
+            },
+        )
+        r.raise_for_status()
+        status = r.json()
+
+        self.their_id = status.get('id')
+        self.url = status.get('url')
+        self.posted = timezone.now()
+        self.save()
 

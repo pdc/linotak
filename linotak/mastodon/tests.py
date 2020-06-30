@@ -1,13 +1,14 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.utils import timezone
 import factory
 import requests_oauthlib   # for mocking
 from unittest.mock import patch, MagicMock
 import time
 
-from ..notes.tests.factories import SeriesFactory
+from ..notes.tests.factories import SeriesFactory, NoteFactory, LocatorFactory
 
-from .models import Server, Connection
+from .models import Server, Connection, Post
 from .protocol import necessary_scopes
 
 
@@ -34,14 +35,14 @@ class ConnectionFactory(factory.django.DjangoModelFactory):
     server = factory.SubFactory(ServerFactory)
 
 
-class TestConnectionCreation(TestCase):
-    """Test the plumbinmg between Server, Connection & Oauth2."""
+class TestViews(TestCase):
+    """Test the views’ plumbing between Server, Connection & OAuth2."""
 
     def setUp(self):
         get_user_model().objects.create_user(username='alice', password='secret')
         self.client.login(username='alice', password='secret')
 
-    def test_redirects_to_authentication_url(self):
+    def test_create_view_redirects_to_authentication_url(self):
         series = SeriesFactory(name='slug')
         server = ServerFactory(name='mast.example.com', client_id='id_of_client')
 
@@ -64,7 +65,7 @@ class TestConnectionCreation(TestCase):
             state=Connection.objects.get().pk,
         )
 
-    def test_processes_access_code_stores_token(self):
+    def test_callback_processes_access_code_stores_token(self):
         series = SeriesFactory(name='slug')
         server = ServerFactory(name='mast.example.com', client_id='id_of_client', client_secret='...SECRET...')
         connection = Connection.objects.create(series=series, server=server)
@@ -80,7 +81,7 @@ class TestConnectionCreation(TestCase):
                 'token_type': 'Bearer',
                 'expires_in': '3600',
             }
-            oauth.get.return_value = MagicMock(status_code=200, json=MagicMock(return_value={'acct': 'alice'}))
+            oauth.get.return_value = mock_json_response({'acct': 'alice'})
             r = self.client.get('/mastodon/callback', {'state': connection.pk, 'code': '...CODE...'}, follow=False)
 
         OAuth2Session.assert_called_with(
@@ -108,7 +109,7 @@ class TestConnectionCreation(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(r.url, f'/mastodon/connections/{connection.pk}')
 
-    def test_processes_access_code_sans_refresh_token(self):
+    def test_callback_processes_access_code_sans_refresh_token(self):
         series = SeriesFactory(name='slug')
         server = ServerFactory(name='mast.example.com')
         connection = Connection.objects.create(series=series, server=server)
@@ -121,7 +122,7 @@ class TestConnectionCreation(TestCase):
                 'token_type': 'Bearer',
                 # Turns out real Mastodon servers do not supply a refresh token.
             }
-            oauth.get.return_value = MagicMock(status_code=200, json=MagicMock(return_value={'acct': 'alice'}))
+            oauth.get.return_value = mock_json_response({'acct': 'alice'})
             self.client.get('/mastodon/callback', {'state': connection.pk, 'code': '...CODE...'}, follow=False)
 
         connection.refresh_from_db()
@@ -134,14 +135,53 @@ class TestConnection(TestCase):
     """Test the Connection instances know how to do stuff."""
 
     def test_uses_token_to_create_oauth_client(self):
-        connection = ConnectionFactory(access_token='*ACCESS*TOKEN*')
+        subject = ConnectionFactory(access_token='*ACCESS*TOKEN*')
 
         with patch.object(requests_oauthlib, 'OAuth2Session') as OAuth2Session, self.settings(NOTES_DOMAIN='example.com'):
             oauth = OAuth2Session.return_value
-            result = connection.make_oauth()
+            result = subject.make_oauth()
 
         self.assertEqual(result, oauth)
         OAuth2Session.assert_called_with(
-            connection.server.client_id,
-            token=connection.access_token,
+            subject.server.client_id,
+            token=subject.access_token,
         )
+
+    def test_posts_text_of_note_to_mastodon(self):
+        series = SeriesFactory(name='slug')
+        note = NoteFactory(
+            series=series,
+            text='Hello, world!',
+            tags=['greeting', 'planet'],
+            subjects=[LocatorFactory(url='https://other.example.com/1')],
+            published=timezone.now()
+        )
+        connection = ConnectionFactory(server__name='mast.example.com', name='spoo', access_token='*ACCESS*TOKEN*')
+
+        with patch.object(requests_oauthlib, 'OAuth2Session') as OAuth2Session, self.settings(NOTES_DOMAIN='example.com'):
+            oauth = OAuth2Session.return_value
+            oauth.post.return_value = mock_json_response({
+                'id': '134269',
+                'url': 'https://mast.example.com/@spoo/134269'
+            })
+            post = Post.objects.create(connection=connection, note=note)
+            post.post_to_mastodon()
+
+        oauth.post.assert_called_with(
+            'https://mast.example.com/api/v1/statuses',
+            data={
+                'status': 'Hello, world!\n\n#greeting #planet\n\nhttps://other.example.com/1',
+            },
+            headers={
+                'Accept': 'application/json',
+                'Idempotency-Key': f'https://slug.example.com/{note.pk}',
+            },
+        )
+        post.refresh_from_db()
+        self.assertEqual(post.their_id, '134269')
+        self.assertEqual(post.url, 'https://mast.example.com/@spoo/134269')
+
+
+def mock_json_response(obj):
+    """Given an object, create a mock Requests response."""
+    return MagicMock(status_code=200, json=MagicMock(return_value=obj))
