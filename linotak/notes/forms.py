@@ -63,7 +63,7 @@ class NoteForm(Form):
         is_new = not self.instance.pk
         if is_new:
             self.instance.save()  # Needed before extract_subject to allow subjects to be added.
-        if self.instance.extract_subject() or is_new:
+        if self.instance.extract_subject() or not is_new:
             self.instance.save()
         return self.instance
 
