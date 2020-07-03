@@ -1,15 +1,20 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.db import transaction
+from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 import factory
+import httpretty
+import json
+import logging
 import requests_oauthlib   # for mocking
 from unittest.mock import patch, MagicMock
 import time
 
 from ..notes.tests.factories import SeriesFactory, NoteFactory, LocatorFactory
 
-from .models import Server, Connection, Post
+from .models import Connection, Post
 from .protocol import necessary_scopes
+from . import tasks
 
 
 # class TestInstanceOrigin(TestCase):
@@ -18,21 +23,60 @@ from .protocol import necessary_scopes
 #         self.assertEqual(instance_origin('@pdc@octodon.social'), 'https://octodon.social')
 
 
-class ServerFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Server
-
-    name = factory.sequence(lambda n: f'mastodon{n}.example.social')
-    client_id = factory.sequence(lambda n: f'id_of_client_{n}')
-    client_secret = factory.sequence(lambda n: f'*SECRET*OF*{n}*')
-
-
 class ConnectionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Connection
 
     series = factory.SubFactory(SeriesFactory)
-    server = factory.SubFactory(ServerFactory)
+    domain = factory.sequence(lambda n: f'mastodon{n}.example.social')
+    client_id = factory.sequence(lambda n: f'id_of_client_{n}')
+    client_secret = factory.sequence(lambda n: f'*SECRET*OF*{n}*')
+
+
+class PostFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Post
+
+    note = factory.SubFactory(NoteFactory)
+    connection = factory.SubFactory(ConnectionFactory)
+
+
+class TestConnectionManager(TestCase):
+
+    @httpretty.activate(allow_net_connect=False)
+    def test_requests_client_id_and_secret(self):
+        series = SeriesFactory(name='name-of-series')
+        requests = []
+
+        def request_callback(request, uri, response_headers):
+            requests.append(request)
+            return 200, response_headers, json.dumps({
+                'client_id': 'id-of-client',
+                'client_secret': '*SECRET*',
+            })
+        httpretty.register_uri(
+            httpretty.POST,
+            'https://masto.example.net/api/v1/apps',
+            body=request_callback,
+            add_headers={
+                'Content-Type': 'application/json',
+            },
+        )
+
+        with self.settings(NOTES_DOMAIN='example.com'):
+            result = Connection.objects.create_connection(series, 'masto.example.net')
+
+        request, = requests
+        self.assertEqual(request.parsed_body.get('client_name'), ['name-of-series.example.com'])
+        self.assertEqual(request.parsed_body.get('redirect_uris'), ['https://name-of-series.example.com/mastodon/callback'])
+        self.assertEqual(request.parsed_body.get('scopes'), [' '.join(necessary_scopes)])
+        self.assertEqual(request.parsed_body.get('website'), ['https://name-of-series.example.com/'])
+
+        self.assertEqual(result.series, series)
+        self.assertEqual(result.domain, 'masto.example.net')
+        self.assertEqual(result.client_id, 'id-of-client')
+        self.assertEqual(result.client_secret, '*SECRET*')
+        self.assertEqual(result.authorize_url, 'https://masto.example.net/oauth/authorize')
 
 
 class TestViews(TestCase):
@@ -44,31 +88,35 @@ class TestViews(TestCase):
 
     def test_create_view_redirects_to_authentication_url(self):
         series = SeriesFactory(name='slug')
-        server = ServerFactory(name='mast.example.com', client_id='id_of_client')
 
-        with patch.object(requests_oauthlib, 'OAuth2Session') as OAuth2Session, self.settings(NOTES_DOMAIN='notes.example.org'):
+        with patch.object(requests_oauthlib, 'OAuth2Session') as OAuth2Session, \
+                patch.object(Connection.objects, 'create_connection') as create_connection, \
+                self.settings(NOTES_DOMAIN='notes.example.org'):
+            create_connection.side_effect \
+                = lambda s, d: ConnectionFactory(series=s, domain=d, client_id='id-of-client', client_secret='*SECRET*')
             oauth = OAuth2Session.return_value
             oauth.authorization_url.return_value = 'https://mast.example.com/auth?this=that', '*STATE*'
 
-            r = self.client.post('/mastodon/connections/add', {'series': series.pk, 'server': server.pk}, follow=False)
+            r = self.client.post('/mastodon/connections/add', {'series': series.pk, 'domain': 'mast.example.com'}, follow=False)
 
         self.assertEqual(r.status_code, 302)
         self.assertEqual(r.url, 'https://mast.example.com/auth?this=that')
-        self.assertTrue(Connection.objects.filter(series=series, server=server).exists())
+        connection = Connection.objects.get(series=series, domain='mast.example.com')
+        self.assertEqual(connection.client_id, 'id-of-client')
+        self.assertEqual(connection.client_secret, '*SECRET*')
         OAuth2Session.assert_called_with(
-            'id_of_client',
+            'id-of-client',
             redirect_uri='https://slug.notes.example.org/mastodon/callback',
             scope=necessary_scopes,
         )
         oauth.authorization_url.assert_called_with(
             'https://mast.example.com/oauth/authorize',
-            state=Connection.objects.get().pk,
+            state=connection.pk,
         )
 
     def test_callback_processes_access_code_stores_token(self):
         series = SeriesFactory(name='slug')
-        server = ServerFactory(name='mast.example.com', client_id='id_of_client', client_secret='...SECRET...')
-        connection = Connection.objects.create(series=series, server=server)
+        connection = Connection.objects.create(series=series, domain='mast.example.com', client_id='id_of_client', client_secret='*SECRET*')
         now = time.time()
 
         with patch.object(requests_oauthlib, 'OAuth2Session') as OAuth2Session, \
@@ -93,7 +141,7 @@ class TestViews(TestCase):
         oauth.fetch_token.assert_called_with(
             'https://mast.example.com/oauth/token',
             authorization_response=authorization_response,
-            client_secret='...SECRET...',
+            client_secret='*SECRET*',
         )
         oauth.get.assert_called_with(
             'https://mast.example.com/api/v1/accounts/verify_credentials',
@@ -111,8 +159,7 @@ class TestViews(TestCase):
 
     def test_callback_processes_access_code_sans_refresh_token(self):
         series = SeriesFactory(name='slug')
-        server = ServerFactory(name='mast.example.com')
-        connection = Connection.objects.create(series=series, server=server)
+        connection = Connection.objects.create(series=series, domain='mast.example.com')
 
         with patch.object(requests_oauthlib, 'OAuth2Session') as OAuth2Session, \
                 self.settings(NOTES_DOMAIN='notes.example.net'):
@@ -132,7 +179,6 @@ class TestViews(TestCase):
 
 
 class TestConnection(TestCase):
-    """Test the Connection instances know how to do stuff."""
 
     def test_uses_token_to_create_oauth_client(self):
         subject = ConnectionFactory(access_token='*ACCESS*TOKEN*')
@@ -143,9 +189,22 @@ class TestConnection(TestCase):
 
         self.assertEqual(result, oauth)
         OAuth2Session.assert_called_with(
-            subject.server.client_id,
-            token=subject.access_token,
+            subject.client_id,
+            token={
+                'access_token': '*ACCESS*TOKEN*',
+                'token_type': 'Bearer',
+                # No refresh token because Mastosdon doesn’t use them.
+            },
         )
+
+
+class TestPost(TestCase):
+    """Test the Connection instances know how to do stuff."""
+    def setUp(self):
+        logging.disable(logging.CRITICAL)
+
+    def tearDown(self):
+        logging.disable(logging.NOTSET)
 
     def test_posts_text_of_note_to_mastodon(self):
         series = SeriesFactory(name='slug')
@@ -156,7 +215,8 @@ class TestConnection(TestCase):
             subjects=[LocatorFactory(url='https://other.example.com/1')],
             published=timezone.now()
         )
-        connection = ConnectionFactory(server__name='mast.example.com', name='spoo', access_token='*ACCESS*TOKEN*')
+        connection = ConnectionFactory(series=series, domain='mast.example.com', name='spoo', access_token='*ACCESS*TOKEN*')
+        post = Post.objects.create(connection=connection, note=note)
 
         with patch.object(requests_oauthlib, 'OAuth2Session') as OAuth2Session, self.settings(NOTES_DOMAIN='example.com'):
             oauth = OAuth2Session.return_value
@@ -164,13 +224,12 @@ class TestConnection(TestCase):
                 'id': '134269',
                 'url': 'https://mast.example.com/@spoo/134269'
             })
-            post = Post.objects.create(connection=connection, note=note)
             post.post_to_mastodon()
 
         oauth.post.assert_called_with(
             'https://mast.example.com/api/v1/statuses',
             data={
-                'status': 'Hello, world!\n\n#greeting #planet\n\nhttps://other.example.com/1',
+                'status': f'Hello, world! (slug.example.com {note.pk})\n\n#greeting #planet\n\nhttps://other.example.com/1',
             },
             headers={
                 'Accept': 'application/json',
@@ -180,6 +239,57 @@ class TestConnection(TestCase):
         post.refresh_from_db()
         self.assertEqual(post.their_id, '134269')
         self.assertEqual(post.url, 'https://mast.example.com/@spoo/134269')
+
+    def test_does_not_post_a_second_time(self):
+        post = Post.objects.create(posted=timezone.now())
+
+        with patch.object(requests_oauthlib, 'OAuth2Session') as OAuth2Session:
+            post.post_to_mastodon()
+
+        self.assertFalse(OAuth2Session.called)
+
+
+class TestHandleNotePostSave(TransactionTestCase):
+    """Test the queueing of task when note saved."""
+
+    # Take care not to create entities outside of a transaction in tests in this class!
+
+    def test_does_nothing_if_unpublished(self):
+        with self.settings(MASTODON_POST_STATUSES=True), patch.object(tasks, 'post_post_to_mastodon') as post_post_to_mastodon:
+            with transaction.atomic():
+                connection = ConnectionFactory(access_token='X')
+                note = NoteFactory(series=connection.series)
+
+            self.assertFalse(post_post_to_mastodon.delay.called)
+            self.assertFalse(Post.objects.filter(note=note, connection=connection).exists())
+
+    def test_queues_post_if_published(self):
+        with self.settings(MASTODON_POST_STATUSES=True), patch.object(tasks, 'post_post_to_mastodon') as post_post_to_mastodon:
+            with transaction.atomic():
+                connection = ConnectionFactory(access_token='X')
+                note = NoteFactory(series=connection.series)
+
+                note.published = timezone.now()
+                note.save()
+
+                self.assertFalse(post_post_to_mastodon.delay.called)
+
+            post = Post.objects.get(note=note, connection=connection)
+            post_post_to_mastodon.delay.assert_called_once_with(post.pk)
+
+    def test_doesnt_queue_if_already_posted(self):
+        with patch.object(tasks, 'post_post_to_mastodon') as post_post_to_mastodon:
+            with transaction.atomic():
+                connection = ConnectionFactory(access_token='X')
+                note = NoteFactory(series=connection.series, published=timezone.now())
+                post = Post.objects.get(note=note, connection=connection)
+                post.posted = timezone.now()
+                post.save()
+
+                with self.settings(MASTODON_POST_STATUSES=True):
+                    note.save()
+
+            self.assertFalse(post_post_to_mastodon.delay.called)
 
 
 def mock_json_response(obj):

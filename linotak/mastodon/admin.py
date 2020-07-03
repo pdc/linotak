@@ -1,15 +1,15 @@
 from django.contrib import admin
 
-from .models import Server, Connection
-
-
-@admin.register(Server)
-class ServerAdmin(admin.ModelAdmin):
-    serach_fields = 'name',
-    readonly_fields = 'created', 'modified'
+from .models import Connection, Post
 
 
 @admin.register(Connection)
 class ConnectionAdmin(admin.ModelAdmin):
-    search_fields = 'server__name', 'series__name', 'name'
+    search_fields = 'series__name', 'domain', 'name'
+    readonly_fields = 'created', 'modified'
+
+
+@admin.register(Post)
+class ConnectionAdmin(admin.ModelAdmin):
+    search_fields = 'connection__series__name', 'connection__domain', 'connection__name'
     readonly_fields = 'created', 'modified'

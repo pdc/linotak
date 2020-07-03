@@ -277,6 +277,18 @@ class TestNoteTextWithLinks(TestCase):
             note.text_with_links(),
             'Hello, world\n\nhttps://example.com/1\n via https://example.com/2\n via https://example.com/3')
 
+    def test_optionally_adds_permashortcitation(self):
+        note = NoteFactory.create(
+            series__name='seriesname',
+            text='Hello, world!!',
+            subjects=[LocatorFactory.create(url='https://example.com/1')],
+        )
+
+        with self.settings(NOTES_DOMAIN='example.net'):
+            result = note.text_with_links(with_citation=True)
+
+        self.assertEqual(result, f'Hello, world!! (seriesname.example.net {note.pk})\n\nhttps://example.com/1')
+
 
 class TestNoteAbsoluteUrl(TestCase):
     # These tests test the URL patterns so they will need amending if the URL patterns change!

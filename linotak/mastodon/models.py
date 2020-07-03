@@ -2,6 +2,8 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+import logging
+import requests
 import requests_oauthlib
 import time
 
@@ -10,53 +12,48 @@ from ..notes.models import Series, Note
 from .protocol import authorize_path, token_path, verify_credentials_path, statuses_path, necessary_scopes
 
 
-class Server(models.Model):
-    """A Mastodon instance we gave registered an app token with.
+logger = logging.getLogger(__name__)
 
-        Using the term ‘server’ because ‘instance’ has special meaning in Django.
-    """
+# My first thought was to have Server & Connection classes, where the former
+# represetns on Mastodon instance we have regstered the app at.
+# But Mastodon has a registration API that makes this redundant so
+# the two classes are collapsed together as Connection
 
-    name = models.CharField(
-        max_length=255,
-        verbose_name=_('domain name'),
-        help_text=_('Domain name of the Mastodon instance.'),
-    )
-    client_id = models.CharField(
-        max_length=255,
-        verbose_name=_('client ID'),
-        help_text=_('Supplied by Mastodon instance when entrolling the app.'),
-    )
-    client_secret = models.CharField(
-        max_length=255,
-        verbose_name=_('client secret'),
-        help_text=_('Supplied by Mastodon instance when entrolling the app.'),
-    )
 
-    created = models.DateTimeField(_('created'), default=timezone.now)
-    modified = models.DateTimeField(_('modified'), auto_now=True)
+class ConnectionManager(models.Manager):
 
-    class Meta:
-        verbose_name = _('server')
-        verbose_name_plural = _('servers')
+    def create_connection(self, series, domain):
+        """Create a connection instance to authenticate with this domain.
 
-    def __str__(self):
-        return self.name
+        Arguments --
+            series -- Series instance that will be connected to an account on this domain.
+            domain -- names a Masotodon instance to connect to (is a host name like `mastodon.social`).
 
-    @property
-    def authorize_url(self):
-        return f'https://{self.name}{authorize_path}'
-
-    @property
-    def token_url(self):
-        return f'https://{self.name}{token_path}'
-
-    @property
-    def verify_credentials_url(self):
-        return f'https://{self.name}{verify_credentials_path}'
-
-    @property
-    def statuses_url(self):
-        return f'https://{self.name}{statuses_path}'
+        Returns --
+            a Connection isntance that has blank access token
+            (and so needs to gop through the OAuth2 dance to be of any use).
+        """
+        r = requests.post(
+            f'https://{domain}/api/v1/apps',
+            data={
+                'client_name': series.domain,
+                'redirect_uris': series.make_absolute_url(reverse('mastodon:callback')),
+                'scopes': ' '.join(necessary_scopes),
+                'website': series.make_absolute_url('/'),
+            },
+            headers={
+                'Accept': 'application/json',
+            }
+        )
+        response_body = r.json()
+        if r.status_code in (200, 201):
+            return self.create(
+                series=series,
+                domain=domain,
+                client_id=response_body['client_id'],
+                client_secret=response_body['client_secret'],
+            )
+        logger.error(f"Could not enroll with {domain}: {response_body.get('error', response_body)}")
 
 
 class Connection(models.Model):
@@ -65,36 +62,75 @@ class Connection(models.Model):
     series = models.ForeignKey(
         Series,
         models.CASCADE,
+        related_name='mastodon_connections',
+        related_query_name='mastodon_connection',
         verbose_name=_('series'),
     )
-    server = models.ForeignKey(
-        Server,
-        models.CASCADE,
-        verbose_name=_('server'),
-    )
 
+    domain = models.CharField(
+        _('domain'),
+        max_length=255,
+        help_text=_('Domain name of the Mastodon instance.'),
+    )
     name = models.CharField(
+        _('name'),
         max_length=255,  # Could not find definitive limit on the size of a username on Mastodon.
-        verbose_name=_('name'),
         help_text=_('Name of user on that instance (without the @ signs and without the domain name)')
     )
-    access_token = models.TextField(null=True, blank=True)
-    refresh_token = models.TextField(null=True, blank=True)
+    client_id = models.CharField(
+        _('client ID'),
+        max_length=255,
+        help_text=_('OAuth2 credential supplied by Mastodon instance when enrolling the app.'),
+    )
+    client_secret = models.CharField(
+        _('client secret'),
+        max_length=255,
+        help_text=_('OAuth2 credential supplied by Mastodon instance when enrolling the app.'),
+    )
+    access_token = models.TextField(
+        _('access token'),
+        null=True,
+        blank=True,
+    )
+    refresh_token = models.TextField(
+        _('refresh token'),
+        null=True,
+        blank=True,
+    )
     expires_at = models.BigIntegerField(
+        _('expires at'),
         null=True, blank=True,
-        help_text='When the access token expires, in seconds since 1970-01-01',
+        help_text=_('When the access token expires, in seconds since 1970-01-01, or null'),
     )
     created = models.DateTimeField(_('created'), default=timezone.now)
     modified = models.DateTimeField(_('modified'), auto_now=True)
 
+    objects = ConnectionManager()
+
     class Meta:
-        unique_together = (('series', 'server', 'name'),)
+        unique_together = (('series', 'domain', 'name'),)
         verbose_name = _('connection')
         verbose_name_plural = _('connections')
 
     def __str__(self):
         """Return Mastodon username in full form."""
-        return f'@{self.name}@{self.server.name}'
+        return f'@{self.name}@{self.domain}'
+
+    @property
+    def authorize_url(self):
+        return f'https://{self.domain}{authorize_path}'
+
+    @property
+    def token_url(self):
+        return f'https://{self.domain}{token_path}'
+
+    @property
+    def verify_credentials_url(self):
+        return f'https://{self.domain}{verify_credentials_path}'
+
+    @property
+    def statuses_url(self):
+        return f'https://{self.domain}{statuses_path}'
 
     def make_oauth(self):
         """Return an OAuth2 porocessor.
@@ -104,14 +140,18 @@ class Connection(models.Model):
         """
         if self.access_token:
             return requests_oauthlib.OAuth2Session(
-                self.server.client_id,
-                token=self.access_token,
+                self.client_id,
+                token={
+                    'access_token': self.access_token,
+                    # 'refresh_token': self.refresh_token,
+                    # 'expires_in': self.expires_at - time.time() if self.expires_at else None,
+                }
             )
 
         # Forced to return an aunauthenticated token.
         redirect_uri = self.series.make_absolute_url(reverse('mastodon:callback'))
         return requests_oauthlib.OAuth2Session(
-            self.server.client_id,
+            self.client_id,
             redirect_uri=redirect_uri,
             scope=necessary_scopes,
         )
@@ -165,15 +205,19 @@ class Post(models.Model):
         verbose_name_plural = _('posts')
 
     def __str__(self):
-        return f'{self.note} ({self.connection.server})'
+        return f'{self.note} ({self.connection})'
 
     def post_to_mastodon(self):
         """Issue request to Mastodion instance to create a status."""
+        if self.posted:
+            logger.warn(f'Tried to repost {self.pk} ({self.note}) to {self.connection}')
+            return
+
         oauth = self.connection.make_oauth()
         r = oauth.post(
-            self.connection.server.statuses_url,
+            self.connection.statuses_url,
             data={
-                'status': self.note.text_with_links(),
+                'status': self.note.text_with_links(with_citation=True),
             },
             headers={
                 'Accept': 'application/json',
@@ -187,4 +231,5 @@ class Post(models.Model):
         self.url = status.get('url')
         self.posted = timezone.now()
         self.save()
+
 

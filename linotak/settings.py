@@ -29,6 +29,7 @@ env = environ.Env(
     NOTES_DOMAIN_INSECURE=(bool, False),
     IMAGES_FETCH_DATA=(bool, False),
     MENTIONS_POST_NOTIFICATIONS=(bool, False),
+    MASTODON_POST_STATUSES=(bool, False),
     LOGGING=(str, None),
     LOG_LEVEL=(str, 'WARNING'),
 )
@@ -202,6 +203,9 @@ if NOTES_DOMAIN:
 # Whether to use `http` instead of `https` in series & note URLs.
 # NOT used in production: only used for the development web site.
 NOTES_DOMAIN_INSECURE = not TEST and env('NOTES_DOMAIN_INSECURE')
+
+# Whether to post statuses to Mastodon.
+MASTODON_POST_STATUSES = not TEST and env('MASTODON_POST_STATUSES')
 
 
 # LOGGING if defined contains JSON-encoded logging configuration

@@ -25,7 +25,7 @@ from .models import Connection
 class ConnectionCreateView(LoginRequiredMixin, SeriesMixin, CreateView):
     """View to create a Connection instance and start the process of making the connection."""
     model = Connection
-    fields = ('series', 'server')
+    fields = ('series', 'domain')
 
     def get_initial(self):
         return {
@@ -33,9 +33,12 @@ class ConnectionCreateView(LoginRequiredMixin, SeriesMixin, CreateView):
         }
 
     def form_valid(self, form):
-        connection = form.save()
+        # Special method that requests client ID and secret from Mastodon instance.
+        connection = Connection.objects.create_connection(form.cleaned_data['series'], form.cleaned_data['domain'])
+
+        # Redirect to OAuth2 authorization URL. This will show login form etc.
         authorization_url, state = connection.make_oauth().authorization_url(
-            connection.server.authorize_url,
+            connection.authorize_url,
             state=connection.pk,
         )
         return redirect(authorization_url)
@@ -47,13 +50,13 @@ def callback(request):
     authorization_response = connection.series.make_absolute_url(request.get_full_path_info())
     oauth = connection.make_oauth()
     token = oauth.fetch_token(
-        connection.server.token_url,
+        connection.token_url,
         authorization_response=authorization_response,
-        client_secret=connection.server.client_secret,
+        client_secret=connection.client_secret,
     )
 
     # Verify it worked and incidentally get user name.
-    r = oauth.get(connection.server.verify_credentials_url, headers={'Accept': 'application/json'})
+    r = oauth.get(connection.verify_credentials_url, headers={'Accept': 'application/json'})
     if r.status_code == 200:
         if acct := r.json().get('acct'):
             connection.name = acct

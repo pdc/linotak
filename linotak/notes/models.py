@@ -298,10 +298,14 @@ class Series(models.Model):
         """Return path on site for this series."""
         return reverse('notes:list', kwargs={'series_name': self.name})
 
+    @property
+    def domain(self):
+        return f'{self.name}.{settings.NOTES_DOMAIN}'
+
     def make_absolute_url(self, path):
         """Given a path (starting with a slash) return a complate URL."""
         scheme = 'http' if settings.NOTES_DOMAIN_INSECURE else 'https'
-        return f"{scheme}://{self.name}.{settings.NOTES_DOMAIN}{path}"
+        return f"{scheme}://{self.domain}{path}"
 
     def icon_representations(self):
         """Return sequence of image representations for use as favicons."""
@@ -457,10 +461,14 @@ class Note(models.Model):
         pos = title.find(' ', 29)
         return '%s…' % title[:30] if pos < 0 else '%s …' % title[:pos]
 
-    def text_with_links(self):
+    def text_with_links(self, with_citation=False):
         """Unparse note back in to text followed by tags and links."""
+        text = self.text.strip()
+        if with_citation:
+            # https://indieweb.org/permashortcitation
+            text = f'{text} ({self.series.name}.{settings.NOTES_DOMAIN} {self.pk})'
         parts = [
-            self.text.strip(),
+            text,
             ' '.join('#' + x.as_camel_case() for x in self.tags.all()),
             '\n'.join(
                 '\n via '.join([x.url] + [xx.url for xx in x.via_chain()])
