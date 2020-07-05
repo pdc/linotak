@@ -86,3 +86,15 @@ textarea {
     color: rgba(0, 0, 0, 0.5);
     color: var(--muted);
 }
+
+.note-mastodon-link:before {
+    content: " ";
+    display: inline-block;
+    vertical-align: middle;
+    width: 16px;
+    height: 16px;
+    background-image: url(mastodon-logo.svg);
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
