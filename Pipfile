@@ -11,6 +11,7 @@ httpretty = "*"
 requests = "*"
 "psycopg2" = "*"
 markdown = "*"
+requests-oauthlib = "*"
 
 [dev-packages]
 tblib = "*"

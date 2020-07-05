@@ -2,8 +2,8 @@
 {% load note_lists %}
 
 {% if note.published %}
+    {% note_url 'detail' as detail_href %}
     {% if note.author.slug %}
-        {% note_url 'detail' as detail_href %}
         {% profile_url note.author as author_href %}
         {% blocktrans with detail_href=detail_href author_href=author_href name=note.author.native_name when_iso=note.published|date:'c' when_date=note.published|date:'P l j F Y e' when_ago=note.published|timesince %}
                 <a class="u-url u-uid link" href="{{ detail_href }}">Noted</a> by

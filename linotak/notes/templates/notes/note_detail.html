@@ -32,6 +32,13 @@
             {% include 'notes/parts/note_subject_list.html' %}
             <small class="note-metadata">
                 {% include 'notes/parts/note_metadata.html' %}
+
+                {% for post in note.mastodon_posts.all %}
+                    {% if post.posted %}
+                            <a class="u-syndication link" href="{{ post.url }}">{% blocktrans with domain=post.connection.domain %}Reply or boost on {{ domain }}{% endblocktrans %}</a>
+                    {% endif %}
+                {% endfor %}
+
                 {% if user.is_staff %}
                 <a class="link" href="{% url 'admin:notes_note_change' object_id=note.pk %}" title="{% trans 'Edit this note in the Admin app' %}">{% trans "Admin" context button %}</a>
                 {% endif %}

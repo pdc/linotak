@@ -1,0 +1,32 @@
+{% extends 'notes/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Connect to Mastodon" %}{% endblock %}
+
+{% block styles %}
+        <style>
+            {% include 'notes/inline-styles/form.css' %}
+        </style>
+{% endblock %}
+
+{% block content %}
+
+    <main>
+
+        {% if form.errors %}
+            <p>{{ form.errors }}</p>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+            <ul class="form-item-list">
+                {{ form.as_ul }}
+            </ul>
+
+            <div class="form-action-bar">
+                <input class="form-action" type="submit" value="{% trans 'Connect' context 'button' %}">
+            </div>
+        </form>
+    </main>
+
+{% endblock %}
