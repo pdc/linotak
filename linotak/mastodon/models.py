@@ -141,11 +141,7 @@ class Connection(models.Model):
         if self.access_token:
             return requests_oauthlib.OAuth2Session(
                 self.client_id,
-                token={
-                    'access_token': self.access_token,
-                    # 'refresh_token': self.refresh_token,
-                    # 'expires_in': self.expires_at - time.time() if self.expires_at else None,
-                }
+                token=self.retrieve_token(),
             )
 
         # Forced to return an aunauthenticated token.
@@ -162,6 +158,12 @@ class Connection(models.Model):
         self.expires_at = int(time.time() + float(token['expires_in'])) if 'expires_in' in token else None
         if save:
             self.save()
+
+    def retrieve_token(self):
+        return {
+            'access_token': self.access_token,
+            'token_type': 'Bearer',
+        }
 
 
 class Post(models.Model):
@@ -181,6 +183,8 @@ class Post(models.Model):
         Note,
         models.SET_NULL,  # Even if we destroy the record of why we created the post the post still exists.
         null=True,  # Null means the note was destroyed after post created.
+        related_name='mastodon_posts',
+        related_query_name='mastodon_post',
         verbose_name=_('note'),
     )
 
