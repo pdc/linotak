@@ -221,7 +221,7 @@ class Post(models.Model):
         r = oauth.post(
             self.connection.statuses_url,
             data={
-                'status': self.note.text_with_links(with_citation=True),
+                'status': self.note.text_with_links(),
             },
             headers={
                 'Accept': 'application/json',
@@ -235,5 +235,3 @@ class Post(models.Model):
         self.url = status.get('url')
         self.posted = timezone.now()
         self.save()
-
-

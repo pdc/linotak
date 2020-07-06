@@ -229,7 +229,7 @@ class TestPost(TestCase):
         oauth.post.assert_called_with(
             'https://mast.example.com/api/v1/statuses',
             data={
-                'status': f'Hello, world! (slug.example.com {note.pk})\n\n#greeting #planet\n\nhttps://other.example.com/1',
+                'status': f'Hello, world!\n\n#greeting #planet\n\nhttps://other.example.com/1',
             },
             headers={
                 'Accept': 'application/json',
