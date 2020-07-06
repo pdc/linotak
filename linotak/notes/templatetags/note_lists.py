@@ -73,8 +73,10 @@ def note_url(context, view=None, note=None, tag_filter=None, drafts=None, with_h
 
 
 @register.simple_tag(takes_context=True)
-def profile_url(context, person=None):
+def profile_url(context, person=None, series=None):
     """Link to the profile of this person (or the subject of this page if no person specified)."""
     path = reverse('notes:person', kwargs={'slug': (person or context['person']).slug})
-    return make_absolute_url(path)
+    if not series:
+        series = context.get('series')
+    return series.make_absolute_url(path) if series else make_absolute_url(path)
 

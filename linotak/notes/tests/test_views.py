@@ -249,4 +249,12 @@ class TestAuthorProfileView(TestCase):
         self.assertEqual(r.context['person'], author)
         self.assertFalse(r.context['series'])
 
+    def test_links_to_feed(self):
+        author = PersonFactory(slug='some-slug')
+        series = SeriesFactory(name='nnn', editors=[author])
+
+        r = self.client.get('/some-slug', HTTP_HOST='nnn.example.com')
+
+        self.assertEqual(r.context['series'], series)
+        self.assertIn(Link(href='https://nnn.example.com/', rel='feed'), r.context['links']())
 

@@ -227,14 +227,13 @@ class NoteUpdateView(LoginRequiredMixin, NotesMixin, NoteFormMixin, UpdateView):
         return super().form_valid(form)
 
 
-class PersonDetailView(SeriesMixin, DetailView):
+class PersonDetailView(LinksMixin, SeriesMixin, DetailView):
     """Information about a person (only allowed if that person has a slug)."""
 
     model = Person
 
-    def dispatch(self, request, *args, **kwargs):
+    def get_links(self):
+        links = super().get_links()
         if self.series:
-            path = reverse('notes:person', kwargs=kwargs)
-            url = make_absolute_url(path)
-            return HttpResponseRedirect(url)
-        return super().dispatch(request, *args, **kwargs)
+            links.append(Link(href=self.series.get_absolute_url(), rel='feed'))
+        return links

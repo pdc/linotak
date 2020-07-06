@@ -294,9 +294,14 @@ class Series(models.Model):
     def __str__(self):
         return self.title or self.name
 
-    def get_absolute_url(self):
-        """Return path on site for this series."""
-        return reverse('notes:list', kwargs={'series_name': self.name})
+    def get_absolute_url(self, with_host=True):
+        """Return path on site for this series.
+
+        Includes schema & host by default because links from
+        admin site or from other series’ pages will fail otherwise.
+        """
+        path = reverse('notes:list', kwargs={'drafts': False})
+        return self.make_absolute_url(path) if with_host else path
 
     @property
     def domain(self):
