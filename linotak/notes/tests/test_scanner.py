@@ -9,9 +9,10 @@ class ScanMixin:
     """Mixin to add a shorthand for scanning an HTML fragment."""
 
     maxDiff = None
+    base_url = 'https://example.com/1'
 
-    def scan(self, text):
-        scanner = PageScanner('https://example.com/1')
+    def scan(self, text, base_url=None):
+        scanner = PageScanner(base_url or self.base_url)
         scanner.feed(text)
         scanner.close()
         return scanner.stuff
@@ -478,6 +479,17 @@ class TestOGEntryCapture(ScanMixin, TestCase):
                 ]
             ),
             stuff)
+
+
+class TestTwitterRecognizer(ScanMixin, TestCase):
+
+    def test_invents_properties_from_URL(self):
+        # As of 2020-06, Twitter’s HTML does not include the text of the tweet.
+        stuff = self.scan("""
+            <html><body>… JavaScript blob …
+        """, base_url='https://twitter.com/username/status/1280781675966935040')
+
+        self.assertIn(Title('@username on Twitter', weight=0), stuff)
 
 
 class TestMastodonMediaGalleryRecognizer(ScanMixin, TestCase):

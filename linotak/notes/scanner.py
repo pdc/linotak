@@ -109,8 +109,9 @@ class StuffBase:
     """Base class for things in the stuff lists."""
 
     def __repr__(self):
+        """Create representation that omits defaulted parameters."""
         xs = self.to_tuple()
-        while xs and not xs[-1]:
+        while xs and xs[-1] is None:
             xs = xs[:-1]
         if len(xs) == 1:
             return '%s(%r)' % (self.__class__.__name__, xs[0])
@@ -163,7 +164,7 @@ class Link(StuffBase):
         return '%s (%s)' % (self.href, ' '.join(self.rel))
 
     def to_tuple(self):
-        return self.rel, self.href, self.type, self.title, self.text, self.classes, self.author, self.published
+        return self.rel, self.href, self.type, self.title, self.text, self.classes or None, self.author, self.published
 
 
 class Img(StuffBase):
@@ -191,14 +192,20 @@ class Img(StuffBase):
 class Title(StuffBase):
     """Title for the page."""
 
-    def __init__(self, text=None):
+    weight = 1
+
+    def __init__(self, text=None, weight=None):
         self.text = text or ''
+        if weight is not None:
+            self.weight = weight
 
     def __str__(self):
         return self.text
 
     def to_tuple(self):
-        return self.text,
+        if self.weight == 1:
+            return self.text,
+        return self.text, self.weight
 
 
 class HSomething(StuffHolderMixin, StuffBase):
@@ -555,6 +562,19 @@ class MastodonMediaGalleryRecognizer:
             return stuff
 
 
+class TwitterRecognizer:
+
+    URL_PATTERN = re.compile(r'^https://twitter.com/(?P<user>\w+)/status/\d+')
+
+    def handle_base_url(self, base_url):
+        self.base_url = base_url
+
+    def handle_end_body(self, tag):
+        if m := self.URL_PATTERN.search(self.base_url):
+            # Return title with lowest weight so it will give way to any better guess:
+            return [Title(f"@{m['user']} on Twitter", weight=0)]
+
+
 class PageScanner(HTMLParser):
     """Scan HTML and call methods in subclass as elements are detected."""
 
@@ -566,6 +586,7 @@ class PageScanner(HTMLParser):
         BlockquoteRecognizer,
         MastodonMediaGalleryRecognizer,
         OGRecognizer,
+        TwitterRecognizer,
     ]
 
     def __init__(self, base_url, recognizers=None, *args, **kwargs):
