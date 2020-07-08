@@ -439,24 +439,30 @@ class OGRecognizer:
     def __init__(self):
         self.props = {}
 
+    def handle_base_url(self, base_url):
+        self.base_url = base_url
+
     def handle_end_meta(self, tag):
-        name = tag.get('property')
-        if name and name.startswith('og:'):
+        if (
+            (name := tag.get('property')) and name.startswith('og:')
+            or (name := tag.get('name')) and name.startswith('twitter')
+        ):
             value = tag.get('content')
             if value:
                 self.props[name] = value
                 return [Property(name, value)]
 
     def handle_end_body(self, tag):
-        image = self.props.pop('og:image', None)
-        title = self.props.pop('og:title', None)
-        desc = self.props.pop('og:description', None)
-        url = self.props.pop('og:url', None)
+        image_src = (src := self.props.pop('og:image', None) or self.props.pop('twitter:image', None)) and urljoin(self.base_url, src)
+        title = self.props.pop('og:title', None) or self.props.pop('twitter:title', None)
+        desc = self.props.pop('og:description', None) or self.props.pop('twitter:description', None)
+        url = self.props.pop('og:url', None) or self.props.pop('twitter:url', None)
         result = [Property(k, v) for k, v in self.props.items()]
-        if url:
-            result.append(HEntry(url, title, desc, images=image and [Img(image)]))
-        elif image:
-            result.append(Img(image))
+        if title or desc or url:
+            url = urljoin(self.base_url, url or '')
+            result.append(HEntry(url, title, desc, images=image_src and [Img(image_src)]))
+        elif image_src:
+            result.append(Img(image_src))
         return result
 
 

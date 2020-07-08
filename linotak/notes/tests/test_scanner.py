@@ -389,14 +389,14 @@ class TestHEntryMixin(ScanMixin, TestCase):
 class TestOGEntryCapture(ScanMixin, TestCase):
 
     def test_captures_og_properties(self):
-        # Inspired by https://twitter.com/Rainmaker1973/status/1105737868893405184
+        # Inspired by https://twitter.com/Rainmaker1973/status/69
         stuff = self.scan("""
             <html>
                 <head>
                     <meta  property="og:type" content="video">
-                    <meta  property="og:url" content="https://twitter.com/Rainmaker1973/status/1105737868893405184">
+                    <meta  property="og:url" content="https://twitter.com/Rainmaker1973/status/69">
                     <meta  property="og:title" content="Massimo on Twitter">
-                    <meta  property="og:image" content="https://pbs.twimg.com/ext_tw_video_thumb/1105737823666225152/pu/img/25oLWXF1zjzBovqJ.jpg">
+                    <meta  property="og:image" content="https://pbs.twimg.com/ext_tw_video_thumb/42/pu/img/69.jpg">
                     <meta  property="og:description" content="“Pure samples are subjected to the high frequency pulsed field of a Tesla coil. https://t.co/wOpc2LcgkZ”">
                     <meta  property="og:site_name" content="Twitter">
                 </head>
@@ -406,11 +406,75 @@ class TestOGEntryCapture(ScanMixin, TestCase):
 
         self.assertIn(
             HEntry(
-                'https://twitter.com/Rainmaker1973/status/1105737868893405184',
+                'https://twitter.com/Rainmaker1973/status/69',
                 'Massimo on Twitter',
                 '“Pure samples are subjected to the high frequency pulsed field of a Tesla coil. https://t.co/wOpc2LcgkZ”',
                 images=[
-                    Img('https://pbs.twimg.com/ext_tw_video_thumb/1105737823666225152/pu/img/25oLWXF1zjzBovqJ.jpg'),
+                    Img('https://pbs.twimg.com/ext_tw_video_thumb/42/pu/img/69.jpg'),
+                ]
+            ),
+            stuff)
+
+    def test_captures_image_if_no_title_or_descruiption(self):
+        # Inspired by https://twitter.com/Rainmaker1973/status/69
+        stuff = self.scan("""
+            <html>
+                <head>
+                   <meta  property="og:image" content="https://pbs.twimg.com/ext_tw_video_thumb/42/pu/img/69.jpg">
+                </head>
+                <body>…</body>
+            </html>
+        """)
+
+        self.assertIn(
+            Img('https://pbs.twimg.com/ext_tw_video_thumb/42/pu/img/69.jpg'),
+            stuff)
+
+    def test_resolves_image_URL(self):
+        # Inspired by https://99spokes.com/bicycle-geometry-terms
+        stuff = self.scan("""
+            <html>
+                <head>
+                    <meta property="og:title" content="Bicycle Geometry Terms – 99 Spokes"/>
+                    <meta property="og:description" content="Descriptions of bike geometry terms and measurements, visualized and explained."/>
+                    <meta property="og:image" content="/_next/static/images/bike-geometry-preview-6a639ba8720feb24c9d18ad77bf7ed2e.png"/>
+                </head>
+                <body>…</body>
+            </html>
+        """)
+
+        self.assertIn(
+            HEntry(
+                'https://example.com/1',
+                'Bicycle Geometry Terms – 99 Spokes',
+                'Descriptions of bike geometry terms and measurements, visualized and explained.',
+                images=[
+                    Img('https://example.com/_next/static/images/bike-geometry-preview-6a639ba8720feb24c9d18ad77bf7ed2e.png'),
+                ]
+            ),
+            stuff)
+
+    def test_also_recognizes_twitter_URLs(self):
+        # Inspired by https://99spokes.com/bicycle-geometry-terms
+        stuff = self.scan("""
+            <html>
+                <head>
+                    <meta name="twitter:title" content="Bicycle Geometry Terms – 99 Spokes"/>
+                    <meta name="twitter:site" content="@99spokes"/>
+                    <meta name="twitter:description" content="Descriptions of bike geometry terms and measurements, visualized and explained."/>
+                    <meta name="twitter:image" content="/_next/static/images/bike-geometry-preview-6a639ba8720feb24c9d18ad77bf7ed2e.png"/>
+                </head>
+                <body>…</body>
+            </html>
+        """)
+
+        self.assertIn(
+            HEntry(
+                'https://example.com/1',
+                'Bicycle Geometry Terms – 99 Spokes',
+                'Descriptions of bike geometry terms and measurements, visualized and explained.',
+                images=[
+                    Img('https://example.com/_next/static/images/bike-geometry-preview-6a639ba8720feb24c9d18ad77bf7ed2e.png'),
                 ]
             ),
             stuff)
