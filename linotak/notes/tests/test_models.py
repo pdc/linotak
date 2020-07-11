@@ -169,7 +169,7 @@ class TestNoteExtractSubjects(TestCase):
     def test_matches_via_between_URLs(self):
         note = NoteFactory.create(text='https://example.com/1 via https://example.com/2')
 
-        result = note.extract_subject()
+        note.extract_subject()
 
         # Then we have 1 subject and it has a ‘via’ link.
         self.assertEqual([x.url for x in note.subjects.all()], ['https://example.com/1'])
@@ -244,6 +244,15 @@ class TestNoteExtractSubjects(TestCase):
         self.assertTrue(result)
         self.assertEqual(note.text, 'Lol')
         self.assertEqual({x.name for x in note.tags.all()}, {'wimble', 'bimble'})
+
+    def test_sets_nsfw_flag_on_locator(self):
+        note = NoteFactory(text='Yo https://example.com/1 (nsfw) via https://example.com/2')
+
+        note.extract_subject()
+
+        locator = note.subjects.get()
+        self.assertTrue(locator.sensitive)
+        self.assertEqual(locator.via.url, 'https://example.com/2')
 
 
 class TestNoteTextWithLinks(TestCase):

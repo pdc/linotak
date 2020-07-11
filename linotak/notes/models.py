@@ -156,6 +156,10 @@ class Locator(models.Model):
         blank=True,
         help_text=_('Description, summary, or content of the linked-to resource'),
     )
+    sensitive = models.BooleanField(
+        default=False,
+        help_text=_('Main image is ‘sensitive’ and should be hidden by default on Mastodon.'),
+    )
     published = models.DateTimeField(
         _('published'),
         null=True,
@@ -505,10 +509,11 @@ class Note(models.Model):
         (
             (?:
                 \s*
-                (?: \b via \s+ )?
+                (?: \b via \s+ )?  # Optional `via` prefix.
                 https?://
                 [\w.-]+(?: :\d+)?
                 (?: /\S* )?
+                (?: \s+ \(nsfw\) )?  # Optional `(nsfw)` suffix.
             |
                 (?:\s+ | ^)
                 \# \w+
@@ -523,18 +528,27 @@ class Note(models.Model):
         excess_urls = set(x.url for x in self.subjects.all())  # Will be reduced to just locators NOT mentioned in text.
         excess_tags = set(x.name for x in self.tags.all())  # Will be reducted to just tags NOT mentioned in text
         prev_locator = None
+        prev_locator_sensitive = False
         next_uri_is_via = False
         if m:
             things, self.text = m.group(1).split(), self.text[:m.start(0)].rstrip()
-            for url in things:
-                if url.startswith('#'):
-                    tag = Tag.objects.get_tag(url[1:])
+            for thing in things:
+                if thing.startswith('#'):
+                    tag = Tag.objects.get_tag(thing[1:])
                     if tag not in self.tags.all():
                         self.tags.add(tag)
                     excess_tags.discard(tag.name)
-                elif url == 'via':
+                elif thing == 'via':
                     next_uri_is_via = True
+                elif thing == '(nsfw)':
+                    prev_locator_sensitive = True
                 else:
+                    # This will be the next locator, so time to finish up the prev locator.
+                    if prev_locator and prev_locator.sensitive != prev_locator_sensitive:
+                        prev_locator.sensitive = prev_locator_sensitive
+                        prev_locator.save()
+                    # Normalize URLs lacking path component.
+                    url = thing
                     if '/' not in url[8:]:
                         url += '/'
                     if next_uri_is_via:
@@ -547,6 +561,7 @@ class Note(models.Model):
                     else:
                         prev_locator = self.add_subject(url)
                     excess_urls.discard(url)
+                    prev_locator_sensitive = False
             if excess_urls:
                 NoteSubject.objects.filter(note=self, locator__url__in=excess_urls).delete()
             if excess_tags:
