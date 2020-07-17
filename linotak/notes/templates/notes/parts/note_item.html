@@ -1,7 +1,7 @@
 
                 <li class="h-entry note{% if not note.published %} note-unpublished{% endif %} p{{ puff }}">
                     {% if note.text %}
-                    <p class="p-name e-content note-text">{{ note.text }}</p>
+                    <div class="p-name e-content note-text">{{ note.text|linebreaks }}</div>
                     {% endif %}
                     {% include 'notes/parts/note_via_chains.html' %}
                     {% include 'notes/parts/note_subject_list.html' %}

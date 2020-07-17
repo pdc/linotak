@@ -11,7 +11,7 @@
     max-width: 1440px;
 }
 
-.note-text {
+.note-text>p {
     margin: 10px;
     min-width: 220px;
     max-width: 620px;

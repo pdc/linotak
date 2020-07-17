@@ -113,11 +113,12 @@
 
 .note {
     display: block;
+    display: flow-root;
     margin: 0;
     padding: 0 0 25px;
 }
 
-.note-text {
+.note-text>p {
     margin: 10px 10px 5px;
 }
 
