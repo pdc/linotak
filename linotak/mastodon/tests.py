@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
 from django.db import transaction
 from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
@@ -7,9 +8,11 @@ import httpretty
 import json
 import logging
 import requests_oauthlib   # for mocking
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, ANY, call
 import time
 
+from ..images.models import Image, Representation
+from ..notes.models import LocatorImage
 from ..notes.tests.factories import SeriesFactory, NoteFactory, LocatorFactory
 
 from .models import Connection, Post
@@ -203,20 +206,14 @@ class TestPost(TestCase):
     def setUp(self):
         logging.disable(logging.CRITICAL)
 
+        self.series = SeriesFactory(name='slug')
+        self.connection = ConnectionFactory(series=self.series, domain='mast.example.com', name='spoo', access_token='*ACCESS*TOKEN*')
+
     def tearDown(self):
         logging.disable(logging.NOTSET)
 
     def test_posts_text_of_note_to_mastodon(self):
-        series = SeriesFactory(name='slug')
-        note = NoteFactory(
-            series=series,
-            text='Hello, world!',
-            tags=['greeting', 'planet'],
-            subjects=[LocatorFactory(url='https://other.example.com/1')],
-            published=timezone.now()
-        )
-        connection = ConnectionFactory(series=series, domain='mast.example.com', name='spoo', access_token='*ACCESS*TOKEN*')
-        post = Post.objects.create(connection=connection, note=note)
+        self.create_note_with_locator()
 
         with patch.object(requests_oauthlib, 'OAuth2Session') as OAuth2Session, self.settings(NOTES_DOMAIN='example.com'):
             oauth = OAuth2Session.return_value
@@ -224,21 +221,21 @@ class TestPost(TestCase):
                 'id': '134269',
                 'url': 'https://mast.example.com/@spoo/134269'
             })
-            post.post_to_mastodon()
+            self.post.post_to_mastodon()
 
         oauth.post.assert_called_with(
             'https://mast.example.com/api/v1/statuses',
-            data={
-                'status': f'Hello, world!\n\n#greeting #planet\n\nhttps://other.example.com/1',
+            json={
+                'status': 'Hello, world!\n\n#greeting #planet\n\nhttps://other.example.com/1',
             },
             headers={
                 'Accept': 'application/json',
-                'Idempotency-Key': f'https://slug.example.com/{note.pk}',
+                'Idempotency-Key': f'https://slug.example.com/{self.note.pk}',
             },
         )
-        post.refresh_from_db()
-        self.assertEqual(post.their_id, '134269')
-        self.assertEqual(post.url, 'https://mast.example.com/@spoo/134269')
+        self.post.refresh_from_db()
+        self.assertEqual(self.post.their_id, '134269')
+        self.assertEqual(self.post.url, 'https://mast.example.com/@spoo/134269')
 
     def test_does_not_post_a_second_time(self):
         post = Post.objects.create(posted=timezone.now())
@@ -247,6 +244,109 @@ class TestPost(TestCase):
             post.post_to_mastodon()
 
         self.assertFalse(OAuth2Session.called)
+
+    def test_posts_main_image_of_subject(self):
+        self.create_note_with_locator()
+        self.with_image_with_representation()
+
+        with patch.object(requests_oauthlib, 'OAuth2Session') as OAuth2Session,  \
+                self.settings(NOTES_DOMAIN='example.com'):
+            oauth = OAuth2Session.return_value
+            oauth.post.side_effect = [
+                mock_json_response({'id': '100001'}),  # Response when creating media.
+                mock_json_response({  # Response when creating post.
+                    'id': '200002',
+                    'url': 'https://mast.example.com/@spoo/134269'
+                }),
+            ]
+            self.post.post_to_mastodon()
+
+            oauth.post.assert_has_calls([
+                call(
+                    'https://mast.example.com/api/v1/media',
+                    files={'file': (ANY, ANY, 'image/jpeg')},
+                ),
+                call(
+                    'https://mast.example.com/api/v1/statuses',
+                    json={
+                        'status': 'Hello, world!\n\n#greeting #planet\n\nhttps://other.example.com/1',
+                        'media_ids': ['100001'],
+                    },
+                    headers={
+                        'Accept': 'application/json',
+                        'Idempotency-Key': f'https://slug.example.com/{self.note.pk}',
+                    },
+                ),
+            ])
+            # Check contents of stream sent to create image.
+            _, kwargs = oauth.post.call_args_list[0]
+            _, stream, _ = kwargs['files']['file']
+            self.assertEqual(stream.read(), b'*file*content*')
+            stream.close()
+
+    def test_adds_sensitive_flag_to_post_of_niote_with_locator_with_sensitive_flag(self):
+        self.create_note_with_locator(sensitive=True)
+        self.with_image_with_representation()
+
+        with patch.object(requests_oauthlib, 'OAuth2Session') as OAuth2Session,  \
+                self.settings(NOTES_DOMAIN='example.com'):
+            oauth = OAuth2Session.return_value
+            oauth.post.side_effect = [
+                mock_json_response({'id': '100001'}),  # Response when creating media.
+                mock_json_response({  # Response when creating post.
+                    'id': '200002',
+                    'url': 'https://mast.example.com/@spoo/134269'
+                }),
+            ]
+            self.post.post_to_mastodon()
+
+            oauth.post.assert_has_calls([
+                call(
+                    'https://mast.example.com/api/v1/media',
+                    files={'file': (ANY, ANY, 'image/jpeg')},
+                ),
+                call(
+                    'https://mast.example.com/api/v1/statuses',
+                    json={
+                        'status': 'Hello, world!\n\n#greeting #planet\n\nhttps://other.example.com/1 (nsfw)',
+                        'media_ids': ['100001'],
+                        'sensitive': True,
+                    },
+                    headers={
+                        'Accept': 'application/json',
+                        'Idempotency-Key': f'https://slug.example.com/{self.note.pk}',
+                    },
+                ),
+            ])
+            # Check contents of stream sent to create image.
+            _, kwargs = oauth.post.call_args_list[0]
+            _, stream, _ = kwargs['files']['file']
+            self.assertEqual(stream.read(), b'*file*content*')
+            stream.close()
+
+    def create_note_with_locator(self, **kwargs):
+        self.locator = LocatorFactory(url='https://other.example.com/1', **kwargs)
+        self.note = NoteFactory(
+            series=self.series,
+            text='Hello, world!',
+            tags=['greeting', 'planet'],
+            subjects=[self.locator],
+            published=timezone.now()
+        )
+        self.post = self.note.mastodon_posts.get()
+
+    def with_image_with_representation(self):
+        """Arrange that create_representation succeeds without running external commands."""
+        self.image = Image.objects.create(width=1920, height=1080)
+        representation = Representation.objects.create(
+            image=self.image,
+            media_type='image/jpeg',
+            width=1280,
+            height=(1280 * 1080 // 1920),
+            is_cropped=False,
+        )
+        representation.content.save('spoo.jpeg', ContentFile(b'*file*content*'))
+        LocatorImage.objects.create(locator=self.locator, image=self.image)
 
 
 class TestHandleNotePostSave(TransactionTestCase):

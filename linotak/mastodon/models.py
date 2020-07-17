@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -7,9 +7,10 @@ import requests
 import requests_oauthlib
 import time
 
+from ..images.size_spec import SizeSpec
 from ..notes.models import Series, Note
 
-from .protocol import authorize_path, token_path, verify_credentials_path, statuses_path, necessary_scopes
+from .protocol import authorize_path, token_path, verify_credentials_path, media_path, statuses_path, necessary_scopes
 
 
 logger = logging.getLogger(__name__)
@@ -129,6 +130,10 @@ class Connection(models.Model):
         return f'https://{self.domain}{verify_credentials_path}'
 
     @property
+    def media_url(self):
+        return f'https://{self.domain}{media_path}'
+
+    @property
     def statuses_url(self):
         return f'https://{self.domain}{statuses_path}'
 
@@ -172,6 +177,9 @@ class Post(models.Model):
     Mastodon API calls this a status.
     """
 
+    max_media = 4
+    media_size_spec = SizeSpec(1280, 1280)  # Mastodon docs say images are limited to 1.6 MPixel
+
     connection = models.ForeignKey(
         Connection,
         models.SET_NULL,
@@ -213,25 +221,51 @@ class Post(models.Model):
 
     def post_to_mastodon(self):
         """Issue request to Mastodion instance to create a status."""
+
         if self.posted:
             logger.warn(f'Tried to repost {self.pk} ({self.note}) to {self.connection}')
             return
 
-        oauth = self.connection.make_oauth()
-        r = oauth.post(
-            self.connection.statuses_url,
-            data={
-                'status': self.note.text_with_links(),
-            },
-            headers={
-                'Accept': 'application/json',
-                'Idempotency-Key': self.note.get_absolute_url(with_host=True),
-            },
-        )
-        r.raise_for_status()
-        status = r.json()
+        # Before starting transaction do stuff that can be harmlessly repeated,
+        # like generating representations of images.
 
-        self.their_id = status.get('id')
-        self.url = status.get('url')
-        self.posted = timezone.now()
-        self.save()
+        oauth = self.connection.make_oauth()
+        data = {
+            'status': self.note.text_with_links(),
+        }
+
+        for locator in self.note.subjects.all():
+            if (image := locator.main_image()):
+                if len(data.setdefault('media_ids', [])) < self.max_media:
+                    representation = image.create_representation(self.media_size_spec)
+                    r = oauth.post(
+                        self.connection.media_url,
+                        files={'file': (representation.content.name, representation.content.open(), representation.media_type)},
+                    )
+                    r.raise_for_status()
+                    media = r.json()
+                    data['media_ids'].append(media['id'])
+                    if locator.sensitive:
+                        data['sensitive'] = True
+
+        with transaction.atomic():
+            if self.posted:
+                logger.warn(f'Tried to repost {self.pk} ({self.note}) to {self.connection}')
+                return
+            self.posted = timezone.now()
+            self.save()
+
+            r = oauth.post(
+                self.connection.statuses_url,
+                json=data,
+                headers={
+                    'Accept': 'application/json',
+                    'Idempotency-Key': self.note.get_absolute_url(with_host=True),
+                },
+            )
+            r.raise_for_status()
+            status = r.json()
+
+            self.their_id = status.get('id')
+            self.url = status.get('url')
+            self.save()

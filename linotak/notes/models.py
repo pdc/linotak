@@ -480,7 +480,7 @@ class Note(models.Model):
             text,
             ' '.join('#' + x.as_camel_case() for x in self.tags.all()),
             '\n'.join(
-                '\n via '.join([x.url] + [xx.url for xx in x.via_chain()])
+                '\n via '.join([f'{x.url} (nsfw)' if x.sensitive else x.url] + [xx.url for xx in x.via_chain()])
                 for x in self.subjects.all()),
         ]
         return '\n\n'.join(x for x in parts if x)
@@ -562,6 +562,11 @@ class Note(models.Model):
                         prev_locator = self.add_subject(url)
                     excess_urls.discard(url)
                     prev_locator_sensitive = False
+            # Finish off last locator
+            if prev_locator and prev_locator.sensitive != prev_locator_sensitive:
+                prev_locator.sensitive = prev_locator_sensitive
+                prev_locator.save()
+            # Delete any instances that are no longer wanted
             if excess_urls:
                 NoteSubject.objects.filter(note=self, locator__url__in=excess_urls).delete()
             if excess_tags:

@@ -200,13 +200,13 @@ class Image(models.Model):
         """
         if not self.width or not self.height:
             # Image size not known, so probably not actually an image.
-            return
+            return None
 
         scaled, crop = spec.scale_and_crop_to_match(self.width, self.height)
         final_width, final_height = crop or scaled
-        if self.representations.filter(width=final_width, height=final_height).exists():
+        if (candidates := self.representations.filter(width=final_width, height=final_height)[:1]):
             # Already done!
-            return
+            return candidates[0]
 
         if final_width == self.width and final_height == self.height:
             # Want the original size of the image. Just copy the data directly.
@@ -225,6 +225,7 @@ class Image(models.Model):
         output_file = ContentFile(output)
         rep = self.representations.create(media_type=self.media_type, width=final_width, height=final_height, is_cropped=bool(crop), etag=etag)
         rep.content.save(file_name_from_etag(rep.etag, rep.media_type), output_file)
+        return rep
 
     def representation_task(self, spec):
         """Celery signature to arrange for representarion to be created.
@@ -252,7 +253,12 @@ class Image(models.Model):
         """
         if self.width and self.height:
             final_width, final_height = spec.best_match(self.width, self.height)
-            results = list(self.representations.filter(width__lte=final_width, height__lte=final_height).order_by((F('width') * F('height')).desc())[:1])
+            results = list(
+                self.representations
+                .filter(width__lte=final_width, height__lte=final_height)
+                .order_by((F('width') * F('height')).desc())
+                [:1]
+            )
             result = results[0] if results else None
         else:
             result = None

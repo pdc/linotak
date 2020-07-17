@@ -245,7 +245,7 @@ class TestNoteExtractSubjects(TestCase):
         self.assertEqual(note.text, 'Lol')
         self.assertEqual({x.name for x in note.tags.all()}, {'wimble', 'bimble'})
 
-    def test_sets_nsfw_flag_on_locator(self):
+    def test_sets_nsfw_flag_on_locator_with_via(self):
         note = NoteFactory(text='Yo https://example.com/1 (nsfw) via https://example.com/2')
 
         note.extract_subject()
@@ -253,6 +253,14 @@ class TestNoteExtractSubjects(TestCase):
         locator = note.subjects.get()
         self.assertTrue(locator.sensitive)
         self.assertEqual(locator.via.url, 'https://example.com/2')
+
+    def test_sets_nsfw_flag_on_locator_sans_via(self):
+        note = NoteFactory(text='Yo https://example.com/1 (nsfw)')
+
+        note.extract_subject()
+
+        locator = note.subjects.get()
+        self.assertTrue(locator.sensitive)
 
 
 class TestNoteTextWithLinks(TestCase):
@@ -285,6 +293,18 @@ class TestNoteTextWithLinks(TestCase):
         self.assertEqual(
             note.text_with_links(),
             'Hello, world\n\nhttps://example.com/1\n via https://example.com/2\n via https://example.com/3')
+
+    def test_adds_nsfw(self):
+        note = NoteFactory.create(text='Hello, world', subjects=[
+            LocatorFactory.create(
+                url='https://example.com/1',
+                sensitive=True,
+            ),
+        ])
+
+        self.assertEqual(
+            note.text_with_links(),
+            'Hello, world\n\nhttps://example.com/1 (nsfw)')
 
     def test_optionally_adds_permashortcitation(self):
         note = NoteFactory.create(
