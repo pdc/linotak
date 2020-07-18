@@ -52,6 +52,7 @@ class Image(models.Model):
             return 'Could not identify %s: ImageMagick identify returned status %d: %r' % (file_name, returncode, message)
 
     MAX_DATA = 10 * 1024 * 1024
+    MIN_WIDTH = MIN_HEIGHT = 80
 
     data_url = models.URLField(
         _('data URL'),
@@ -186,6 +187,16 @@ class Image(models.Model):
         except CannotSniff as e:
             rc, msg = e.args
             raise Image.NotSniffable(file_name_from_etag(self.etag, None), rc, msg)
+
+    def delete_if_small(self):
+        """If this image is small, delete it."""
+        if self.width and self.width < self.MIN_WIDTH and self.height and self.height < self.MIN_HEIGHT:
+            for r in self.representations.all():
+                r.content.delete(save=False)
+                r.delete()
+            if self.cached_data:
+                self.cached_data.delete(save=False)
+            self.delete()
 
     def create_square_representation(self, size):
         """Create a representation (probably cropped) of this image."""

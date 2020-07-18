@@ -190,6 +190,13 @@ class TestUpdateLocatorWithStuff(TestCase):
 
         self.assertEqual(self.locator.images.all()[0].data_url, 'https://images.example.com/42')
 
+    def test_drops_small_images(self):
+        update_locator_with_stuff(self.locator, [
+            Img('https://images.example.com/42', width=75, height=75),
+        ])
+
+        self.assertFalse(self.locator.images.all())
+
     def test_copies_media_type_and_size(self):
         update_locator_with_stuff(self.locator, [
             Img('https://images.example.com/42', type='image/jpeg', width=1001, height=997),

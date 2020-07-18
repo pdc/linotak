@@ -12,6 +12,10 @@ from .scanner import PageScanner, Title, HEntry, Img, Link
 from .signals import locator_post_scanned
 
 
+# Images on the page smaller than this are ignored.
+MIN_IMAGE_SIZE = 80
+
+
 @transaction.atomic
 def fetch_page_update_locator(locator, if_not_scanned_since):
     """Download and scan the web page thus locator references and update it."
@@ -76,7 +80,8 @@ def update_locator_with_stuff(locator, stuff):
 
     Does not save the locator.
     """
-    titles = []  # List of candidate titles with weight. Pairs (WEIGHT, TITLE) where WEIGHT is a positive integer and TITLE is nonemoty.
+    titles = []  # Candidates for title of the form (WEIGHT, TITLE) where WEIGHT is a positive integer and TITLE is nonemoty.
+    images = []  # Candidate images
     for thing in stuff:
         if isinstance(thing, Title):
             if thing.text:
@@ -87,16 +92,19 @@ def update_locator_with_stuff(locator, stuff):
             if thing.summary:
                 locator.text = thing.summary
             if thing.images:
-                for img in thing.images:
-                    thing, is_new = LocatorImage.objects.get_or_create(
-                        locator=locator,
-                        image=image_of_img(img))
+                images += thing.images
         elif isinstance(thing, Img):
-            LocatorImage.objects.get_or_create(locator=locator, image=image_of_img(thing))
+            images.append(thing)
     if titles:
         _, title = max(titles)
         if title:
             locator.title = title
+    for img in images:
+        if img.width and img.width < MIN_IMAGE_SIZE or img.height and img.height < MIN_IMAGE_SIZE:
+            continue
+        thing, is_new = LocatorImage.objects.get_or_create(
+            locator=locator,
+            image=image_of_img(img))
 
 
 def image_of_img(img):

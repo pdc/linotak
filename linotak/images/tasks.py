@@ -24,8 +24,9 @@ def retrieve_image_data(pk, if_not_retrieved_since):
     is suppressed if the image has been retrieved after
     the specified date and time.
     """
-    with transaction.atomic():
-        Image.objects.get(pk=pk).retrieve_data(if_not_retrieved_since=datetime_of_timestamp(if_not_retrieved_since), save=True)
+    image = Image.objects.get(pk=pk)
+    image.retrieve_data(if_not_retrieved_since=datetime_of_timestamp(if_not_retrieved_since), save=True)
+    image.delete_if_small()
 
 
 @shared_task(name='linotak.images.sniff_image_data')

@@ -2,17 +2,19 @@
 
 from base64 import b64encode
 from datetime import timedelta
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 import httpretty
 import os
+import pathlib
 import struct
 from unittest.mock import patch
 
 from ..matchers_for_mocks import DateTimeTimestampMatcher
-from .models import Image, _sniff, CannotSniff, _sniff_svg, suffix_from_media_type
+from .models import Image, Representation, _sniff, CannotSniff, _sniff_svg, suffix_from_media_type
 from .size_spec import SizeSpec
 from .templatetags.image_representations import _image_representation
 from . import models, signal_handlers, tasks  # For mocking
@@ -41,27 +43,33 @@ class ImageTestMixin:
         self.image.sniff()
         self.image.save()
 
+    def with_representation(self, file_name, **kwargs):
+        with open(os.path.join(data_dir, file_name), 'rb') as input:
+            self.data = input.read()
+        self.representation = Representation.objects.create(image=self.image, **kwargs)
+        self.representation.content.save('r.png', ContentFile(self.data))
+
 
 class TestImageSniff(ImageTestMixin, TestCase):
     """Test Image.sniff."""
 
     def test_can_get_width_and_height_of_png(self):
-        image = self.create_image_with_data_from_file('im.png')
+        image = self.create_image_with_data_from_file('234x123.png')
 
         image.sniff()
 
         self.assertEqual(image.media_type, 'image/png')
-        self.assertEqual(image.width, 69)
-        self.assertEqual(image.height, 42)
+        self.assertEqual(image.width, 234)
+        self.assertEqual(image.height, 123)
 
     def test_can_get_width_and_height_of_jpeg(self):
-        image = self.create_image_with_data_from_file('37x57.jpeg')
+        image = self.create_image_with_data_from_file('frost-100x101.jpeg')
 
         image.sniff()
 
         self.assertEqual(image.media_type, 'image/jpeg')
-        self.assertEqual(image.width, 37)
-        self.assertEqual(image.height, 57)
+        self.assertEqual(image.width, 100)
+        self.assertEqual(image.height, 101)
 
     def test_doesnt_explode_if_not_image(self):
         image = self.create_image_with_data(b'Nope.')
@@ -146,6 +154,20 @@ class TestSniffSVG(TestCase):
             input=b'<html/>')
 
         self.assertFalse(media_type)
+
+
+class TestDeleteIfSmall(ImageTestMixin, TestCase):
+
+    def test_deletes_if_small(self):
+        self.given_image_with_data('37x57.jpeg')
+        self.with_representation('37x57.jpeg', width=37, height=57, is_cropped=False)
+        file_names = [self.image.cached_data.name, self.representation.content.name]
+
+        self.image.delete_if_small()
+
+        for n in file_names:
+            self.assertFalse((pathlib.Path(settings.MEDIA_ROOT) / n).exists())
+        self.assertFalse(Image.objects.filter(pk=self.image.pk).exists())
 
 
 class TestImageRetrieve(ImageTestMixin, TestCase):
