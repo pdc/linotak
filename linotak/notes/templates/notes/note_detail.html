@@ -27,8 +27,10 @@
         </header>
 
         <article class="h-entry note-detail p{{ puff }}">
-            <div class="e-content p-name note-text">{{ note.text|linebreaks }}</p>
-            {% include 'notes/parts/note_via_chains.html' %}
+            <div class="e-content p-name note-text">
+                {{ note.text|linebreaks }}
+                {% include 'notes/parts/note_via_chains.html' %}
+            </div>
             {% include 'notes/parts/note_subject_list.html' %}
 
             <div class="note-footer">

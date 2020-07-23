@@ -49,18 +49,13 @@
     .loc-p5B .loc,
     .loc-p4A .loc {
         display: flex;
-        flex-flow: row wrap;
-        justify-content: flex-start;
+        flex-flow: column;
     }
     .loc-text {
         min-width: 240px;
     }
 }
 @media (min-width: 1120px) {
-    .loc-p5B .loc,
-    .loc-p4A .loc {
-        flex-flow: row nowrap;
-    }
 }
 
 .loc-img {
