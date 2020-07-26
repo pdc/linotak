@@ -28,3 +28,15 @@ def on_image_wants_representation(sender, instance, spec, **kwargs):
             instance.retrieve_data_task(),
             instance.representation_task(spec),
         ).delay()
+
+
+def on_image_pre_delete(sender, instance, **kwargs):
+    """Tidy away image file."""
+    if instance.cached_data:
+        instance.cached_data.delete(save=False)
+
+
+def on_representation_pre_delete(sender, instance, **kwargs):
+    """Tidy away image file."""
+    if instance.content:
+        instance.content.delete(save=False)

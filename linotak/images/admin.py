@@ -5,7 +5,7 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from .templatetags.image_representations import square_representation, representation
-from .models import Image
+from .models import Image, Representation
 
 
 def queue_retrieve(model_admin, request, queryset):
@@ -15,6 +15,14 @@ def queue_retrieve(model_admin, request, queryset):
 
 
 queue_retrieve.short_description = _('Queue retrieval of image data')
+
+
+def delete_cropped_representations(model_admin, request, queryset):
+    """Delete representations that are cropped (e.g., because focus changed)."""
+    Representation.objects.filter(image__in=queryset, is_cropped=True).delete()
+
+
+delete_cropped_representations.short_description = _('Delete cropped representations')
 
 
 def small_thumbnail(image):
@@ -37,7 +45,7 @@ large_thumbnail.short_description = _('Thumbnail')
 
 
 class ImageAdmin(admin.ModelAdmin):
-    actions = [queue_retrieve]
+    actions = [queue_retrieve, delete_cropped_representations]
     date_hierarchy = 'created'
     list_display = ['__str__', small_thumbnail, 'media_type', 'width', 'height', 'retrieved']
     list_filter = [

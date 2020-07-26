@@ -327,6 +327,18 @@ class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
         self.assert_representation(rep, 'image/png', 32, 32, is_cropped=True)
         self.assert_same_PNG_as_file(rep, 'im-32sq.png')
 
+    def test_offsets_crop_to_suit_focus(self):
+        self.given_image_with_data('im.png', focus_x=0.333, focus_y=0.75)
+
+        self.image.create_square_representation(32)
+
+        # convert - -resize '^32x32>' -extent 32x32+7+0 - < linotak/images/test-data/im.png > linotak/images/test-data/im-32sq2.png
+        # The +7 comes from (52.6 - 32) * 0.333.
+        self.assertEqual(self.image.representations.count(), 1)
+        rep = self.image.representations.all()[0]
+        self.assert_representation(rep, 'image/png', 32, 32, is_cropped=True)
+        self.assert_same_PNG_as_file(rep, 'im-32sq2.png')
+
     def test_doesnt_tag_square_from_square_as_cropped(self):
         self.given_image_with_data('frost-100x101.jpeg')
 

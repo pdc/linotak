@@ -86,6 +86,16 @@ class Image(models.Model):
         null=True,
         blank=True,
     )
+    focus_x = models.FloatField(
+        _('focus_x'),
+        default=0.5,
+        help_text=_('Range 0.0 to 1.0. Fraction of the way from the left edge of the focal point'),
+    )
+    focus_y = models.FloatField(
+        _('focus_y'),
+        default=0.5,
+        help_text=_('Range 0.0 to 1.0. Fraction of the way down from the top of the focal point'),
+    )
     etag = models.BinaryField(
         _('etag'),
         max_length=16,
@@ -192,10 +202,7 @@ class Image(models.Model):
         """If this image is small, delete it."""
         if self.width and self.width < self.MIN_WIDTH and self.height and self.height < self.MIN_HEIGHT:
             for r in self.representations.all():
-                r.content.delete(save=False)
                 r.delete()
-            if self.cached_data:
-                self.cached_data.delete(save=False)
             self.delete()
 
     def create_square_representation(self, size):
@@ -227,7 +234,10 @@ class Image(models.Model):
             return
 
         if crop:
-            cmd = ['convert', '-', '-resize', '^%dx%d>' % scaled, '-gravity', 'center', '-extent', '%dx%d' % crop, '-']
+            w_s, h_s = scaled
+            w_c, h_c = crop
+            x, y = round(self.focus_x * (w_s - w_c)), round(self.focus_y * (h_s - h_c))
+            cmd = ['convert', '-', '-resize', '^%dx%d>' % scaled, '-extent', '%dx%d+%d+%d' % (w_c, h_c, x, y), '-']
         else:
             cmd = ['convert', '-', '-resize', '%dx%d>' % scaled, '-']
         with self.cached_data.open() as f:
