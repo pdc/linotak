@@ -238,10 +238,15 @@ class Post(models.Model):
             if (image := locator.main_image()):
                 if len(data.setdefault('media_ids', [])) < self.max_media:
                     representation = image.create_representation(self.media_size_spec)
-                    r = oauth.post(
-                        self.connection.media_url,
-                        files={'file': (representation.content.name, representation.content.open(), representation.media_type)},
-                    )
+                    files = {'file': (representation.content.name, representation.content.open(), representation.media_type)}
+                    if image.focus_x == 0.5 and image.focus_y == 0.5:
+                        r = oauth.post(self.connection.media_url, files=files)
+                    else:
+                        r = oauth.post(
+                            self.connection.media_url,
+                            files=files,
+                            data={'focus': f'{2.0 * image.focus_x - 1.0},{2.0 * image.focus_y - 1.0}'},
+                        )
                     r.raise_for_status()
                     media = r.json()
                     data['media_ids'].append(media['id'])

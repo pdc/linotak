@@ -266,23 +266,35 @@ class TestPost(TestCase):
                     'https://mast.example.com/api/v1/media',
                     files={'file': (ANY, ANY, 'image/jpeg')},
                 ),
-                call(
-                    'https://mast.example.com/api/v1/statuses',
-                    json={
-                        'status': 'Hello, world!\n\n#greeting #planet\n\nhttps://other.example.com/1',
-                        'media_ids': ['100001'],
-                    },
-                    headers={
-                        'Accept': 'application/json',
-                        'Idempotency-Key': f'https://slug.example.com/{self.note.pk}',
-                    },
-                ),
+                self.expected_post_call_with_json(media_ids=['100001']),
             ])
-            # Check contents of stream sent to create image.
-            _, kwargs = oauth.post.call_args_list[0]
-            _, stream, _ = kwargs['files']['file']
-            self.assertEqual(stream.read(), b'*file*content*')
-            stream.close()
+            self.assert_files_file_stream_arg_contains(oauth.post.call_args_list[0], b'*file*content*')
+
+    def test_adds_focus_data_to_image_if_not_centred(self):
+        self.create_note_with_locator()
+        self.with_image_with_representation(focus_x=0.5, focus_y=0.75)
+
+        with patch.object(requests_oauthlib, 'OAuth2Session') as OAuth2Session,  \
+                self.settings(NOTES_DOMAIN='example.com'):
+            oauth = OAuth2Session.return_value
+            oauth.post.side_effect = [
+                mock_json_response({'id': '100001'}),  # Response when creating media.
+                mock_json_response({  # Response when creating post.
+                    'id': '200002',
+                    'url': 'https://mast.example.com/@spoo/134269'
+                }),
+            ]
+            self.post.post_to_mastodon()
+
+            oauth.post.assert_has_calls([
+                call(
+                    'https://mast.example.com/api/v1/media',
+                    files={'file': (ANY, ANY, 'image/jpeg')},
+                    data={'focus': '0.0,0.5'},  # Mastodon coordinates are from -1 to +1
+                ),
+                self.expected_post_call_with_json(media_ids=['100001']),
+            ])
+            self.assert_files_file_stream_arg_contains(oauth.post.call_args_list[0], b'*file*content*')
 
     def test_adds_sensitive_flag_to_post_of_niote_with_locator_with_sensitive_flag(self):
         self.create_note_with_locator(sensitive=True)
@@ -305,24 +317,12 @@ class TestPost(TestCase):
                     'https://mast.example.com/api/v1/media',
                     files={'file': (ANY, ANY, 'image/jpeg')},
                 ),
-                call(
-                    'https://mast.example.com/api/v1/statuses',
-                    json={
-                        'status': 'Hello, world!\n\n#greeting #planet\n\nhttps://other.example.com/1 (nsfw)',
-                        'media_ids': ['100001'],
-                        'sensitive': True,
-                    },
-                    headers={
-                        'Accept': 'application/json',
-                        'Idempotency-Key': f'https://slug.example.com/{self.note.pk}',
-                    },
+                self.expected_post_call_with_json(
+                    'Hello, world!\n\n#greeting #planet\n\nhttps://other.example.com/1 (nsfw)',
+                    media_ids=['100001'], sensitive=True,
                 ),
             ])
-            # Check contents of stream sent to create image.
-            _, kwargs = oauth.post.call_args_list[0]
-            _, stream, _ = kwargs['files']['file']
-            self.assertEqual(stream.read(), b'*file*content*')
-            stream.close()
+            self.assert_files_file_stream_arg_contains(oauth.post.call_args_list[0], b'*file*content*')
 
     def create_note_with_locator(self, **kwargs):
         self.locator = LocatorFactory(url='https://other.example.com/1', **kwargs)
@@ -335,9 +335,9 @@ class TestPost(TestCase):
         )
         self.post = self.note.mastodon_posts.get()
 
-    def with_image_with_representation(self):
+    def with_image_with_representation(self, **kwargs):
         """Arrange that create_representation succeeds without running external commands."""
-        self.image = Image.objects.create(width=1920, height=1080)
+        self.image = Image.objects.create(width=1920, height=1080, **kwargs)
         representation = Representation.objects.create(
             image=self.image,
             media_type='image/jpeg',
@@ -347,6 +347,28 @@ class TestPost(TestCase):
         )
         representation.content.save('spoo.jpeg', ContentFile(b'*file*content*'))
         LocatorImage.objects.create(locator=self.locator, image=self.image)
+
+    def assert_files_file_stream_arg_contains(self, call, content):
+        """Check contents of stream sent to create image."""
+        _, kwargs = call
+        _, stream, _ = kwargs['files']['file']
+        self.assertEqual(stream.read(), content)
+        stream.close()
+
+    def expected_post_call_with_json(self, text=None, **kwargs):
+        """Returns a unittest.mock.Call instance."""
+        json = {
+            'status': text or 'Hello, world!\n\n#greeting #planet\n\nhttps://other.example.com/1',
+        }
+        json.update(kwargs)
+        return call(
+            'https://mast.example.com/api/v1/statuses',
+            json=json,
+            headers={
+                'Accept': 'application/json',
+                'Idempotency-Key': f'https://slug.example.com/{self.note.pk}',
+            },
+        )
 
 
 class TestHandleNotePostSave(TransactionTestCase):
