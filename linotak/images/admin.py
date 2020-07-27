@@ -25,6 +25,23 @@ def delete_cropped_representations(model_admin, request, queryset):
 delete_cropped_representations.short_description = _('Delete cropped representations')
 
 
+def delete_all_representations(model_admin, request, queryset):
+    """Delete representations, forcing them to be regenerated."""
+    Representation.objects.filter(image__in=queryset).delete()
+
+
+delete_all_representations.short_description = _('Delete all representations')
+
+
+def delete_if_small(model_admin, request, queryset):
+    """Delete images if they are less than 80×80 pixels."""
+    for image in queryset.all():
+        image.delete_if_small()
+
+
+delete_if_small.short_description = _('Delete if small')
+
+
 def small_thumbnail(image):
     return format_html(
         '<div style="display: inline-block; background-color: #DED">'
@@ -45,7 +62,7 @@ large_thumbnail.short_description = _('Thumbnail')
 
 
 class ImageAdmin(admin.ModelAdmin):
-    actions = [queue_retrieve, delete_cropped_representations]
+    actions = [queue_retrieve, delete_cropped_representations, delete_all_representations, delete_if_small]
     date_hierarchy = 'created'
     list_display = ['__str__', small_thumbnail, 'media_type', 'width', 'height', 'retrieved']
     list_filter = [
