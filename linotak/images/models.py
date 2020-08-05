@@ -87,14 +87,21 @@ class Image(models.Model):
         blank=True,
     )
     focus_x = models.FloatField(
-        _('focus_x'),
+        _('focus x'),
         default=0.5,
         help_text=_('Range 0.0 to 1.0. Fraction of the way from the left edge of the focal point'),
     )
     focus_y = models.FloatField(
-        _('focus_y'),
+        _('focus y'),
         default=0.5,
         help_text=_('Range 0.0 to 1.0. Fraction of the way down from the top of the focal point'),
+    )
+    placeholder = models.CharField(
+        _('placeholder'),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_('CSS colour for a blank rect shown while awaiting image proper'),
     )
     etag = models.BinaryField(
         _('etag'),
@@ -193,7 +200,7 @@ class Image(models.Model):
             kwargs -- how to get the input. Either stdin=REALFILE or input=BYTES
         """
         try:
-            self.media_type, self.width, self.height = _sniff(media_type=media_type, **kwargs)
+            self.media_type, self.width, self.height, self.placeholder = _sniff(media_type=media_type, **kwargs)
         except CannotSniff as e:
             rc, msg = e.args
             raise Image.NotSniffable(file_name_from_etag(self.etag, None), rc, msg)
@@ -301,6 +308,9 @@ class Image(models.Model):
         wants_data.send(self.__class__, instance=self)
 
 
+GEOMETRY_RE = re.compile(r'(\d+)x(\d+)\+0\+0')
+
+
 def _sniff(media_type=None, **kwargs):
     """Given a file-like object, guess media_type, width, and height.
 
@@ -317,15 +327,27 @@ def _sniff(media_type=None, **kwargs):
         media_type_1, width, height = _sniff_svg(**kwargs)
         if media_type_1:
             return media_type_1, width, height
-    cmd = ['identify', '-']
+    cmd = ['identify', '-colorspace', 'lab', '-verbose', '-']
     result = subprocess.run(cmd, check=False, stderr=subprocess.PIPE, stdout=subprocess.PIPE, **kwargs)
     if result.returncode:
         # Command failed.
         raise CannotSniff(result.returncode, result.stderr or result.stdout)
     output = result.stdout
-    _, type, size, *rest = output.split()
-    w, h = size.split(b'x')
-    return media_type_from_imagemagick_type(type), int(w), int(h)
+    media_type, geometry, l_bit, a_bit, b_bit = _comb_imagemagick_verbose(
+        (
+            ('Mime type',),
+            ('Geometry',),
+            ('Channel statistics', 'Channel 0', 'mean'),
+            ('Channel statistics', 'Channel 1', 'mean'),
+            ('Channel statistics', 'Channel 2', 'mean'),
+        ), io.TextIOWrapper(io.BytesIO(output), encoding='UTF-8'))
+    if geometry and (m := GEOMETRY_RE.match(geometry)):
+        width, height = int(m[1]), int(m[2])
+    else:
+        width, height = None, None
+    lab = l_bit is not None and _lab_from_imagemagick_verbose_bits((l_bit, a_bit, b_bit))
+    placeholder = '#%02X%02X%02X' % sRGB_from_Lab(lab) if lab else None
+    return media_type, width, height, placeholder
 
 
 _length_pattern = re.compile(r'^\s*(\d+|\d*\.\d+)\s*([a-z]{2,3})?\s*$')
@@ -396,6 +418,84 @@ def suffix_from_media_type(media_type):
 
 def file_name_from_etag(etag, media_type):
     return urlsafe_b64encode(etag).decode('ascii').rstrip('=') + suffix_from_media_type(media_type)
+
+
+def _comb_imagemagick_verbose(specs, stream):
+    """Pull data items out of the output of `identify -colorspace lab -verbose`.
+
+    Arguments --
+        specs -- list of path, where a path is a list of headings
+        stream -- file-like source that can vbe read line-by-line
+
+    Returns --
+        Sequence of values extracted from stream
+        (value None means that value not found).
+    """
+    found = {tuple(p): None for p in specs}
+    path = []
+    indents = []
+    indent = -1
+    for line in stream:
+        key, *rest = line.split(':', 1)
+        len1 = len(key)
+        key = key.lstrip()
+        new_indent = len1 - len(key)
+        while new_indent < indent:
+            path = path[:-1]
+            indent = indents.pop(-1)
+        if new_indent == indent:
+            path[-1] = key
+        else:
+            path.append(key)
+            indents.append(indent)
+            indent = new_indent
+        p = tuple(path[1:])
+        if p in found:
+            found[p] = rest[0].strip()
+    return tuple(found[tuple(p)] for p in specs)
+
+
+COORD_RE = re.compile(r'\d*(?:.\d+)? \((0|1|0\.\d+)\)')
+
+
+def _lab_from_imagemagick_verbose_bits(bits):
+    scaled_l, scaled_a, scaled_b = tuple(float(m[1]) for bit in bits if bit and (m := COORD_RE.match(bit)))
+    return scaled_l * 100.0, scaled_a * 255.0 - 128.0, scaled_b * 255.0 - 128.0
+
+
+def sRGB_from_Lab(lab):
+    """Convert from CIE L*a*b* colour to 8-bit sRGB.
+
+    Argument --
+        lab -- a tuple of (L*, a*, b*) in range 0..100, -128..127, -128..127
+
+    Returns --
+        rgb -- a ruple of (r, g, b) in range 0..255
+
+    """
+    L_star, a_star, b_star = lab
+
+    # Convert L*a*b* to XYZ
+    delta = 6 / 29
+    X_n, Y_n, Z_n = 0.950489, 1.0, 1.088840  # D65 white point, scaled so XYZ are in range 0..1
+
+    def f_minus_1(t):
+        return t ** 3 if t > delta else 3 * delta * delta * (t - 4 / 29)
+
+    q = (L_star + 16) / 116
+    X = X_n * f_minus_1(q + a_star / 500)
+    Y = Y_n * f_minus_1(q)
+    Z = Z_n * f_minus_1(q - b_star / 200)
+
+    # Convert XYZ to RGB linear in 0..1 scale
+    R_L = 3.2406255 * X - 1.537208 * Y - 0.4986286 * Z
+    G_L = -0.9689307 * X + 1.8757561 * Y + 0.0415175 * Z
+    B_L = 0.0557101 * X - 0.2040211 * Y + 1.0569959 * Z
+
+    return tuple(
+        round(255 * (323 * u / 25 if u <= 0.0031308 else (211 * u ** (5 / 12) - 11) / 200))
+        for u in (R_L, G_L, B_L)
+    )
 
 
 class Representation(models.Model):

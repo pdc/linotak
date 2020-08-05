@@ -8,13 +8,19 @@ from django.core.files.storage import FileSystemStorage
 from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 import httpretty
+import io
 import os
 import pathlib
 import struct
 from unittest.mock import patch
 
 from ..matchers_for_mocks import DateTimeTimestampMatcher
-from .models import Image, Representation, _sniff, CannotSniff, _sniff_svg, suffix_from_media_type
+from .models import (
+    Image, Representation, _sniff, CannotSniff, _sniff_svg,
+    suffix_from_media_type, _comb_imagemagick_verbose,
+    _lab_from_imagemagick_verbose_bits,
+    sRGB_from_Lab
+)
 from .size_spec import SizeSpec
 from .templatetags.image_representations import _image_representation
 from . import models, signal_handlers, tasks  # For mocking
@@ -70,6 +76,15 @@ class TestImageSniff(ImageTestMixin, TestCase):
         self.assertEqual(image.media_type, 'image/jpeg')
         self.assertEqual(image.width, 100)
         self.assertEqual(image.height, 101)
+
+    def test_can_determine_placeholder_colour(self):
+        image = self.create_image_with_data_from_file('234x123.png')
+
+        image.sniff()
+
+        # Tests for the plucking of the values from the `identify` output in TestExtractStats below.
+        # RGB calculated using colormine.com!
+        self.assertEqual(image.placeholder, '#D57CD9')
 
     def test_doesnt_explode_if_not_image(self):
         image = self.create_image_with_data(b'Nope.')
@@ -380,7 +395,7 @@ class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
 
         # Check the content actually maches the metadata.
         with rep.content.open() as f:
-            actual_media_type, actual_width, actual_height = _sniff(stdin=f.file)
+            actual_media_type, actual_width, actual_height, _ = _sniff(stdin=f.file)
         self.assertEqual(actual_media_type, media_type)
         self.assertEqual(actual_width, width)
         self.assertEqual(actual_height, height)
@@ -632,3 +647,90 @@ class TestImageRepresentationTag(TestCase):
             '<image width="900" height="600" xlink:href="http://example.com/foo.svg"/>'
             '</svg>')
 
+
+# identify -colorspace Lab -verbose linotak/images/test-data/234x123.png
+sample_verbose = """Image: linotak/images/test-data/234x123.png
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 234x123+0+0
+  Resolution: 72x72
+  Print size: 3.25x1.70833
+  Units: PixelsPerCentimeter
+  Colorspace: CIELab
+  Type: Palette
+  Base type: Undefined
+  Endianess: Undefined
+  Depth: 8/16-bit
+  Channel depth:
+    Channel 0: 16-bit
+    Channel 1: 16-bit
+    Channel 2: 16-bit
+  Channel statistics:
+    Pixels: 28782
+    Channel 0:
+      min: 100.242  (0.393107)
+      max: 184.861 (0.724945)
+      mean: 164.582 (0.64542)
+      standard deviation: 35.6815 (0.139928)
+      kurtosis: -0.493308
+      skewness: -1.21686
+      entropy: 0.146701
+    Channel 1:
+      min: 156.365  (0.613196)
+      max: 181.555 (0.711982)
+      mean: 176.387 (0.691714)
+      standard deviation: 8.70216 (0.0341261)
+      kurtosis: -0.552761
+      skewness: -1.19121
+      entropy: 0.147456
+    Channel 2:
+      min: 53.3958  (0.209395)
+      max: 107.279 (0.420703)
+      mean: 94.3706 (0.370081)
+      standard deviation: 22.7183 (0.0890913)
+      kurtosis: -0.491737
+      skewness: -1.21749
+      entropy: 0.146701
+  """
+
+
+class TestExtractStats(TestCase):
+
+    def test_extracts_stats_by_path(self):
+        spec = [
+            ['Channel statistics', 'Channel 0', 'mean'],
+            ['Channel statistics', 'Channel 1', 'mean'],
+            ['Channel statistics', 'Channel 2', 'mean'],
+        ]
+
+        result = _comb_imagemagick_verbose(spec, io.StringIO(sample_verbose))
+
+        self.assertEqual(result, ('164.582 (0.64542)', '176.387 (0.691714)', '94.3706 (0.370081)'))
+
+    def test_extracts_Lab_from_verbose_bits(self):
+        l_star, a_star, b_star = _lab_from_imagemagick_verbose_bits(
+            ('164.582 (0.64542)', '176.387 (0.691714)', '94.3706 (0.370081)')
+        )
+
+        self.assertAlmostEqual(l_star, 64.542, 3)
+        self.assertAlmostEqual(a_star, 48.387, 3)
+        self.assertAlmostEqual(b_star, -33.629, 3)
+
+    def test_Lab_from_bits_white(self):
+        l_star, a_star, b_star = _lab_from_imagemagick_verbose_bits(('0 (0)', '127.5 (0.5)', '127.5 (0.5)'))
+
+        self.assertAlmostEqual(l_star, 0.0, 3)
+
+    def test_Lab_from_bits_black(self):
+        l_star, a_star, b_star = _lab_from_imagemagick_verbose_bits(('255 (1)', '127.5 (0.5)', '127.5 (0.5)'))
+
+        self.assertAlmostEqual(l_star, 100.0, 3)
+
+    def test_sRGB_from_Lab(self):
+        r, g, b = sRGB_from_Lab((64.542, 48.38707000000002, -33.62934))
+
+        # Calculated using colormine.org
+        self.assertAlmostEqual(r, 213, 3)
+        self.assertAlmostEqual(g, 124, 3)
+        self.assertAlmostEqual(b, 217, 3)
