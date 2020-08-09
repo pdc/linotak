@@ -17,6 +17,16 @@ def queue_retrieve(model_admin, request, queryset):
 queue_retrieve.short_description = _('Queue retrieval of image data')
 
 
+def sniff_again(model_admin, request, queryset):
+    """Delete images if they are less than 80×80 pixels."""
+    for image in queryset.filter(cached_data__isnull=False):
+        image.sniff()
+        image.save()
+
+
+sniff_again.short_description = _('Sniff again')
+
+
 def delete_cropped_representations(model_admin, request, queryset):
     """Delete representations that are cropped (e.g., because focus changed)."""
     Representation.objects.filter(image__in=queryset, is_cropped=True).delete()
@@ -62,7 +72,7 @@ large_thumbnail.short_description = _('Thumbnail')
 
 
 class ImageAdmin(admin.ModelAdmin):
-    actions = [queue_retrieve, delete_cropped_representations, delete_all_representations, delete_if_small]
+    actions = [queue_retrieve, sniff_again, delete_cropped_representations, delete_all_representations, delete_if_small]
     date_hierarchy = 'created'
     list_display = ['__str__', small_thumbnail, 'media_type', 'width', 'height', 'retrieved']
     list_filter = [

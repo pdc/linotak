@@ -9,11 +9,13 @@ register = template.Library()
 
 
 IMAGE_TEMPLATE = template.Template("""{% spaceless %}
+    {% if image.placeholder %}<div style="background: {{ image.placeholder }}">{% endif %}
     {% if representation %}
         <img src="{{ representation.content.url }}" {% if srcset %}srcset="{{srcset}}" sizes="{{sizes}}"{% endif %}
             {% if image.with_class %}class="{{ image.with_class }}" {% endif %}width="{{ representation.width }}" height="{{ representation.height }}"
             alt="">
     {% endif %}
+    {% if image.placeholder %}</div>{% endif %}
 {% endspaceless %}""")
 
 SVG_TEMPLATE = template.Template("""{% spaceless %}

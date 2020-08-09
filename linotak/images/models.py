@@ -179,7 +179,7 @@ class Image(models.Model):
             logger.warning(e)
         self.cached_data.save(file_name, file, save=save)
 
-    def sniff(self, save=False):
+    def sniff(self):
         """Presuming already has image data, guess width, height, and media_type."""
         with self.cached_data.open() as f:
             if not self.etag:
@@ -455,10 +455,24 @@ def _comb_imagemagick_verbose(specs, stream):
     return tuple(found[tuple(p)] for p in specs)
 
 
+# Picking a representative colour form an image to use as a placeholder.
+#
+# For now I am using the mean of the pixels, using the L*a*b* colourspace
+# since its perceptually linear mapping form numbers to colours means the
+# average colour should be closer to the average as perceieved by eye.
+#
+# Reluctant to get in to learning enough NumPy to write this directly, I am
+# instead using ImageMagick’s colourspace transformation and statistics in the
+# output of `identify -verbose`. I need to comb the verbose output for the
+# values I want, and then convert from the transformed L*a*b* ImageMagick
+# writes (the values are mapped from (0..255, -128..127, -182..127) to (0..1,
+# 0..1, 0..1) by scaling and adding 0.5) back to sRGB.
+
 COORD_RE = re.compile(r'\d*(?:.\d+)? \((0|1|0\.\d+)\)')
 
 
 def _lab_from_imagemagick_verbose_bits(bits):
+    """Extract L*a*b* coordinates from the format output by `identify -verbose`."""
     scaled_l, scaled_a, scaled_b = tuple(float(m[1]) for bit in bits if bit and (m := COORD_RE.match(bit)))
     return scaled_l * 100.0, scaled_a * 255.0 - 128.0, scaled_b * 255.0 - 128.0
 
@@ -467,10 +481,10 @@ def sRGB_from_Lab(lab):
     """Convert from CIE L*a*b* colour to 8-bit sRGB.
 
     Argument --
-        lab -- a tuple of (L*, a*, b*) in range 0..100, -128..127, -128..127
+        lab -- a tuple of floats (L*, a*, b*) in range 0..100, -128..127, -128..127
 
     Returns --
-        rgb -- a ruple of (r, g, b) in range 0..255
+        rgb -- a tuple of integers (r, g, b) in range 0..255
 
     """
     L_star, a_star, b_star = lab
