@@ -357,6 +357,7 @@ _px_per_unit = {
     'cm': 96.0 / 2.54,
     'mm': 96.0 / 25.4,
     'em': 16.0,  # Assume my usual 16px tyoe size
+    'ex': 16.0 / 2,  # Half an em
     'rem': 16.0,  # Ditto
 }
 
