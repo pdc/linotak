@@ -3,6 +3,7 @@
 from django.conf import settings
 from django import forms
 from django.urls import resolve, Resolver404
+from django.utils import timezone
 from urllib.parse import urlparse
 
 from ..notes.models import Locator, Note
@@ -59,10 +60,14 @@ class IncomingForm(forms.Form):
             # No point scanning source if we cannot associate it with a note.
             source = None
 
-        return Incoming.objects.create(
+        result, is_new = Incoming.objects.update_or_create(
             source_url=source_url,
             target_url=target_url,
-            user_agent=http_user_agent,
-            source=source,
-            target=target,
+            defaults={
+                'user_agent': http_user_agent,
+                'source': source,
+                'target': target,
+                'received': timezone.now(),
+            },
         )
+        return result

@@ -289,6 +289,29 @@ class TestIncomingForm(TestCase):
         self.assertEqual(result.source.url, source_url)
         self.assertEqual(result.target, note)
 
+    def test_collapses_matching_notifications(self):
+        series = SeriesFactory(name='alpha')
+        note = NoteFactory(series=series)
+        source_url = 'https://example.com/blog/1'
+        target_url = 'https://alpha.notes.example.org/tagged/froth/page5/%s' % note.pk
+        then = timezone.now() - timedelta(minutes=5)
+        existing = Incoming.objects.create(source_url=source_url, target_url=target_url, received=then)
+        form = IncomingForm({
+            'source': source_url,
+            'target': target_url,
+        })
+        self.assertTrue(form.is_valid())
+
+        now = timezone.now()
+        with self.settings(NOTES_DOMAIN='notes.example.org'), patch.object(timezone, 'now', return_value=now):
+            result = form.save(http_user_agent='Agent/69')
+
+        existing.refresh_from_db()
+        self.assertEqual(result, existing)
+        self.assertEqual(result.received, now)  # Has updated date to most recent
+
+    # TODO. In future this test will only collapse unprocessed duplicates...
+
 
 class TestWebmentionEndpoint(TestCase):
 

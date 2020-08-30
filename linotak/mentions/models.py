@@ -192,6 +192,7 @@ class Incoming(models.Model):
     )
 
     created = models.DateTimeField(_('created'), default=timezone.now)
+    received = models.DateTimeField(_('received'), default=timezone.now)
     # target_acquired = models.DateTimeField(
     #     blank=True,
     #     null=True,
