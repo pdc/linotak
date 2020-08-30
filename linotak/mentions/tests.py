@@ -296,11 +296,13 @@ class TestWebmentionEndpoint(TestCase):
         series = SeriesFactory(name='alpha')
         note = NoteFactory(series=series)
 
-        self.client.post(reverse('webmention'), {
+        response = self.client.post(reverse('webmention'), {
             'source': 'http://example.com/blog/1',
             'target': 'https://alpha.notes.example.org/%d' % note.pk,
         })
 
         incoming = Incoming.objects.get(source_url='http://example.com/blog/1')
         self.assertEqual(incoming.target_url, 'https://alpha.notes.example.org/%d' % note.pk)
-
+        # Does NOT redirect, but shows template instead:
+        self.assertEqual(response.status_code, 201)  # Created
+        self.assertEqual(response['Location'], incoming.get_absolute_url())
