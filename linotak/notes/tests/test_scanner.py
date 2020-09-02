@@ -344,11 +344,11 @@ class TestHEntryMixin(ScanMixin, TestCase):
                 'https://example.com/1',
                 'Webmention',
                 'Webmention'
-                    ' is a web standard for mentions and conversations across the web, a powerful building block that is'
-                    ' used for a growing federated'
-                    ' network of comments,'
-                    ' likes, reposts,'
-                    ' and other rich interactions across the decentralized social web.',
+                ' is a web standard for mentions and conversations across the web, a powerful building block that is'
+                ' used for a growing federated'
+                ' network of comments,'
+                ' likes, reposts,'
+                ' and other rich interactions across the decentralized social web.',
                 classes=['mw-body', 'h-entry'],
                 role='main'
             ),
@@ -385,6 +385,33 @@ class TestHEntryMixin(ScanMixin, TestCase):
                 links=[Link('webmention', 'https://example.com/test/5/webmention', text='Webmention endpoint')]
             ),
             stuff)
+
+    def test_includes_like_of_link(self):
+        stuff = self.scan("""
+            <div class="h-entry">
+                <a class="u-like-of" href="https://pdc.ooble.uk/395"></a>
+        """)
+
+        self.assertIn(
+            HEntry(
+                classes={'h-entry'},
+                links=[Link(set(), 'https://pdc.ooble.uk/395', classes={'u-like-of'})]
+            ),
+            stuff)
+
+    def test_includes_link_with_notes_domain(self):
+        with self.settings(NOTES_DOMAIN='ooble.uk'):
+            stuff = self.scan("""
+                <div class="h-entry">
+                    <a href="https://pdc.ooble.uk/395">Woo</a>
+            """)
+
+            self.assertIn(
+                HEntry(
+                    classes={'h-entry'},
+                    links=[Link(set(), 'https://pdc.ooble.uk/395', text='Woo')]
+                ),
+                stuff)
 
 
 class TestOGEntryCapture(ScanMixin, TestCase):

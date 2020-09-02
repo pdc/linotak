@@ -156,6 +156,11 @@ class Incoming(models.Model):
 
     """
 
+    MENTION, LIKE, REPOST, REPLY = range(4)
+    INTENTS = MENTION, LIKE, REPOST, REPLY
+    INTENT_LABELS = _('Mention'), _('Like'), _('Repost'), _('Reply')
+    INTENT_CHOICES = zip(INTENTS, INTENT_LABELS)
+
     source = models.ForeignKey(
         Locator,
         on_delete=models.SET_NULL,
@@ -190,9 +195,17 @@ class Incoming(models.Model):
         blank=True,
         help_text=_('What software the caller claims to be running.'),
     )
+    intent = models.PositiveSmallIntegerField(
+        _('intent'),
+        null=True,
+        blank=True,
+        choices=INTENT_CHOICES,
+        help_text=_('Inferred intent of the mention.')
+    )
 
     created = models.DateTimeField(_('created'), default=timezone.now)
     received = models.DateTimeField(_('received'), default=timezone.now)
+    scanned = models.DateTimeField(_('scanned'), null=True, blank=True, help_text='When source erntry was scanned')
     # target_acquired = models.DateTimeField(
     #     blank=True,
     #     null=True,
@@ -232,15 +245,21 @@ def handle_note_post_save(sender, instance, created, raw, **kwargs):
                 outgoing.make_discovered(locator.mentions_info.created, locator.mentions_info.receiver)
 
 
+CLASS_INTENTS = {
+    'u-like-of': Incoming.LIKE,
+    'u-repost-of': Incoming.REPOST,
+}
+
+
 def handle_locator_post_scanned(sender, locator, stuff, **kwargs):
     """Called after a locator has been scanned. Look for webmention links."""
+    # Find if ther is an endpoint for outgoing Webmention notifications.
     for link in entry_links(stuff):
         if 'webmention' in link.rel:
             receiver, is_new = Receiver.objects.get_or_create(url=link.href)
             break
     else:
         receiver = None
-
     try:
         location_receiver = locator.mentions_info
         if location_receiver.receiver != receiver:
@@ -252,6 +271,19 @@ def handle_locator_post_scanned(sender, locator, stuff, **kwargs):
     now = timezone.now()
     for mention in Outgoing.objects.filter(target=locator, discovered__isnull=True):
         mention.make_discovered(now, receiver)
+
+    # Is this the source of an incoming Webmention?
+    for incoming in locator.incoming_set.all():
+        for link in entry_links(stuff):
+            if link.href == incoming.target_url:
+                for css_class in link.classes:
+                    if (intent := CLASS_INTENTS.get(css_class)):
+                        break
+                else:
+                    intent = Incoming.MENTION
+                incoming.intent = intent
+                incoming.save()
+                break
 
 
 def entry_links(stuff):

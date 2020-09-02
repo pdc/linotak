@@ -5,12 +5,12 @@ list of ’stuff’ (linkks, properties, and microforat2 structures like h-entrr
 instances).
 """
 
+from django.conf import settings
+from django.utils.dateparse import parse_date, parse_datetime
 import json
 from html.parser import HTMLParser
 import re
 from urllib.parse import urljoin
-
-from django.utils.dateparse import parse_date, parse_datetime
 
 
 class StuffHolderMixin:
@@ -156,7 +156,7 @@ class Link(StuffBase):
         self.type = type
         self.title = title
         self.text = text
-        self.classes = classes or []
+        self.classes = set(classes) if classes else set()
         self.author = author
         self.published = published
 
@@ -241,8 +241,9 @@ class HCard(StuffBase):
         return self.name, self.url, self.photo, self.classes, self.short_name
 
 
-# Links with these rel attributes in an entry are considered to be links about the entry, not mentioned in the entry.
+# Links with these rel & class attributes in an entry are considered to be links about the entry, not mentioned in the entry.
 RELS_FOR_ENTRY_LINKS = {'webmention'}
+CLASSES_FOR_ENTRY_LINKS = {'u-like-of', 'u-repost-of'}
 
 
 class HEntry(StuffBase):
@@ -253,7 +254,7 @@ class HEntry(StuffBase):
         self.name = name
         self.summary = summary
         self.author = author
-        self.classes = classes or []
+        self.classes = set(classes) if classes else set()
         self.role = role
         self.images = images or []
         self.links = links or []
@@ -266,7 +267,7 @@ class HEntry(StuffBase):
 
 
 # Recognizers will be called by the scanner when various HTML things are parsed.
-# They emit stuff form end-tag handlers, which is aggregated by the caller.
+# They can emit stuff from end-tag handlers, which is aggregated by the caller.
 
 
 class LinkRecognizer:
@@ -498,7 +499,16 @@ class HSomethingRecognizer:
         summary = summary_prop.value if summary_prop else link.text if link else None
         role = tag.get('role')
         images = [x for x in stuff if isinstance(x, Img)]
-        links = [x for x in stuff if isinstance(x, Link) and (x.rel & RELS_FOR_ENTRY_LINKS)]
+        links = [
+            x
+            for x in stuff
+            if isinstance(x, Link)
+            and (
+                x.rel & RELS_FOR_ENTRY_LINKS
+                or x.classes & CLASSES_FOR_ENTRY_LINKS
+                or settings.NOTES_DOMAIN in x.href
+            )
+        ]
         return HEntry(href, name, summary, author=author, classes=tag.classes, role=role, images=images, links=links)
 
     def make_h_card(self, tag, classes, stuff):
@@ -526,7 +536,7 @@ class HSomethingRecognizer:
     def make_h_cite(self, tag, classes, stuff):
         link = _pop_stuff_strictly(stuff, Link, 'h-cite') or _pop_stuff(stuff, Link, 'u-url')
         if 'h-cite' not in link.classes:
-            link.classes.append('h-cite')
+            link.classes.add('h-cite')
         card = _pop_stuff(stuff, HCard, 'p-author')
         prop = _pop_stuff_strictly(stuff, Property, 'p-author')
         if card:
@@ -543,7 +553,7 @@ class HSomethingRecognizer:
         prop = _pop_stuff_strictly(stuff, Property, 'dt-published')
         if prop:
             link.published = prop.value
-        link.classes = [x for x in link.classes if x not in self.hcite_props]
+        link.classes = {x for x in link.classes if x not in self.hcite_props}
         return link
 
 

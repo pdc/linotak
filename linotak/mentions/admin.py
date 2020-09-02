@@ -26,10 +26,10 @@ class OutgoingAdmin(admin.ModelAdmin):
 
 
 class IncomingAdmin(admin.ModelAdmin):
-    list_display = ['source_url', 'target', 'created']
-    search_fields = ['source_url', 'target_url']
+    list_display = ['source_url', 'target', 'intent', 'received']
+    search_fields = ['source_url', 'target_url', 'target__text']
     raw_id_fields = ['source', 'target']
-    date_hierarchy = 'created'
+    date_hierarchy = 'received'
 
 
 admin.site.register(Receiver, ReceiverAdmin)

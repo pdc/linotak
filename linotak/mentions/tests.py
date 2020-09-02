@@ -76,7 +76,11 @@ class TestHandleNotePostSave(TestCase):
 
 
 class TestHandleLocatorScanned(TestCase):
-    """Test handle_locator_post_scanned."""
+    """Test handle_locator_post_scanned.
+
+    This is used (a) to find webmention enpoint of target of outgoint mention,
+    and (b) when looking at source of incoming webmention.
+    """
 
     def test_sets_recevier_to_null_when_no_link(self):
         locator = LocatorFactory()
@@ -123,6 +127,24 @@ class TestHandleLocatorScanned(TestCase):
 
         result = LocatorReceiver.objects.get(locator=locator)
         self.assertEqual(result.receiver.url, 'https://example.com/new')
+
+    def test_updates_intent_of_incoming_mention(self):
+        locator = LocatorFactory()
+        note = NoteFactory(series__name='spoo')
+        incoming = Incoming.objects.create(source=locator, target=note, target_url=f'https://spoo.example.com/{note.pk}')
+
+        with self.settings(NOTES_DOMAIN='example.com'):
+            handle_locator_post_scanned(Locator, locator=locator, stuff=[
+                HEntry(
+                    None,
+                    'Liiiike',
+                    classes=['h-entry'],
+                    links=[Link(None, f'https://spoo.example.com/{note.pk}', classes=['u-like-of'])]
+                ),
+            ])
+
+        incoming.refresh_from_db()
+        self.assertEqual(incoming.intent, incoming.LIKE)
 
 
 class TestHandleLocatorScannedTriggersNotification(TransactionTestCase):
