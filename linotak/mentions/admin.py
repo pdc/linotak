@@ -1,6 +1,16 @@
 from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
 
 from .models import Incoming, Outgoing, Receiver, LocatorReceiver
+
+
+def queue_fetch_source(model_admin, request, queryset):
+    """Queue the images to be retrieved."""
+    for incomming in queryset:
+        incomming.source.queue_fetch()
+
+
+queue_fetch_source.short_description = _('Queue fetch source')
 
 
 class ReceiverAdmin(admin.ModelAdmin):
@@ -30,6 +40,7 @@ class IncomingAdmin(admin.ModelAdmin):
     search_fields = ['source_url', 'target_url', 'target__text']
     raw_id_fields = ['source', 'target']
     date_hierarchy = 'received'
+    actions = [queue_fetch_source]
 
 
 admin.site.register(Receiver, ReceiverAdmin)

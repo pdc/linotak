@@ -282,6 +282,7 @@ def handle_locator_post_scanned(sender, locator, stuff, **kwargs):
                 else:
                     intent = Incoming.MENTION
                 incoming.intent = intent
+                incoming.scanned = timezone.now()
                 incoming.save()
                 break
 
