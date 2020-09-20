@@ -290,7 +290,7 @@ class TestPost(TestCase):
                 call(
                     'https://mast.example.com/api/v1/media',
                     files={'file': (ANY, ANY, 'image/jpeg')},
-                    data={'focus': '0.0,0.5'},  # Mastodon coordinates are from -1 to +1
+                    data={'focus': '0.0,-0.5'},  # Mastodon coordinates are from -1 to +1 AND y axis is positive upwards
                 ),
                 self.expected_post_call_with_json(media_ids=['100001']),
             ])

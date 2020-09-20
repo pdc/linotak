@@ -245,7 +245,7 @@ class Post(models.Model):
                         r = oauth.post(
                             self.connection.media_url,
                             files=files,
-                            data={'focus': f'{2.0 * image.focus_x - 1.0},{2.0 * image.focus_y - 1.0}'},
+                            data={'focus': f'{2.0 * image.focus_x - 1.0},{-2.0 * image.focus_y + 1.0}'},
                         )
                     r.raise_for_status()
                     media = r.json()
