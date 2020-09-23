@@ -115,7 +115,7 @@ class TestImageSniff(ImageTestMixin, TestCase):
 class TestSniffSVG(TestCase):
 
     def test_can_get_width_and_height_of_svg_with_width_and_height(self):
-        media_type, width, height = _sniff_svg(
+        media_type, width, height, _ = _sniff_svg(
             input=b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6 3" height="600px" width="300px"/>')
 
         self.assertEqual(media_type, 'image/svg+xml')
@@ -123,7 +123,7 @@ class TestSniffSVG(TestCase):
         self.assertEqual(height, 600)
 
     def test_comverts_mm_to_px(self):
-        media_type, width, height = _sniff_svg(
+        media_type, width, height, _ = _sniff_svg(
             input=(
                 b'<svg xmlns="http://www.w3.org/2000/svg" '
                 b'viewBox="0 0 713.35878 175.8678" height="49.633801mm" width="201.3257mm"/>'))
@@ -133,7 +133,7 @@ class TestSniffSVG(TestCase):
         self.assertEqual(height, 188)
 
     def test_can_get_width_and_height_of_svg_with_view_box(self):
-        media_type, width, height = _sniff_svg(
+        media_type, width, height, _ = _sniff_svg(
             input=b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 48"/>')
 
         self.assertEqual(media_type, 'image/svg+xml')
@@ -141,7 +141,7 @@ class TestSniffSVG(TestCase):
         self.assertEqual(height, 48)
 
     def test_accepts_unitless_lengths(self):
-        media_type, width, height = _sniff_svg(
+        media_type, width, height, _ = _sniff_svg(
             input=b'<svg xmlns="http://www.w3.org/2000/svg" width="640" height="270"/>')
 
         self.assertEqual(media_type, 'image/svg+xml')
@@ -149,7 +149,7 @@ class TestSniffSVG(TestCase):
         self.assertEqual(height, 270)
 
     def test_accepts_namespaceless_svg(self):
-        media_type, width, height = _sniff_svg(
+        media_type, width, height, _ = _sniff_svg(
             input=b'<svg width="640px" height="270px"/>')
 
         self.assertEqual(media_type, 'image/svg+xml')
@@ -157,7 +157,7 @@ class TestSniffSVG(TestCase):
         self.assertEqual(height, 270)
 
     def test_not_confused_by_xml_decl(self):
-        media_type, width, height = _sniff_svg(
+        media_type, width, height, _ = _sniff_svg(
             input=b'<?xml version="1.0"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="640px" height="270px"/>')
 
         self.assertEqual(media_type, 'image/svg+xml')
@@ -165,7 +165,7 @@ class TestSniffSVG(TestCase):
         self.assertEqual(height, 270)
 
     def test_rejects_non_svg(self):
-        media_type, width, height = _sniff_svg(
+        media_type, width, height, _ = _sniff_svg(
             input=b'<html/>')
 
         self.assertFalse(media_type)

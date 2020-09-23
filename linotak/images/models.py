@@ -318,15 +318,15 @@ def _sniff(media_type=None, **kwargs):
         kwargs -- how to get the input. Either stdin=REALFILE or input=BYTES
 
     Returns --
-        MEDIA_TYPE, WIDTH, HEIGHT
+        MEDIA_TYPE, WIDTH, HEIGHT, PLACEHOLDER
 
     Raises --
         CannotSniff when cannot sniff
     """
     if media_type and 'svg' in media_type:
-        media_type_1, width, height = _sniff_svg(**kwargs)
+        media_type_1, width, height, placeholder = _sniff_svg(**kwargs)
         if media_type_1:
-            return media_type_1, width, height
+            return media_type_1, width, height, placeholder
     cmd = ['identify', '-colorspace', 'lab', '-verbose', '-']
     result = subprocess.run(cmd, check=False, stderr=subprocess.PIPE, stdout=subprocess.PIPE, **kwargs)
     if result.returncode:
@@ -380,7 +380,7 @@ def _sniff_svg(input=None, stdin=None):
     Exactly one of the above should be specified.
 
     Returns --
-        MEDIA_TYPE, WIDTH, HEIGHT
+        MEDIA_TYPE, WIDTH, HEIGHT, PLACEHOLDER
     """
     root = ElementTree.parse(stdin) if stdin else ElementTree.fromstring(input)
     width, height, view_box = root.get('width'), root.get('height'), root.get('viewBox')
@@ -391,7 +391,7 @@ def _sniff_svg(input=None, stdin=None):
         width, height = round(float(width)), round(float(height))
     else:
         width, height = None, None
-    return 'image/svg+xml' if root.tag in ['{http://www.w3.org/2000/svg}svg', 'svg'] else None, width, height
+    return 'image/svg+xml' if root.tag in ['{http://www.w3.org/2000/svg}svg', 'svg'] else None, width, height, '#AAA'
 
 
 _media_types_by_imagemagick = {
