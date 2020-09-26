@@ -9,7 +9,6 @@ from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 import httpretty
 import io
-import os
 import pathlib
 import struct
 from unittest.mock import patch
@@ -27,7 +26,7 @@ from . import models, signal_handlers, tasks  # For mocking
 
 
 # How we obtain real test files:
-data_dir = os.path.join(os.path.dirname(__file__), 'test-data')
+data_dir = pathlib.Path(__file__).parent / 'test-data'
 data_storage = FileSystemStorage(location=data_dir)
 
 
@@ -41,19 +40,38 @@ class ImageTestMixin:
                 rep.content.delete()
             self.image.cached_data.delete()
 
-    def given_image_with_data(self, file_name, **kwargs):
-        with open(os.path.join(data_dir, file_name), 'rb') as input:
-            self.data = input.read()
+    def given_image_with_data(self, file_name, sniffed=True, **kwargs):
+        self.data = (data_dir / file_name).read_bytes()
         self.image = Image.objects.create(data_url='http://example.com/69', **kwargs)
         self.image.cached_data.save('test.png', ContentFile(self.data))
-        self.image.sniff()
-        self.image.save()
+        if sniffed:
+            self.image.sniff(save=True)
 
     def with_representation(self, file_name, **kwargs):
-        with open(os.path.join(data_dir, file_name), 'rb') as input:
-            self.data = input.read()
+        self.data = (data_dir / file_name).read_bytes()
         self.representation = Representation.objects.create(image=self.image, **kwargs)
         self.representation.content.save('r.png', ContentFile(self.data))
+
+    def given_downloadable_image(self, data=None, media_type='image/png', **kwargs):
+        self.data = data if data is not None else (data_dir / '234x123.png').read_bytes()
+        img_src = 'http://example.com/2'
+        self.image = Image.objects.create(data_url=img_src, **kwargs)
+        httpretty.register_uri(
+            httpretty.GET, img_src,
+            body=self.data,
+            add_headers={
+                'Content-Type': media_type,
+            },
+        )
+
+    def then_retrieved_and_sniffed(self, media_type='image/png', width=234, height=123):
+        self.assertEqual(self.image.media_type.split(';', 1)[0], media_type)
+        self.assertEqual(self.image.width, width)
+        self.assertEqual(self.image.height, height)
+        with self.image.cached_data.open() as f:
+            actual = f.read()
+        self.assertEqual(actual, self.data)
+        self.assertTrue(self.image.retrieved)
 
 
 class TestImageSniff(ImageTestMixin, TestCase):
@@ -104,9 +122,8 @@ class TestImageSniff(ImageTestMixin, TestCase):
 
     def create_image_with_data_from_file(self, file_name):
         """Create an image and remember to delete it."""
-        with open(os.path.join(data_dir, file_name), 'rb') as input:
-            data = input.read()
         self.image = Image.objects.create(data_url='https://example.org/1')
+        data = (data_dir / file_name).read_bytes()
         self.image.cached_data.save('test_file', ContentFile(data), save=True)
         # Intentionally don’t give it a ‘.png’ extension.
         return self.image
@@ -190,7 +207,7 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
 
     @httpretty.activate(allow_net_connect=False)
     def test_can_retrive_image_and_sniff(self):
-        self.given_image_with_data()
+        self.given_downloadable_image()
 
         self.image.retrieve_data(if_not_retrieved_since=None)
 
@@ -207,7 +224,7 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
     @httpretty.activate(allow_net_connect=False)
     def test_will_retrieve_if_retrieved_in_the_past(self):
         then = timezone.now() - timedelta(days=30)
-        self.given_image_with_data(retrieved=then)
+        self.given_downloadable_image(retrieved=then)
 
         self.image.retrieve_data(if_not_retrieved_since=then)
 
@@ -224,7 +241,7 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
 
     @httpretty.activate(allow_net_connect=False)
     def test_does_not_explode_if_data_isnt_image(self):
-        self.given_image_with_data(b'LOLWAT', media_type='text/plain')
+        self.given_downloadable_image(b'LOLWAT', media_type='text/plain')
 
         with patch.object(models, 'logger') as logger:
             self.image.retrieve_data(if_not_retrieved_since=None)
@@ -234,8 +251,7 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
 
     @httpretty.activate(allow_net_connect=False)
     def test_gets_data_from_data_url(self):
-        with open(os.path.join(data_dir, 'smol.gif'), 'rb') as input:
-            self.data = input.read()
+        self.data = (data_dir / 'smol.gif').read_bytes()
         data_url = 'data:image/gif;base64,' + b64encode(self.data).decode('UTF-8')
         self.image = Image.objects.create(data_url=data_url)
 
@@ -243,32 +259,6 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
             self.image.retrieve_data(if_not_retrieved_since=None)
 
         self.then_retrieved_and_sniffed('image/gif', 1020, 100)
-
-    def given_image_with_data(self, data=None, media_type='image/png', **kwargs):
-        if data is None:
-            # Use default.
-            with open(os.path.join(data_dir, 'im.png'), 'rb') as input:
-                self.data = input.read()
-        else:
-            self.data = data
-        img_src = 'http://example.com/2'
-        self.image = Image.objects.create(data_url=img_src, **kwargs)
-        httpretty.register_uri(
-            httpretty.GET, 'http://example.com/2',
-            body=self.data,
-            add_headers={
-                'Content-Type': media_type,
-            },
-        )
-
-    def then_retrieved_and_sniffed(self, media_type='image/png', width=69, height=42):
-        self.assertEqual(self.image.media_type.split(';', 1)[0], media_type)
-        self.assertEqual(self.image.width, width)
-        self.assertEqual(self.image.height, height)
-        with self.image.cached_data.open() as f:
-            actual = f.read()
-        self.assertEqual(actual, self.data)
-        self.assertTrue(self.image.retrieved)
 
 
 class TestSuffixFromMediaType(TestCase):
@@ -285,6 +275,47 @@ class TestSuffixFromMediaType(TestCase):
     def test_returns_html_for_html(self):  # Not that that makes any sense for an image …
         self.assertEqual(suffix_from_media_type('text/html'), '.html')
         self.assertEqual(suffix_from_media_type('text/html; charset=UTF-8'), '.html')
+
+
+class TestRetrieveImageDate(ImageTestMixin, TestCase):
+
+    @httpretty.activate(allow_net_connect=False)
+    def test_retrieves_and_sniffs(self):
+        self.given_downloadable_image((data_dir / '234x123.png').read_bytes())
+
+        tasks.retrieve_image_data(self.image.pk, None)
+
+        self.image.refresh_from_db()
+        self.then_retrieved_and_sniffed()
+
+    @httpretty.activate(allow_net_connect=False)
+    def test_retrieves_and_deletes_if_small(self):
+        self.given_downloadable_image((data_dir / 'im-32sq.png').read_bytes())
+
+        tasks.retrieve_image_data(self.image.pk, None)
+
+        self.assertFalse(Image.objects.filter(pk=self.image.pk).exists())
+
+
+class TestSniffImageDataTask(ImageTestMixin, TestCase):
+
+    def test_sniffs_and_saves(self):
+        self.given_image_with_data('234x123.png', sniffed=False)
+
+        tasks.sniff_image_data(self.image.pk)
+
+        # Check it has been sniffed and saved, and has not, for example,
+        # raised an exception because of a signature change.
+        self.image.refresh_from_db()
+        self.assertEqual((self.image.width, self.image.height), (234, 123))
+
+    def test_sniffs_and_deletes_if_small(self):
+        self.given_image_with_data('im-32sq.png', sniffed=False)
+
+        tasks.sniff_image_data(self.image.pk)
+
+        # Check image has been deleted.
+        self.assertFalse(Image.objects.filter(pk=self.image.pk).exists())
 
 
 class TestSignalHandler(TransactionTestCase):  # Different superclass so that on_commit hooks are called.
@@ -401,15 +432,13 @@ class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
         self.assertEqual(actual_height, height)
 
     def assert_same_data_as_file(self, rep, file_name):
-        with open(os.path.join(data_dir, file_name), 'rb') as f:
-            expected = f.read()
+        expected = (data_dir / file_name).read_bytes()
         with rep.content.open() as f:
             actual = f.read()
         self.assertEqual(actual, expected, 'expected content of %s to match %s' % (rep, file_name))
 
     def assert_same_PNG_as_file(self, rep, file_name):
-        with open(os.path.join(data_dir, file_name), 'rb') as input:
-            expected = input.read()
+        expected = (data_dir / file_name).read_bytes()
         with rep.content.open() as f:
             actual = f.read()
         self.asset_same_PNG_data(actual, expected)

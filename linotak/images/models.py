@@ -179,7 +179,7 @@ class Image(models.Model):
             logger.warning(e)
         self.cached_data.save(file_name, file, save=save)
 
-    def sniff(self):
+    def sniff(self, save=False):
         """Presuming already has image data, guess width, height, and media_type."""
         with self.cached_data.open() as f:
             if not self.etag:
@@ -192,6 +192,8 @@ class Image(models.Model):
                 self.etag = hasher.digest()
                 f.seek(0)
             self._sniff(stdin=f.file)
+        if save:
+            self.save()
 
     def _sniff(self, media_type=None, **kwargs):
         """Given a file-like object, guess width, height, and media_type.

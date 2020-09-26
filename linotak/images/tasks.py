@@ -38,7 +38,9 @@ def sniff_image_data(pk):
     """
     with transaction.atomic():
         try:
-            Image.objects.get(pk=pk).sniff(save=True)
+            image = Image.objects.get(pk=pk)
+            image.sniff(save=True)
+            image.delete_if_small()
         except Image.NotSniffable as e:
             logger.warning(e)
 
