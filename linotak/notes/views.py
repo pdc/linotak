@@ -1,5 +1,6 @@
 """Views for notes."""
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin
 from django.db.models import F, Prefetch
 from django.http import HttpResponseRedirect
@@ -7,11 +8,12 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
-from django.views.generic import DetailView, ListView
+from django.utils.translation import ngettext
+from django.views.generic import DetailView, ListView, FormView
 from django.views.generic.edit import CreateView, UpdateView
 
-from .forms import NoteForm
-from .models import Person, Series, Note, Locator, make_absolute_url
+from .forms import NoteForm, LocatorImageFormSet
+from .models import Person, Series, Note, Locator, LocatorImage
 from .tag_filter import TagFilter
 from .templatetags.note_lists import note_list_url
 
@@ -237,3 +239,56 @@ class PersonDetailView(LinksMixin, SeriesMixin, DetailView):
         if self.series:
             links.append(Link(href=self.series.get_absolute_url(), rel='feed'))
         return links
+
+
+class LocatorImagesView(SeriesMixin, FormView):
+
+    form_class = LocatorImageFormSet
+    template_name = 'notes/locator_image_list.html'
+
+    @cached_property
+    def locator(self):
+        """Locator specified in the URL."""
+        return self.note.subjects.get(pk=self.kwargs['locator_pk'])
+
+    @cached_property
+    def note(self):
+        """Note specified in the URL."""
+        return self.series.note_set.get(pk=self.kwargs['pk'])
+
+    def get_form_kwargs(self):
+        """Get formset with images from locator."""
+        kwargs = super().get_form_kwargs()
+        kwargs['queryset'] = self.get_queryset()
+        return kwargs
+
+    def get_queryset(self):
+        """Images associated with locator."""
+        return (
+            LocatorImage.objects.filter(locator=self.locator)
+            .order_by(
+                '-prominence',
+                (F('image__width') * F('image__height')).desc(nulls_last=True))
+        )
+
+    def get_context_data(self, **kwargs):
+        """Add the series to the context."""
+        context = super().get_context_data(**kwargs)
+        context['formset'] = context['form']  # Pretend FormView is actually FormsetView
+        context['note'] = self.note
+        context['locator'] = self.locator
+        return context
+
+    def get_success_url(self):
+        return self.note.get_absolute_url()
+
+    def form_valid(self, formset, *args, **kwargs):
+        xs = formset.save()  # List of LocatorImage instances that were changed
+        if xs:
+            messages.add_message(self.request, messages.INFO, ngettext(
+                'Updated one image’s prominence',
+                'Updated prominence on %(count)d images',
+                len(xs),
+            ) % {'count': len(xs)})
+
+        return super().form_valid(formset, *args, *kwargs)

@@ -8,14 +8,12 @@ body {
     main {
         margin:  auto;
         width: 620px;
-
     }
 }
 
 p {
     margin: 10px;
 }
-
 
 form {
     padding: 10px 0;
@@ -74,6 +72,8 @@ textarea {
     border-style: outset;
 }
 
-.form-action + .form-action  {
+.form-action + .form-action,
+.form-action + .link
+ {
     margin-left: 10px;
 }

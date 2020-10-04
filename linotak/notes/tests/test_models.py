@@ -330,7 +330,7 @@ class TestNoteAbsoluteUrl(TestCase):
     def test_allows_replacing_view(self):
         note = NoteFactory.create()
 
-        self.assertEqual(note.get_absolute_url(view='edit'), '/drafts/%d.edit' % note.pk)
+        self.assertEqual(note.get_absolute_url(view='edit'), '/drafts/%d/edit' % note.pk)
 
     def test_can_add_tags(self):
         note = NoteFactory.create()

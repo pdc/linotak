@@ -6,10 +6,11 @@ from django.utils import timezone
 import logging
 from unittest.mock import patch
 
-from ..models import Locator
+from ...images.models import Image
+from ..models import Locator, LocatorImage
 from ..tag_filter import TagFilter
 from ..views import Link, NoteListView, NoteDetailView
-from .factories import SeriesFactory, PersonFactory, NoteFactory
+from .factories import SeriesFactory, PersonFactory, NoteFactory, LocatorFactory
 
 
 @override_settings(NOTES_DOMAIN='example.com', ALLOWED_HOSTS=['.example.com'])
@@ -258,3 +259,45 @@ class TestAuthorProfileView(TestCase):
         self.assertEqual(r.context['series'], series)
         self.assertIn(Link(href='https://nnn.example.com/', rel='feed'), r.context['links']())
 
+
+@override_settings(NOTES_DOMAIN='example.com', ALLOWED_HOSTS=['.example.com'])
+class TestLocatorImagesView(TestCase):
+
+    def test_supplies_note_and_locator(self):
+        locator = LocatorFactory()
+        note = NoteFactory(series__name='smoo', subjects=[locator])
+        image = Image.objects.create(data_url='https://example.com/a.png')
+        locator_image = LocatorImage.objects.create(locator=locator, image=image, prominence=3)
+
+        r = self.client.get(f'/{note.pk}/subjects/{locator.pk}/images/', HTTP_HOST='smoo.example.com')
+
+        self.assertEqual(r.context['note'], note)
+        self.assertEqual(r.context['locator'], locator)
+        self.assertTrue(r.context['formset'])
+        self.assertEqual(r.context['formset'][0].instance, locator_image)
+
+    def test_updates_locator_images(self):
+        locator = LocatorFactory()
+        note = NoteFactory(series__name='smoo', subjects=[locator])
+        images = [Image.objects.create(data_url=f'https://example.com/{i}.png') for i in range(3)]
+        locator_images = [LocatorImage.objects.create(locator=locator, image=image) for image in images]
+
+        data = {
+            'form-TOTAL_FORMS': '3',
+            'form-INITIAL_FORMS': '3',
+            'form-MIN_NUM_FORMS': '0',
+            'form-MAX_NUM_FORMS': '1000',
+            'form-0-prominence': '0',
+            'form-0-id': str(locator_images[0].pk),
+            'form-1-prominence': '1',
+            'form-1-id': str(locator_images[1].pk),
+            'form-2-prominence': '0',
+            'form-2-id': str(locator_images[2].pk),
+        }
+        r = self.client.post(f'/{note.pk}/subjects/{locator.pk}/images/', data=data, HTTP_HOST='smoo.example.com', follow=False)
+
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.url, f'/drafts/{note.pk}')
+        for locator_image in locator_images:
+            locator_image.refresh_from_db()
+        self.assertEqual([x.prominence for x in locator_images], [0, 1, 0])

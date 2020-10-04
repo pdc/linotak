@@ -6,7 +6,8 @@ from . import views, feed
 thing_or_list = [
     path('', views.NoteListView.as_view(), name='list'),
     path('<int:pk>', views.NoteDetailView.as_view(), name='detail'),
-    path('<int:pk>.edit', views.NoteUpdateView.as_view(), name='edit'),
+    path('<int:pk>/edit', views.NoteUpdateView.as_view(), name='edit'),
+    path('<int:pk>/subjects/<int:locator_pk>/images/', views.LocatorImagesView.as_view(), name='locator_images'),
 ]
 
 series_paged = [

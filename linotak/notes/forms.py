@@ -1,8 +1,9 @@
 """Forms for use in the notes app."""
 
 from django.forms import Form, CharField, ModelChoiceField, HiddenInput, Textarea
+from django.forms import modelformset_factory
 
-from .models import Person, Series, Note
+from .models import Person, Series, Note, LocatorImage
 
 
 class NoteForm(Form):
@@ -67,3 +68,5 @@ class NoteForm(Form):
             self.instance.save()
         return self.instance
 
+
+LocatorImageFormSet = modelformset_factory(LocatorImage, fields=('prominence',), extra=0)

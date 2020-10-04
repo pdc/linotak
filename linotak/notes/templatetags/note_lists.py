@@ -49,7 +49,7 @@ def note_list_url(context, view=None, series=None, tag_filter=None, drafts=None,
 
 
 @register.simple_tag(takes_context=True)
-def note_url(context, view=None, note=None, tag_filter=None, drafts=None, with_host=False):
+def note_url(context, view=None, note=None, tag_filter=None, drafts=None, with_host=False, **kwargs):
     """Like url tag except specialized for links to note lists.
 
     Arguments --
@@ -69,7 +69,13 @@ def note_url(context, view=None, note=None, tag_filter=None, drafts=None, with_h
         tag_filter = context.get('tag_filter')
     if drafts is None:
         drafts = context.get('drafts')
-    return note.get_absolute_url(view=view, tag_filter=tag_filter, drafts=(drafts or False), with_host=(with_host or note.series != context_series))
+    return note.get_absolute_url(
+        view=view,
+        tag_filter=tag_filter,
+        drafts=(drafts if drafts is not None else note and not note.published),
+        with_host=(with_host or note.series != context_series),
+        **kwargs,
+    )
 
 
 @register.simple_tag(takes_context=True)

@@ -187,7 +187,7 @@ class TestNoteUrl(TestCase):
             tag_filter=TagFilter.parse('foo+bar'),
             drafts=True)
 
-        self.assertEqual(result, 'https://zerg.example.org/tagged/bar+foo/drafts/69.edit')
+        self.assertEqual(result, 'https://zerg.example.org/tagged/bar+foo/drafts/69/edit')
 
     def test_omits_domain_if_same_as_series(self):
         zerg = SeriesFactory.create(name='zerg')

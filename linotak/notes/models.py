@@ -485,7 +485,7 @@ class Note(models.Model):
         ]
         return '\n\n'.join(x for x in parts if x)
 
-    def get_absolute_url(self, view=None, tag_filter=None, drafts=None, with_host=False):
+    def get_absolute_url(self, view=None, tag_filter=None, drafts=None, with_host=False, **kwargs):
         """Return URL for this note.
 
         Arguments (all optional) --
@@ -499,6 +499,7 @@ class Note(models.Model):
                 'pk': self.id,
                 'tags': tag_filter.unparse() if tag_filter else '',
                 'drafts': drafts if drafts is not None else not self.published,
+                **kwargs,
             }
         )
         if with_host:
