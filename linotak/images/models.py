@@ -342,7 +342,9 @@ def _sniff(media_type=None, **kwargs):
             ('Channel statistics', 'Channel 0', 'mean'),
             ('Channel statistics', 'Channel 1', 'mean'),
             ('Channel statistics', 'Channel 2', 'mean'),
-        ), io.TextIOWrapper(io.BytesIO(output), encoding='UTF-8'))
+        ),
+        output,
+    )
     if geometry and (m := GEOMETRY_RE.match(geometry)):
         width, height = int(m[1]), int(m[2])
     else:
@@ -423,17 +425,18 @@ def file_name_from_etag(etag, media_type):
     return urlsafe_b64encode(etag).decode('ascii').rstrip('=') + suffix_from_media_type(media_type)
 
 
-def _comb_imagemagick_verbose(specs, stream):
+def _comb_imagemagick_verbose(specs, data):
     """Pull data items out of the output of `identify -colorspace lab -verbose`.
 
     Arguments --
         specs -- list of path, where a path is a list of headings
-        stream -- file-like source that can vbe read line-by-line
+        data -- raw data as written by ImageMagick `identity -verbose`
 
     Returns --
         Sequence of values extracted from stream
         (value None means that value not found).
     """
+    stream = io.TextIOWrapper(io.BytesIO(data), encoding='UTF-8', errors='replace')
     found = {tuple(p): None for p in specs}
     path = []
     indents = []

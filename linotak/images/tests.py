@@ -678,7 +678,7 @@ class TestImageRepresentationTag(TestCase):
 
 
 # identify -colorspace Lab -verbose linotak/images/test-data/234x123.png
-sample_verbose = """Image: linotak/images/test-data/234x123.png
+sample_verbose = b"""Image: linotak/images/test-data/234x123.png
   Format: PNG (Portable Network Graphics)
   Mime type: image/png
   Class: DirectClass
@@ -723,6 +723,74 @@ sample_verbose = """Image: linotak/images/test-data/234x123.png
       entropy: 0.146701
   """
 
+sample_bad_utf8 = b'''Image:
+  Filename: /tmp/magick-_-c6Vz592SYSHWGo5h_tJmcgmeaG7_9W
+  Base filename: -
+  Format: JPEG (Joint Photographic Experts Group JFIF format)
+  Mime type: image/jpeg
+  Class: DirectClass
+  Geometry: 200x200+0+0
+  Depth: 8/16-bit
+  Channel depth:
+    Channel 0: 16-bit
+    Channel 1: 16-bit
+    Channel 2: 16-bit
+  Channel statistics:
+    Pixels: 40000
+    Channel 0:
+      min: 3.44258  (0.0135003)
+      max: 255 (1)
+      mean: 92.3088 (0.361995)
+      standard deviation: 71.4034 (0.280013)
+      kurtosis: -0.558661
+      skewness: 0.978054
+      entropy: 0.854311
+    Channel 1:
+      min: 116.182  (0.455614)
+      max: 152.325 (0.597354)
+      mean: 128.073 (0.502249)
+      standard deviation: 6.56622 (0.0257499)
+      kurtosis: 0.259273
+      skewness: 1.17942
+      entropy: 0.861765
+    Channel 2:
+      min: 120.271  (0.47165)
+      max: 157.609 (0.618073)
+      mean: 133.11 (0.521999)
+      standard deviation: 7.19182 (0.0282032)
+      kurtosis: 0.359022
+      skewness: 1.22173
+      entropy: 0.843439
+  Image statistics:
+    Overall:
+      min: 3.44258  (0.0135003)
+      max: 255 (1)
+      mean: 117.831 (0.462081)
+      standard deviation: 28.3872 (0.111322)
+      kurtosis: 0.741899
+      skewness: -0.148907
+      entropy: 0.853172
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33)
+    green primary: (0.3,0.6)
+    blue primary: (0.15,0.06)
+    white point: (0.3127,0.329)
+  Matte color: grey74
+  Profiles:
+    Profile-8bim: 418 bytes
+    Profile-iptc: 406 bytes
+      Image Name[2,5]: \x90\x9b\x93\xe0\x8at\x82\xaa\x94\xad\x91\xab
+      Category[2,15]: 001
+      Keyword[2,25]: \x81u\x83J\x83\x89\x81[\x81v
+      Special Instructions[2,40]: \x83\x88\x83R\x81A\x90V\x93\xe0\x8at\x92\xa9\x8a\xa7\x83\x81\x83\x82\x81i\x81@\x81j\x81A\x90\xad\x8e\xa1\x82r\x81A\x93\xfa\x8co\x90V\x95\xb7\x91\xe3\x95\\\x8eB\x89e\x81A\x93\x8c\x8b\x9e\x94\xad
+      City[2,90]: \x93\x8c\x8b\x9e
+      Original Transmission Reference[2,103]: \x8b\xa4\x82a\x82R\x82s\x82Q\x82O\x82Q\x82T\x93d\x90\xe0\x82R\x82X\x82O\x82r
+      Headline[2,105]: \x8bL\x94O\x8eB\x89e\x82\xcc\x90\x9b\x8e\xf1\x91\x8a\x82\xe7
+      Caption[2,120]: \x81@\x94F\x8f\xd8\x8e\xae\x82\xf0\x8fI\x82\xa6\x81A\x8bL\x94O\x8e\xca\x90^\x82\xc9\x94[\x82\xdc\x82\xe9\x90\x9b\x8b`\x88\xcc\x8e\xf1\x91\x8a\x81i\x91O\x97\xf1\x92\x86\x89\x9b\x81j\x82\xc6\x8at\x97\xbb\x82\xe7\x81\x81\x82P\x82U\x93\xfa\x8c\xdf\x8c\xe3\x82W\x8e\x9e\x82P\x82S\x95\xaa\x81A\x8b{\x93a\x81E\x96k\x8e\xd4\x8a\xf1\x81i\x91\xe3\x95\\\x8eB\x89e\x81j
+'''
+
 
 class TestExtractStats(TestCase):
 
@@ -733,9 +801,20 @@ class TestExtractStats(TestCase):
             ['Channel statistics', 'Channel 2', 'mean'],
         ]
 
-        result = _comb_imagemagick_verbose(spec, io.StringIO(sample_verbose))
+        result = _comb_imagemagick_verbose(spec, sample_verbose)
 
         self.assertEqual(result, ('164.582 (0.64542)', '176.387 (0.691714)', '94.3706 (0.370081)'))
+
+    def test_wortks_around_bad_UTF_8(self):
+        spec = [
+            ['Channel statistics', 'Channel 0', 'mean'],
+            ['Channel statistics', 'Channel 1', 'mean'],
+            ['Channel statistics', 'Channel 2', 'mean'],
+        ]
+
+        result = _comb_imagemagick_verbose(spec, sample_bad_utf8)
+
+        self.assertEqual(result, ('92.3088 (0.361995)', '128.073 (0.502249)', '133.11 (0.521999)'))
 
     def test_extracts_Lab_from_verbose_bits(self):
         l_star, a_star, b_star = _lab_from_imagemagick_verbose_bits(
