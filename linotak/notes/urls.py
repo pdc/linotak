@@ -8,6 +8,7 @@ thing_or_list = [
     path('<int:pk>', views.NoteDetailView.as_view(), name='detail'),
     path('<int:pk>/edit', views.NoteUpdateView.as_view(), name='edit'),
     path('<int:pk>/subjects/<int:locator_pk>/images/', views.LocatorImagesView.as_view(), name='locator_images'),
+    path('<int:pk>/subjects/<int:locator_pk>/images/<int:image_pk>', views.LocatorImageUpdateView.as_view(), name='locator_image'),
 ]
 
 series_paged = [

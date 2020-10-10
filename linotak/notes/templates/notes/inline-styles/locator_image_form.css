@@ -1,0 +1,12 @@
+.loc-img-frm-img {
+    display: block;
+    margin: 10px auto;
+}
+
+.loc-img-frm-focus {
+    margin: 10px;
+}
+
+.loc-img-frm-focus input {
+    width: 7ch;
+}

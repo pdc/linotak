@@ -17,9 +17,7 @@
 
 {% block content %}
 
-
     <main>
-
         {% if formset.errors %}
             <p>{{ formset.errors }}</p>
         {% endif %}
@@ -38,10 +36,11 @@
                     <p class="loc-img-size">
                         {{ image.width }}×{{ image.height }}
                     </p>
-                    {% endwith %}
                     <ul class="loc-img-form">
                         {{ form.as_ul }}
                     </ul>
+                    <a class="link" href="{% note_url 'locator_image' locator_pk=locator.pk image_pk=image.pk %}">Set focus point</a>
+                    {% endwith %}
                 </li>
                 {% endfor %}
             </ul>

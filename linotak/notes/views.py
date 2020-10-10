@@ -12,6 +12,8 @@ from django.utils.translation import ngettext
 from django.views.generic import DetailView, ListView, FormView
 from django.views.generic.edit import CreateView, UpdateView
 
+from ..images.models import Image
+
 from .forms import NoteForm, LocatorImageFormSet
 from .models import Person, Series, Note, Locator, LocatorImage
 from .tag_filter import TagFilter
@@ -241,10 +243,7 @@ class PersonDetailView(LinksMixin, SeriesMixin, DetailView):
         return links
 
 
-class LocatorImagesView(SeriesMixin, FormView):
-
-    form_class = LocatorImageFormSet
-    template_name = 'notes/locator_image_list.html'
+class NoteLocatorMixin:
 
     @cached_property
     def locator(self):
@@ -255,6 +254,19 @@ class LocatorImagesView(SeriesMixin, FormView):
     def note(self):
         """Note specified in the URL."""
         return self.series.note_set.get(pk=self.kwargs['pk'])
+
+    def get_context_data(self, **kwargs):
+        """Add the series to the context."""
+        context = super().get_context_data(**kwargs)
+        context['note'] = self.note
+        context['locator'] = self.locator
+        return context
+
+
+class LocatorImagesView(NoteLocatorMixin, SeriesMixin, FormView):
+
+    form_class = LocatorImageFormSet
+    template_name = 'notes/locator_image_list.html'
 
     def get_form_kwargs(self):
         """Get formset with images from locator."""
@@ -275,8 +287,6 @@ class LocatorImagesView(SeriesMixin, FormView):
         """Add the series to the context."""
         context = super().get_context_data(**kwargs)
         context['formset'] = context['form']  # Pretend FormView is actually FormsetView
-        context['note'] = self.note
-        context['locator'] = self.locator
         return context
 
     def get_success_url(self):
@@ -292,3 +302,24 @@ class LocatorImagesView(SeriesMixin, FormView):
             ) % {'count': len(xs)})
 
         return super().form_valid(formset, *args, *kwargs)
+
+
+class LocatorImageUpdateView(NoteLocatorMixin, SeriesMixin, UpdateView):
+    """Updating the focus point of an image from the list of locator images."""
+
+    model = Image
+    fields = ['focus_x', 'focus_y']
+    template_name = 'notes/locator_image_update_form.html'
+    pk_url_kwarg = 'image_pk'
+
+    def form_valid(self, form, *args, **kwargs):
+        """Delete cropped representations in case change of focus point invalidated them."""
+        self.object.representations.filter(is_cropped=True).delete()
+        return super().form_valid(form, *args, **kwargs)
+
+    def get_success_url(self):
+        """Return to images list."""
+        return self.note.get_absolute_url(
+            view='locator_images',
+            locator_pk=self.locator.pk,
+        )

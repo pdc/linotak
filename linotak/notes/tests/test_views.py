@@ -6,7 +6,7 @@ from django.utils import timezone
 import logging
 from unittest.mock import patch
 
-from ...images.models import Image
+from ...images.models import Image, Representation
 from ..models import Locator, LocatorImage
 from ..tag_filter import TagFilter
 from ..views import Link, NoteListView, NoteDetailView
@@ -301,3 +301,42 @@ class TestLocatorImagesView(TestCase):
         for locator_image in locator_images:
             locator_image.refresh_from_db()
         self.assertEqual([x.prominence for x in locator_images], [0, 1, 0])
+
+
+@override_settings(NOTES_DOMAIN='example.com', ALLOWED_HOSTS=['.example.com'])
+class TestLocatorImageUpdateView(TestCase):
+
+    def test_supplies_image(self):
+        locator = LocatorFactory()
+        note = NoteFactory(series__name='smoo', subjects=[locator])
+        image = Image.objects.create(data_url='https://example.com/a.png')
+        LocatorImage.objects.create(locator=locator, image=image, prominence=3)
+
+        r = self.client.get(f'/{note.pk}/subjects/{locator.pk}/images/{image.pk}', HTTP_HOST='smoo.example.com')
+
+        self.assertEqual(r.context['note'], note)
+        self.assertEqual(r.context['locator'], locator)
+        self.assertEqual(r.context['object'], image)
+        self.assertEqual(r.context['form'].instance, image)
+
+    def test_deletes_cropped_representations(self):
+        locator = LocatorFactory()
+        note = NoteFactory(series__name='smoo', subjects=[locator])
+        image = Image.objects.create(data_url='https://example.com/a.png')
+        cropped = Representation.objects.create(image=image, width=13, height=13, is_cropped=True)
+        not_cropped = Representation.objects.create(image=image, width=13, height=13, is_cropped=False)
+        LocatorImage.objects.create(locator=locator, image=image, prominence=3)
+
+        data = {
+            'focus_x': '0.333',
+            'focus_y': '0.667',
+        }
+        r = self.client.post(f'/{note.pk}/subjects/{locator.pk}/images/{image.pk}', data=data, HTTP_HOST='smoo.example.com', follow=False)
+
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.url, f'/drafts/{note.pk}/subjects/{locator.pk}/images/')
+        image.refresh_from_db()
+        self.assertEqual((image.focus_x, image.focus_y), (0.333, 0.667))
+        self.assertFalse(Representation.objects.filter(pk=cropped.pk).exists())
+        self.assertTrue(Representation.objects.filter(pk=not_cropped.pk).exists())
+

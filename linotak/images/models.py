@@ -11,7 +11,7 @@ Images have two main classes:
 from base64 import b64decode, urlsafe_b64encode
 from django.core.files import File
 from django.core.files.base import ContentFile
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.db.models import F
 from django.utils import timezone
@@ -89,11 +89,13 @@ class Image(models.Model):
     focus_x = models.FloatField(
         _('focus x'),
         default=0.5,
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
         help_text=_('Range 0.0 to 1.0. Fraction of the way from the left edge of the focal point'),
     )
     focus_y = models.FloatField(
         _('focus y'),
         default=0.5,
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
         help_text=_('Range 0.0 to 1.0. Fraction of the way down from the top of the focal point'),
     )
     placeholder = models.CharField(

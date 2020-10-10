@@ -198,13 +198,13 @@ class TestNoteExtractSubjects(TestCase):
             LocatorFactory.create(url='https://example.com/2')
         ])
 
-        # When editing to remove one URL:
+        # When editing to remove one URL and add another:
         note.text = 'Lolwut https://example.com/2 https://example.com/3'
         note.save()
         note.extract_subject()
 
         # Then we have 1 URL
-        self.assertEqual([x.url for x in note.subjects.all()], ['https://example.com/2', 'https://example.com/3'])
+        self.assertEqual({x.url for x in note.subjects.all()}, {'https://example.com/2', 'https://example.com/3'})
         self.assertFalse(note.subjects.all()[0].via)
 
     def test_returns_false_if_no_urls(self):
