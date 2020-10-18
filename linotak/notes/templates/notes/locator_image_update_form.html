@@ -1,5 +1,7 @@
 {% extends 'notes/base.html' %}
 {% load i18n %}
+{% load static %}
+
 {% load tag_filters %}
 {% load note_lists %}
 {% load image_representations %}
@@ -18,18 +20,21 @@
 {% block content %}
 
     <main>
-
-        {% if form.non_field_errors %}
-            <p>{{ form.non_field_errors }}</p>
-        {% endif %}
-
-        <form method="POST">
+        <form method="POST" class="focus-frm" id="focus-ui-form">
             {% csrf_token %}
-            {{ object|with_class:"loc-img-frm-img"|representation:"640x640" }}
-            <p class="loc-img-frm-focus">
+            {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+            {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+            <div class="focus-frm-focus" id="focus-ui">
+                {{ object|with_class:"focus-frm-img"|representation:"640x640" }}
                 <label for="{{ form.focus_x.id_for_label }}">{% trans 'Focus point:' %}</label>
                 {{ form.focus_x }}{{ form.focus_y }}
-            </p>
+                {% if form.focus_x.errors or form.focus_y.errors %}
+                <ul class="errorlist">
+                    {% for error in form.focus_x.errors %}<li>{{ error }}</li>{% endfor %}
+                    {% for error in form.focus_y.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
 
             <div class="form-action-bar">
                 <input class="form-action" type="submit" value="{% trans 'Save' context 'button' %}">
@@ -37,4 +42,9 @@
             </div>
         </form>
     </main>
+{% endblock %}
+
+{% block scripts %}
+    <link rel="stylesheet" href="{% static 'notes/bundle.css' %}" type="text/css"/>
+    <script defer src="{% static 'notes/bundle.js' %}"></script>
 {% endblock %}

@@ -73,7 +73,20 @@ textarea {
 }
 
 .form-action + .form-action,
-.form-action + .link
- {
+.form-action + .link {
     margin-left: 10px;
+}
+
+
+.errorlist {
+    margin: 5px 0 0;
+    padding: 0;
+}
+
+.errorlist li {
+    list-style-type: none;
+}
+
+.errorlist li::before {
+    content: "❌ ";
 }

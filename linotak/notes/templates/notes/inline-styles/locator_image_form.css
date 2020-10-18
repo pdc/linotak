@@ -1,12 +1,16 @@
-.loc-img-frm-img {
+.focus-frm {
+    padding-top: 0;
+}
+
+.focus-frm-img {
     display: block;
-    margin: 10px auto;
+    margin-bottom: 5px;
 }
 
-.loc-img-frm-focus {
-    margin: 10px;
+.focus-frm-focus input {
+    margin-left: 0.25em;
 }
 
-.loc-img-frm-focus input {
+.focus-frm-focus input {
     width: 7ch;
 }

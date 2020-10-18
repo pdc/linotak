@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <meta charset=UTF-8>
+        <title>Images – #60 – Damian’s notes</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+
+:root {
+    margin: 0;
+
+    font-family: "Trebuchet MS", Helvetica Neue, Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        color: #FFF;
+        background-color: #000;
+    }
+}
+
+footer {
+    padding: 40px 10px 10px;
+    font-size: 13px;
+}
+
+        </style>
+
+        <style>
+
+
+header {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1 {
+    margin: 10px;
+    height: 1.25em;
+
+    font-size: 1.25em;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+
+body {
+    display: grid;
+    grid-template-rows: 1fr auto;
+}
+
+@media (min-width: 640px) {
+    main {
+        margin:  auto;
+        width: 620px;
+    }
+}
+
+p {
+    margin: 10px;
+}
+
+form {
+    padding: 10px 0;
+}
+
+.form-item-list {
+    margin: 0;
+    padding: 0;
+}
+
+.form-item-list li {
+    padding: 5px 10px;
+    list-style-type: none;
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+label {
+    margin: 0 0 5px;
+}
+
+input[type=text],
+input[type=url],
+input[type=password],
+textarea {
+    margin: 0;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 5px;
+
+    font-size: 1rem;
+    border-width: 1px;
+}
+
+.helptext {
+    margin: 5px 0 0;
+
+    font-size: 13px;
+}
+
+.form-action-bar {
+    margin: 5px 10px;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.form-action {
+    box-sizing: border-box;  /* Cannot unset this on some browsers */
+    padding: 0.4em 10px;
+
+    font-size: 1rem;
+    line-height: normal;  /* Cannot unset this on some browsers */
+    border-width: 1px;
+    border-style: outset;
+}
+
+.form-action + .form-action,
+.form-action + .link {
+    margin-left: 10px;
+}
+
+
+.errorlist {
+    margin: 5px 0 0;
+    padding: 0;
+}
+
+.errorlist li {
+    list-style-type: none;
+}
+
+.errorlist li::before {
+    content: "❌ ";
+}
+
+
+.nav {
+    margin: 10px;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+}
+
+.nav-link {
+    position: relative;
+    padding: 0 10px 0 5px;
+    min-width: 3em;
+
+    text-align: center;
+    text-decoration: none;
+    line-height: 2;
+}
+
+            .focus-frm {
+    padding-top: 0;
+}
+
+.focus-frm-img {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.focus-frm-focus input {
+    margin-left: 0.25em;
+}
+
+.focus-frm-focus input {
+    width: 7ch;
+}
+
+        </style>
+
+
+
+
+    </head>
+    <body>
+
+
+
+
+    <main>
+        <form method="POST" class="focus-frm" id="focus-ui-form">
+            <input type="hidden" name="csrfmiddlewaretoken" value="GlxwolwcOpGWEOinUwzMydzsGMKZQLgzs8JylFOiwAwrO2yMNWJdsfPLhbcESZRO">
+
+
+            <div class="focus-frm-focus" id="focus-ui">
+                <img src="http://pdc.mustardseed.local:8004/media/i/jQBiW7mrd9SYFEZoQls1tQ.jpeg"
+            class="focus-frm-img" width="494" height="570"
+            alt="">
+                <label for="id_focus_x">Focus point:</label>
+                <input type="number" name="focus_x" value="0.5" step="any" required id="id_focus_x"><input type="number" name="focus_y" value="0.4" step="any" required id="id_focus_y">
+
+            </div>
+
+            <div class="form-action-bar">
+                <input class="form-action" type="submit" value="Save">
+                <a href="/60/subjects/58/images/" class="link">Cancel</a>
+            </div>
+        </form>
+    </main>
+
+
+        <footer>
+            <a href="/about/" class="link">About Damian’s notes</a>
+            · <a href="/about/privacy" class="link">Privacy policy</a>
+
+            · <a href="/accounts/logout/" class="action-btn">Log out</a>
+
+        </footer>
+
+    <link rel='stylesheet' href='/build/bundle.css'>
+    <script defer module src='/build/bundle.js'></script>
+
+</body>
+</html>
