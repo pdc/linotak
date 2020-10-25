@@ -5,10 +5,10 @@ from unittest.mock import patch
 
 from ...matchers_for_mocks import DateTimeTimestampMatcher
 from ...images.models import Image, wants_data
-from ..models import Locator, LocatorImage, Tag, Note
+from ..models import Locator, LocatorImage, Tag, Note, effective_char_count
 from ..tag_filter import TagFilter
 from .. import tasks
-from .factories import NoteFactory, SeriesFactory, LocatorFactory, PersonFactory
+from .factories import NoteFactory, SeriesFactory, LocatorFactory, PersonFactory, TagFactory
 
 
 class TestFactories(TestCase):
@@ -317,6 +317,83 @@ class TestNoteTextWithLinks(TestCase):
             result = note.text_with_links(with_citation=True)
 
         self.assertEqual(result, f'Hello, world!! (seriesname.example.net {note.pk})\n\nhttps://example.com/1')
+
+    def test_shortens_text_and_substitutes_link_to_self_of_overlength(self):
+        note = NoteFactory.create(
+            series__name='seriesname',
+            text='YARDLANDS YARDSTICK YARDWANDS YARDWORKS YARMELKES YEARLINGS YEARNINGS YEASAYERS YEASTIEST YEASTLESS',
+            subjects=[LocatorFactory.create(url='https://example.com/2020/10/25/2020-10-25-link-of-more-than-23-characters/')],
+            published=timezone.now(),
+        )
+
+        with self.settings(NOTES_DOMAIN='example.net'):
+            result = note.text_with_links(max_length=100, url_length=23)
+
+        self.assertEqual(
+            result,
+            f'YARDLANDS YARDSTICK YARDWANDS YARDWORKS YARMELKES YEARLINGS YEARNINGS … https://seriesname.example.net/{note.pk}')
+
+    def test_appends_hashtags_to_shortened_note(self):
+        note = NoteFactory.create(
+            series__name='seriesname',
+            text='YARDLANDS YARDSTICK YARDWANDS YARDWORKS YARMELKES YEARLINGS YEARNINGS YEASAYERS YEASTIEST YEASTLESS',
+            subjects=[LocatorFactory.create(url='https://example.com/2020/10/25/2020-10-25-link-of-more-than-23-characters/')],
+            tags=['bananaFrappe', 'grapeSoda'],
+            published=timezone.now(),
+        )
+
+        with self.settings(NOTES_DOMAIN='example.net'):
+            result = note.text_with_links(max_length=100, url_length=23)
+
+        expected = f'YARDLANDS YARDSTICK YARDWANDS YARDWORKS … https://seriesname.example.net/{note.pk}\n\n#bananaFrappe #grapeSoda'
+        self.assertEqual(result, expected)
+
+    def test_includes_via_links_in_calculation_omits_ellipsis_if_text_not_shorter(self):
+        note = NoteFactory.create(
+            series__name='seriesname',
+            text='YARDLANDS YARDSTICK YARDWANDS YARDWORKS YARMELKES YEARLINGS YEARNINGS',
+            subjects=[LocatorFactory.create(via=LocatorFactory.create())],
+            published=timezone.now(),
+        )
+
+        with self.settings(NOTES_DOMAIN='example.net'):
+            result = note.text_with_links(max_length=100, url_length=23)
+
+        expected = f'YARDLANDS YARDSTICK YARDWANDS YARDWORKS YARMELKES YEARLINGS YEARNINGS\n\nhttps://seriesname.example.net/{note.pk}'
+        self.assertEqual(result, expected)
+        self.assertLess(len(result.replace(f'https://seriesname.example.net/{note.pk}', '*' * 23)), 100)  # Check this is actually the correct result.
+
+    def test_splits_very_long_last_word(self):
+        note = NoteFactory.create(
+            series__name='seriesname',
+            text='YARDLANDS YARDSTICK YARDWANDS YARDWORKS YARMELKES YEARLINGSYEARNINGSYEASAYERSYEASTIESTYEASTLESS',
+            subjects=[LocatorFactory.create(url='https://example.com/2020/10/25/2020-10-25-link-of-more-than-23-characters/')],
+            published=timezone.now(),
+        )
+
+        with self.settings(NOTES_DOMAIN='example.net'):
+            result = note.text_with_links(max_length=100, url_length=23)
+
+        self.assertEqual(
+            result,
+            f'YARDLANDS YARDSTICK YARDWANDS YARDWORKS YARMELKES YEARLINGSYEARNINGSYEASAYE… https://seriesname.example.net/{note.pk}',
+        )
+        self.assertEqual(len(result.replace(f'https://seriesname.example.net/{note.pk}', '*' * 23)), 100)
+
+
+class TestEffectiveCharCount(TestCase):
+
+    def test_includes_via_urls(self):
+        self.assertEqual(
+            effective_char_count('Hello', [], [LocatorFactory(via=LocatorFactory())], url_length=23),
+            5 + 2 + 23 + 6 + 23
+        )
+
+    def test_includes_hashtags(self):
+        self.assertEqual(
+            effective_char_count('Hello', [TagFactory(name='someTag')], [LocatorFactory()], url_length=23),
+            5 + 2 + 8 + 2 + 23
+        )
 
 
 class TestNoteAbsoluteUrl(TestCase):

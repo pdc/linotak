@@ -470,15 +470,43 @@ class Note(models.Model):
         pos = title.find(' ', 29)
         return '%s…' % title[:30] if pos < 0 else '%s …' % title[:pos]
 
-    def text_with_links(self, with_citation=False):
-        """Unparse note back in to text followed by tags and links."""
+    def text_with_links(self, with_citation=False, max_length=None, url_length=None):
+        """Unparse note back in to text followed by tags and links.
+
+        Arguments --
+            with_citation -- if True, append a citation to the text (see <https://indieweb.org/permashortcitation>)
+            max_length -- if set, ensure effective character count is no more than this.
+                If it would be too long, return as much text as possible followed by ellipsis and
+                link to the note itself
+            url_length -- if set, treat subject URLs as being this length no matter how long they actually are.
+
+
+        If none of the above optional arguments are supplied, then this function
+        should return something that if re-parsed will yield an equivalent note.
+        """
         text = self.text.strip()
+        hashtags = ' '.join('#' + x.as_camel_case() for x in self.tags.all())
         if with_citation:
             # https://indieweb.org/permashortcitation
             text = f'{text} ({self.series.name}.{settings.NOTES_DOMAIN} {self.pk})'
+
+        if max_length and effective_char_count(text, self.tags.all(), self.subjects.all(), url_length=url_length) > max_length:
+            # Too long so return shortend text and link to note.
+            url = self.get_absolute_url(with_host=True)
+            hashtags_part = ('\n\n' + hashtags) if hashtags else ''
+            fixed_length = 2 + (url_length or len(url)) + len(hashtags_part)
+            available_length = max_length - fixed_length
+            if len(self.text) <= available_length:
+                return f'{self.text}\n\n{url}{hashtags_part}'
+            pos = self.text.rfind(' ', max(available_length - 20, 0), available_length)
+            if pos > 0:
+                pos += 1  # Include the space before the ellipsis
+            else:
+                pos = available_length  # This will cut off in mid-word.
+            return f'{self.text[:pos]}… {url}{hashtags_part}'
         parts = [
             text,
-            ' '.join('#' + x.as_camel_case() for x in self.tags.all()),
+            hashtags,
             '\n'.join(
                 '\n via '.join([f'{x.url} (nsfw)' if x.sensitive else x.url] + [xx.url for xx in x.via_chain()])
                 for x in self.subjects.all()),
@@ -573,6 +601,32 @@ class Note(models.Model):
             if excess_tags:
                 self.tags.filter(name__in=excess_tags).delete()
             return things
+
+
+def effective_char_count(text, tags, subjects, url_length=None):
+    """Calculate the character count Twitter or Mastodon will give to this note.
+
+    Arguments --
+        text -- free-text portion of a note
+        tags -- collection of Tag instances
+        subjects -- collection of Location instances
+        url_length -- if specified, assume all URLs are shortened to this length
+
+    Mastodon also treats @-mentions specially, but since we do not use them
+    we do not attempt to account for that in this function.
+    """
+    url_length = (
+        2 + sum(
+            (url_length or len(locator.url))
+            + sum(6 + (url_length or len(u)) for u in locator.via_chain())
+            for locator in subjects
+        )
+        if subjects
+        else 0
+    )
+    hashtag_length = (1 + sum(2 + len(x.name) for x in tags) if tags else 0)
+
+    return len(text) + url_length + hashtag_length
 
 
 class NoteSubject(models.Model):

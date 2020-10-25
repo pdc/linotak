@@ -231,7 +231,7 @@ class Post(models.Model):
 
         oauth = self.connection.make_oauth()
         data = {
-            'status': self.note.text_with_links(),
+            'status': self.note.text_with_links(max_length=500, url_length=23),
         }
 
         for locator in self.note.subjects.all():
