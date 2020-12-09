@@ -35,7 +35,7 @@ def fetch_page_update_locator(locator, if_not_scanned_since):
     locator.scanned = timezone.now()  # This is rolled back if the scan fails.
     # Setting it early should help prevent simultanous processing of the same page.
 
-    with requests.get(locator.url, stream=True) as r:
+    with requests.get(locator.url, stream=True,  headers={'User-Agent': 'Linotak/0.1'}) as r:
         stuff = parse_link_header(locator.url, r.headers.get('Link', ''))
         scanner = PageScanner(locator.url)
         for chunk in r.iter_content(10_000, decode_unicode=True):

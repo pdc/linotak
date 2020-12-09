@@ -158,7 +158,7 @@ class Image(models.Model):
             self.etag = md5(data).digest()
             file = ContentFile(data)
         else:
-            r = requests.get(self.data_url)
+            r = requests.get(self.data_url, headers={'User-Agent': 'Linotak/0.1 (thumbnailer)'})
             media_type = r.headers['Content-Type']
             buf = io.BytesIO()
             total_size = 0
