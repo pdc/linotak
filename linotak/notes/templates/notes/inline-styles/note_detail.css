@@ -1,7 +1,25 @@
+
 body {
-    display: grid;
-    grid-template-rows: max-content 1fr max-content;
-    align-items: center;
+    display: flex;
+    flex-flow: column;
+        min-height: 100vh;
+}
+
+@supports (display: grid) {
+    body {
+        display: grid;
+        min-height: 100vh;
+        grid-template-rows: auto 1fr auto 2fr auto;
+        align-items: top;
+    }
+
+    .note-detail {
+        grid-row: 3;
+    }
+
+    footer {
+        grid-row: 5;
+    }
 }
 
 
@@ -14,13 +32,12 @@ body {
 
 .note-detail {
     margin:  0 auto 40px;
-    max-width: 1440px;
+    /*max-width: 1440px;*/
+
 }
 
 .note-text>p {
     margin: 10px;
-  /*  min-width: 220px;
-    max-width: 620px;*/
 }
 
 .note-via-chain {
@@ -28,19 +45,30 @@ body {
     font-size: 13px;
 }
 
+
+
+/*
+
 @media (max-width: 640px) {
     .note-detail .loc-img {
         max-width: 100%;
         height: auto;
     }
 }
+*/
+
+.loc img {
+    margin: 10px;
+}
+
 
 @supports (display: grid) {
     @media (min-width: 960px) {
         article {
             display: grid;
-            grid-template-columns: minmax(160px, 480px) minmax(max-content, 1fr);
-            grid-template-rows: 1fr max-content;
+            grid-template-columns: auto auto;
+            grid-template-rows: auto auto;
+            grid-gap: 10px 20px;
         }
 
         .loc-img {
