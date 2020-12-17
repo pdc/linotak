@@ -38,6 +38,7 @@ body {
 
 .note-text>p {
     margin: 10px;
+    max-width: 60ch;
 }
 
 .note-via-chain {
