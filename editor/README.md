@@ -1,10 +1,8 @@
 # Editor
 
-Svelte component for choosuing the focus point of an image.
+Svelte component for choosing the focus point of an image.
 
 This may one day be expanded to a more complete editor for images or even notes.
-
-
 
 
 ## Get started
@@ -24,6 +22,14 @@ yarn dev
 Navigate to [localhost:5000](http://localhost:5000). You should see your app running. Edit a component file in `src`, save it, and reload the page to see your changes.
 
 By default, the server will only respond to requests from localhost. To allow connections from other computers, edit the `sirv` commands in package.json to include the option `--host 0.0.0.0`.
+
+
+
+## Storybook
+
+
+Create stories for component `Foo.svelte` in `Foo.stories.jsx`
+
 
 
 ## Building and running in production mode

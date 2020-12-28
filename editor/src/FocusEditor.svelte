@@ -1,11 +1,11 @@
 <script>
   import { onMount } from "svelte";
 
-  export let src;
-  export let width;
+  export let src; // URL reference to a representation of the image being edited.
+  export let width; // Dimensions ofg the source image.
   export let height;
-  export let label;
-  export let focusX = 0.5;
+  export let label; // Human-readable label for this editor.
+  export let focusX = 0.5; // Initial or corrent value of the focus point.
   export let focusY = 0.5;
 
   const r = 32; // Size of target circle.
@@ -47,7 +47,8 @@
 
   onMount(() => {
     const availableWidth = document.documentElement.clientWidth;
-    const availableHeight = document.documentElement.clientHeight - numbersDiv.clientHeight;
+    const availableHeight =
+      document.documentElement.clientHeight - numbersDiv.clientHeight;
     if (width > availableWidth || height > availableHeight) {
       // Scale down to fit.
       if (width / height < availableWidth / availableHeight) {
@@ -82,20 +83,6 @@
     }
   }
 </script>
-
-<style>
-  main {
-    height: 100vh;
-    display: grid;
-    grid-template-rows: max-content 1fr;
-  }
-
-  @media (min-width: 640px) {
-    main {
-      max-width: none;
-    }
-  }
-</style>
 
 <div class="focus-editor">
   <svg
@@ -139,8 +126,8 @@
       step="any"
       required />
     <input
-	  name="focus_y"
-	  id="id_focus_y"
+      name="focus_y"
+      id="id_focus_y"
       bind:value={focusY}
       type="number"
       step="any"

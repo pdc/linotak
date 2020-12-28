@@ -15,6 +15,20 @@
             {% include 'notes/inline-styles/nav.css' %}
             {% include 'notes/inline-styles/locator_image_form.css' %}
         </style>
+
+        <style>
+          main {
+            height: 100vh;
+            display: grid;
+            grid-template-rows: max-content 1fr;
+          }
+
+          @media (min-width: 640px) {
+            main {
+              max-width: none;
+            }
+          }
+        </style>
 {% endblock %}
 
 {% block content %}
@@ -42,6 +56,7 @@
             </div>
         </form>
     </main>
+
 {% endblock %}
 
 {% block scripts %}

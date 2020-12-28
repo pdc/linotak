@@ -1,4 +1,4 @@
-import App from './App.svelte';
+import FocusPoint from './FocusPoint.svelte';
 
 // Extract info from original form …
 const form = document.getElementById('focus-ui-form');
@@ -13,11 +13,19 @@ const width = imgElt.width;
 const height = imgElt.height;
 
 // … and replace it with editor UI.
-labelElt.remove();
+// labelElt.remove();
 imgElt.remove();
-form.focus_x.remove();
-form.focus_y.remove();
-const app = new App({
+// form.focus_x.remove();
+// form.focus_y.remove();
+
+const handleFocusPointChange = (e) => {
+    const { detail: { focusX, focusY } } = e;
+    console.log('handleFocusPointChange')
+    form.focus_x.value = focusX;
+    form.focus_y.value = focusY;
+}
+
+const app = new FocusPoint({
     target: elt,
     props: {
         src,
@@ -25,8 +33,8 @@ const app = new App({
         height,
         focusX,
         focusY,
-        label,
-    }
+    },
 });
+app.$on('focuspointchange', handleFocusPointChange);
 
 export default app;
