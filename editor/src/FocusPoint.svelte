@@ -1,5 +1,6 @@
 <script>
     import { createEventDispatcher, onMount } from "svelte";
+    import { pannable } from "./pannable.js";
 
     export let src; // URL reference to a representation of the image being edited.
     export let width; // Dimensions of the source image.
@@ -60,33 +61,12 @@
         }
     });
 
-    function handleMouseDown(e) {
-        const { left, top } = image.getBoundingClientRect();
-        const dX = e.clientX - left - focusX * width;
-        const dY = e.clientY - top - focusY * height;
-        if (dX * dX + dY * dY <= r * r) {
-            // It it inside the focus circle?
-            e.preventDefault();
-            const handleMousemove = (e) => {
-                const { left, top } = image.getBoundingClientRect();
-                focusX = Math.max(
-                    Math.min(1, (e.clientX - left - dX) / width),
-                    0
-                );
-                focusY = Math.max(
-                    Math.min(1, (e.clientY - top - dY) / height),
-                    0
-                );
-                dispatch("focuspointchange", { focusX, focusY });
-            };
-            const handleMouseUp = (e) => {
-                e.target.removeEventListener("mousemove", handleMousemove);
-                e.target.removeEventListener("mouseup", handleMouseUp);
-            };
-
-            e.target.addEventListener("mousemove", handleMousemove);
-            e.target.addEventListener("mouseup", handleMouseUp);
-        }
+    function handlePanMove(e) {
+        focusX += e.detail.dx / width;
+        focusY += e.detail.dy / height;
+        focusX = Math.max(Math.min(1, focusX), 0);
+        focusY = Math.max(Math.min(1, focusY), 0);
+        dispatch("focuspointchange", { focusX, focusY });
     }
 </script>
 
@@ -111,12 +91,13 @@
             stroke="#0BA"
             fill="none" />
         <circle
+            use:pannable
             cx={focusX * width}
             cy={focusY * height}
             r={32}
             stroke-width="1"
             stroke="#B0A"
             fill="rgba(187, 0, 170, 0.1)"
-            on:mousedown={handleMouseDown} />
+            on:panmove={handlePanMove} />
     </svg>
 </div>
