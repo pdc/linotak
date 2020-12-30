@@ -62,10 +62,8 @@
     });
 
     function handlePanMove(e) {
-        focusX += e.detail.dx / width;
-        focusY += e.detail.dy / height;
-        focusX = Math.max(Math.min(1, focusX), 0);
-        focusY = Math.max(Math.min(1, focusY), 0);
+        focusX = Math.max(Math.min(1, +focusX + e.detail.dx / width), 0);
+        focusY = Math.max(Math.min(1, +focusY + e.detail.dy / height), 0);
         dispatch("focuspointchange", { focusX, focusY });
     }
 </script>

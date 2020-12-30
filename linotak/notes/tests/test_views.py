@@ -33,6 +33,18 @@ class TestNoteListView(TestCase):
         self.assertEqual(list(r.context['object_list']), [note])
         self.assertEqual(list(r.context['note_list']), [note])
 
+    def test_filters_by_series_with_tilde(self):
+        series = SeriesFactory.create(name='bar')
+        note = NoteFactory.create(series=series, published=timezone.now())
+        other = SeriesFactory.create()
+        NoteFactory.create(series=other, published=timezone.now())  # Will be omitted because wrong series
+
+        r = self.client.get('/~bar/', HTTP_HOST='example.com')
+
+        self.assertEqual(r.context['series'], series)
+        self.assertEqual(list(r.context['object_list']), [note])
+        self.assertEqual(list(r.context['note_list']), [note])
+
     def test_excludes_unpublished_notes(self):
         series = SeriesFactory.create(name='bar')
         author = PersonFactory.create()

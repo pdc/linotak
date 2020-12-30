@@ -59,6 +59,8 @@ export function pannable(node) {
             touches.push(copyTouch(touch));
         }
         if (touches.length === 1) {
+            event.preventDefault();
+
             const { clientX, clientY } = touches[0];
             x = clientX;
             y = clientY;
@@ -80,6 +82,8 @@ export function pannable(node) {
         }
         if (touches.length === 1) {
             // TODO check in
+            event.preventDefault();
+
             const { clientX, clientY } = touches[0];
             const dx = clientX - x;
             const dy = clientY - y;
@@ -101,6 +105,8 @@ export function pannable(node) {
 
     function terminateTouches(event, eventName) {
         if (touches.length === 1 && event.changedTouches.length >= 1 && event.changedTouches[0].identifier === touches[0].identifier) {
+            event.preventDefault();
+
             const { clientX, clientY } = event.changedTouches[0];
             x = clientX;
             y = clientY;

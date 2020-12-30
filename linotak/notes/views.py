@@ -26,7 +26,7 @@ class SeriesMixin():
     @cached_property
     def series(self):
         """The series of notes this page relates to."""
-        series_name = getattr(self.request, 'series_name', None)
+        series_name = getattr(self.request, 'series_name', None) or self.kwargs.get('series_name')
         return None if not series_name else get_object_or_404(Series, name=series_name)
 
     def get_context_data(self, **kwargs):
