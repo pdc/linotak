@@ -5,20 +5,24 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 import httpretty
-import io
 import pathlib
 import struct
 from unittest.mock import patch
 
 from ..matchers_for_mocks import DateTimeTimestampMatcher
 from .models import (
-    Image, Representation, _sniff, CannotSniff, _sniff_svg,
-    suffix_from_media_type, _comb_imagemagick_verbose,
+    Image,
+    Representation,
+    _sniff,
+    CannotSniff,
+    _sniff_svg,
+    suffix_from_media_type,
+    _comb_imagemagick_verbose,
     _lab_from_imagemagick_verbose_bits,
-    sRGB_from_Lab
+    sRGB_from_Lab,
 )
 from .size_spec import SizeSpec
 from .templatetags.image_representations import _image_representation
@@ -26,7 +30,7 @@ from . import models, signal_handlers, tasks  # For mocking
 
 
 # How we obtain real test files:
-data_dir = pathlib.Path(__file__).parent / 'test-data'
+data_dir = pathlib.Path(__file__).parent / "test-data"
 data_storage = FileSystemStorage(location=data_dir)
 
 
@@ -42,30 +46,33 @@ class ImageTestMixin:
 
     def given_image_with_data(self, file_name, sniffed=True, **kwargs):
         self.data = (data_dir / file_name).read_bytes()
-        self.image = Image.objects.create(data_url='http://example.com/69', **kwargs)
-        self.image.cached_data.save('test.png', ContentFile(self.data))
+        self.image = Image.objects.create(data_url="http://example.com/69", **kwargs)
+        self.image.cached_data.save("test.png", ContentFile(self.data))
         if sniffed:
             self.image.sniff(save=True)
 
     def with_representation(self, file_name, **kwargs):
         self.data = (data_dir / file_name).read_bytes()
         self.representation = Representation.objects.create(image=self.image, **kwargs)
-        self.representation.content.save('r.png', ContentFile(self.data))
+        self.representation.content.save("r.png", ContentFile(self.data))
 
-    def given_downloadable_image(self, data=None, media_type='image/png', **kwargs):
-        self.data = data if data is not None else (data_dir / '234x123.png').read_bytes()
-        img_src = 'http://example.com/2'
+    def given_downloadable_image(self, data=None, media_type="image/png", **kwargs):
+        self.data = (
+            data if data is not None else (data_dir / "234x123.png").read_bytes()
+        )
+        img_src = "http://example.com/2"
         self.image = Image.objects.create(data_url=img_src, **kwargs)
         httpretty.register_uri(
-            httpretty.GET, img_src,
+            httpretty.GET,
+            img_src,
             body=self.data,
             add_headers={
-                'Content-Type': media_type,
+                "Content-Type": media_type,
             },
         )
 
-    def then_retrieved_and_sniffed(self, media_type='image/png', width=234, height=123):
-        self.assertEqual(self.image.media_type.split(';', 1)[0], media_type)
+    def then_retrieved_and_sniffed(self, media_type="image/png", width=234, height=123):
+        self.assertEqual(self.image.media_type.split(";", 1)[0], media_type)
         self.assertEqual(self.image.width, width)
         self.assertEqual(self.image.height, height)
         with self.image.cached_data.open() as f:
@@ -78,34 +85,34 @@ class TestImageSniff(ImageTestMixin, TestCase):
     """Test Image.sniff."""
 
     def test_can_get_width_and_height_of_png(self):
-        image = self.create_image_with_data_from_file('234x123.png')
+        image = self.create_image_with_data_from_file("234x123.png")
 
         image.sniff()
 
-        self.assertEqual(image.media_type, 'image/png')
+        self.assertEqual(image.media_type, "image/png")
         self.assertEqual(image.width, 234)
         self.assertEqual(image.height, 123)
 
     def test_can_get_width_and_height_of_jpeg(self):
-        image = self.create_image_with_data_from_file('frost-100x101.jpeg')
+        image = self.create_image_with_data_from_file("frost-100x101.jpeg")
 
         image.sniff()
 
-        self.assertEqual(image.media_type, 'image/jpeg')
+        self.assertEqual(image.media_type, "image/jpeg")
         self.assertEqual(image.width, 100)
         self.assertEqual(image.height, 101)
 
     def test_can_determine_placeholder_colour(self):
-        image = self.create_image_with_data_from_file('234x123.png')
+        image = self.create_image_with_data_from_file("234x123.png")
 
         image.sniff()
 
         # Tests for the plucking of the values from the `identify` output in TestExtractStats below.
         # RGB calculated using colormine.com!
-        self.assertEqual(image.placeholder, '#D57CD9')
+        self.assertEqual(image.placeholder, "#D57CD9")
 
     def test_doesnt_explode_if_not_image(self):
-        image = self.create_image_with_data(b'Nope.')
+        image = self.create_image_with_data(b"Nope.")
 
         with self.assertRaises(CannotSniff):
             image.sniff()
@@ -116,26 +123,26 @@ class TestImageSniff(ImageTestMixin, TestCase):
 
     def create_image_with_data(self, data):
         """Create image with these bytes"""
-        image = Image.objects.create(data_url='https://example.org/1')
-        image.cached_data.save('test_file', ContentFile(data), save=True)
+        image = Image.objects.create(data_url="https://example.org/1")
+        image.cached_data.save("test_file", ContentFile(data), save=True)
         return image
 
     def create_image_with_data_from_file(self, file_name):
         """Create an image and remember to delete it."""
-        self.image = Image.objects.create(data_url='https://example.org/1')
+        self.image = Image.objects.create(data_url="https://example.org/1")
         data = (data_dir / file_name).read_bytes()
-        self.image.cached_data.save('test_file', ContentFile(data), save=True)
+        self.image.cached_data.save("test_file", ContentFile(data), save=True)
         # Intentionally don’t give it a ‘.png’ extension.
         return self.image
 
 
 class TestSniffSVG(TestCase):
-
     def test_can_get_width_and_height_of_svg_with_width_and_height(self):
         media_type, width, height, _ = _sniff_svg(
-            input=b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6 3" height="600px" width="300px"/>')
+            input=b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6 3" height="600px" width="300px"/>'
+        )
 
-        self.assertEqual(media_type, 'image/svg+xml')
+        self.assertEqual(media_type, "image/svg+xml")
         self.assertEqual(width, 300)
         self.assertEqual(height, 600)
 
@@ -143,56 +150,60 @@ class TestSniffSVG(TestCase):
         media_type, width, height, _ = _sniff_svg(
             input=(
                 b'<svg xmlns="http://www.w3.org/2000/svg" '
-                b'viewBox="0 0 713.35878 175.8678" height="49.633801mm" width="201.3257mm"/>'))
+                b'viewBox="0 0 713.35878 175.8678" height="49.633801mm" width="201.3257mm"/>'
+            )
+        )
 
-        self.assertEqual(media_type, 'image/svg+xml')
+        self.assertEqual(media_type, "image/svg+xml")
         self.assertEqual(width, 761)
         self.assertEqual(height, 188)
 
     def test_can_get_width_and_height_of_svg_with_view_box(self):
         media_type, width, height, _ = _sniff_svg(
-            input=b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 48"/>')
+            input=b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 48"/>'
+        )
 
-        self.assertEqual(media_type, 'image/svg+xml')
+        self.assertEqual(media_type, "image/svg+xml")
         self.assertEqual(width, 72)
         self.assertEqual(height, 48)
 
     def test_accepts_unitless_lengths(self):
         media_type, width, height, _ = _sniff_svg(
-            input=b'<svg xmlns="http://www.w3.org/2000/svg" width="640" height="270"/>')
+            input=b'<svg xmlns="http://www.w3.org/2000/svg" width="640" height="270"/>'
+        )
 
-        self.assertEqual(media_type, 'image/svg+xml')
+        self.assertEqual(media_type, "image/svg+xml")
         self.assertEqual(width, 640)
         self.assertEqual(height, 270)
 
     def test_accepts_namespaceless_svg(self):
         media_type, width, height, _ = _sniff_svg(
-            input=b'<svg width="640px" height="270px"/>')
+            input=b'<svg width="640px" height="270px"/>'
+        )
 
-        self.assertEqual(media_type, 'image/svg+xml')
+        self.assertEqual(media_type, "image/svg+xml")
         self.assertEqual(width, 640)
         self.assertEqual(height, 270)
 
     def test_not_confused_by_xml_decl(self):
         media_type, width, height, _ = _sniff_svg(
-            input=b'<?xml version="1.0"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="640px" height="270px"/>')
+            input=b'<?xml version="1.0"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="640px" height="270px"/>'
+        )
 
-        self.assertEqual(media_type, 'image/svg+xml')
+        self.assertEqual(media_type, "image/svg+xml")
         self.assertEqual(width, 640)
         self.assertEqual(height, 270)
 
     def test_rejects_non_svg(self):
-        media_type, width, height, _ = _sniff_svg(
-            input=b'<html/>')
+        media_type, width, height, _ = _sniff_svg(input=b"<html/>")
 
         self.assertFalse(media_type)
 
 
 class TestDeleteIfSmall(ImageTestMixin, TestCase):
-
     def test_deletes_if_small(self):
-        self.given_image_with_data('37x57.jpeg')
-        self.with_representation('37x57.jpeg', width=37, height=57, is_cropped=False)
+        self.given_image_with_data("37x57.jpeg")
+        self.with_representation("37x57.jpeg", width=37, height=57, is_cropped=False)
         file_names = [self.image.cached_data.name, self.representation.content.name]
 
         self.image.delete_if_small()
@@ -216,7 +227,9 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
     @httpretty.activate(allow_net_connect=False)
     def test_does_not_retrieve_if_retrieved(self):
         then = timezone.now() - timedelta(hours=1)
-        self.image = Image.objects.create(data_url='https://example.com/1', retrieved=then)
+        self.image = Image.objects.create(
+            data_url="https://example.com/1", retrieved=then
+        )
 
         self.image.retrieve_data(if_not_retrieved_since=None)
         # Attempting to download will cause HTTPretty to complain.
@@ -234,54 +247,55 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
     def test_does_not_retrieve_if_retrieved_later(self):
         then = timezone.now() - timedelta(hours=1)
         earlier = timezone.now() - timedelta(hours=2)
-        self.image = Image.objects.create(data_url='https://example.com/1', retrieved=then)
+        self.image = Image.objects.create(
+            data_url="https://example.com/1", retrieved=then
+        )
 
         self.image.retrieve_data(if_not_retrieved_since=earlier)
         # Attempting to download will cause HTTPretty to complain.
 
     @httpretty.activate(allow_net_connect=False)
     def test_does_not_explode_if_data_isnt_image(self):
-        self.given_downloadable_image(b'LOLWAT', media_type='text/plain')
+        self.given_downloadable_image(b"LOLWAT", media_type="text/plain")
 
-        with patch.object(models, 'logger') as logger:
+        with patch.object(models, "logger") as logger:
             self.image.retrieve_data(if_not_retrieved_since=None)
 
-        self.then_retrieved_and_sniffed('text/plain', None, None)
+        self.then_retrieved_and_sniffed("text/plain", None, None)
         self.assertTrue(logger.warning.called)
 
     @httpretty.activate(allow_net_connect=False)
     def test_gets_data_from_data_url(self):
-        self.data = (data_dir / 'smol.gif').read_bytes()
-        data_url = 'data:image/gif;base64,' + b64encode(self.data).decode('UTF-8')
+        self.data = (data_dir / "smol.gif").read_bytes()
+        data_url = "data:image/gif;base64," + b64encode(self.data).decode("UTF-8")
         self.image = Image.objects.create(data_url=data_url)
 
-        with patch.object(models, 'logger') as logger:
+        with patch.object(models, "logger") as logger:
             self.image.retrieve_data(if_not_retrieved_since=None)
 
-        self.then_retrieved_and_sniffed('image/gif', 1020, 100)
+        self.then_retrieved_and_sniffed("image/gif", 1020, 100)
 
 
 class TestSuffixFromMediaType(TestCase):
-
     def test_returns_jpeg_for_jpeg(self):
-        self.assertEqual(suffix_from_media_type('image/jpeg'), '.jpeg')
-        self.assertEqual(suffix_from_media_type('image/png'), '.png')
-        self.assertEqual(suffix_from_media_type('image/gif'), '.gif')
+        self.assertEqual(suffix_from_media_type("image/jpeg"), ".jpeg")
+        self.assertEqual(suffix_from_media_type("image/png"), ".png")
+        self.assertEqual(suffix_from_media_type("image/gif"), ".gif")
 
     def test_returns_svg_for_svg(self):
-        self.assertEqual(suffix_from_media_type('image/svg+xml'), '.svg')
-        self.assertEqual(suffix_from_media_type('image/svg'), '.svg')
+        self.assertEqual(suffix_from_media_type("image/svg+xml"), ".svg")
+        self.assertEqual(suffix_from_media_type("image/svg"), ".svg")
 
-    def test_returns_html_for_html(self):  # Not that that makes any sense for an image …
-        self.assertEqual(suffix_from_media_type('text/html'), '.html')
-        self.assertEqual(suffix_from_media_type('text/html; charset=UTF-8'), '.html')
+    def test_returns_html_for_html(self):
+        # Not that that makes any sense for an image …
+        self.assertEqual(suffix_from_media_type("text/html"), ".html")
+        self.assertEqual(suffix_from_media_type("text/html; charset=UTF-8"), ".html")
 
 
 class TestRetrieveImageDate(ImageTestMixin, TestCase):
-
     @httpretty.activate(allow_net_connect=False)
     def test_retrieves_and_sniffs(self):
-        self.given_downloadable_image((data_dir / '234x123.png').read_bytes())
+        self.given_downloadable_image((data_dir / "234x123.png").read_bytes())
 
         tasks.retrieve_image_data(self.image.pk, None)
 
@@ -290,7 +304,7 @@ class TestRetrieveImageDate(ImageTestMixin, TestCase):
 
     @httpretty.activate(allow_net_connect=False)
     def test_retrieves_and_deletes_if_small(self):
-        self.given_downloadable_image((data_dir / 'im-32sq.png').read_bytes())
+        self.given_downloadable_image((data_dir / "im-32sq.png").read_bytes())
 
         tasks.retrieve_image_data(self.image.pk, None)
 
@@ -298,9 +312,8 @@ class TestRetrieveImageDate(ImageTestMixin, TestCase):
 
 
 class TestSniffImageDataTask(ImageTestMixin, TestCase):
-
     def test_sniffs_and_saves(self):
-        self.given_image_with_data('234x123.png', sniffed=False)
+        self.given_image_with_data("234x123.png", sniffed=False)
 
         tasks.sniff_image_data(self.image.pk)
 
@@ -310,7 +323,7 @@ class TestSniffImageDataTask(ImageTestMixin, TestCase):
         self.assertEqual((self.image.width, self.image.height), (234, 123))
 
     def test_sniffs_and_deletes_if_small(self):
-        self.given_image_with_data('im-32sq.png', sniffed=False)
+        self.given_image_with_data("im-32sq.png", sniffed=False)
 
         tasks.sniff_image_data(self.image.pk)
 
@@ -318,63 +331,73 @@ class TestSniffImageDataTask(ImageTestMixin, TestCase):
         self.assertFalse(Image.objects.filter(pk=self.image.pk).exists())
 
 
-class TestSignalHandler(TransactionTestCase):  # Different superclass so that on_commit hooks are called.
-    """Test the signal handler."""
+@override_settings(IMAGES_FETCH_DATA=True)
+class TestSignalHandler(TransactionTestCase):
+    # Note this class uses a different superclass so that on_commit hooks are called.
 
     # The retireval of image data is suppressed during testing,
     # so in these tests we need to explictly enable it.
 
     def test_queues_retrieve_when_image_created(self):
         """Test signal handler queues retrieve when image created."""
-        with self.settings(IMAGES_FETCH_DATA=True), patch.object(tasks, 'retrieve_image_data') as retrieve_image_data:
-            self.image = Image.objects.create(data_url='https://example.com/1')
+        with patch.object(tasks, "retrieve_image_data") as retrieve_image_data:
+            self.image = Image.objects.create(data_url="https://example.com/1")
 
-        retrieve_image_data.s.assert_called_with(self.image.pk, if_not_retrieved_since=None)
+        retrieve_image_data.s.assert_called_with(
+            self.image.pk, if_not_retrieved_since=None
+        )
         retrieve_image_data.s.return_value.delay.assert_called_with()  # from on_commit
 
     def test_doesnt_queue_retrieve_when_retrieved_is_set(self):
         """Test signal handler doesnt queue retrieve when retrieved is set."""
-        with self.settings(IMAGES_FETCH_DATA=True), patch.object(tasks, 'retrieve_image_data') as retrieve_image_data:
-            self.image = Image.objects.create(data_url='https://example.com/1', retrieved=timezone.now())
+        with patch.object(tasks, "retrieve_image_data") as retrieve_image_data:
+            self.image = Image.objects.create(
+                data_url="https://example.com/1", retrieved=timezone.now()
+            )
 
         self.assertFalse(retrieve_image_data.s.called)
 
     def test_doesnt_queue_retrieve_when_size_knwn_to_be_too_small(self):
         """Test signal handler doesnt queue retrieve when retrieved is set."""
-        with self.settings(IMAGES_FETCH_DATA=True), patch.object(tasks, 'retrieve_image_data') as retrieve_image_data:
-            self.image = Image.objects.create(data_url='https://example.com/1', width=32, height=32)
+        with patch.object(tasks, "retrieve_image_data") as retrieve_image_data:
+            self.image = Image.objects.create(
+                data_url="https://example.com/1", width=32, height=32
+            )
 
         self.assertFalse(retrieve_image_data.s.called)
 
 
+@override_settings(IMAGES_FETCH_DATA=True)
 class TestImageQueueRetrieveData(TransactionTestCase):
-
     def test_sends_timestamp_from_retrieved(self):
         """Test signal handler queues retrieve when image created."""
-        image = Image.objects.create(data_url='https://example.com/1', retrieved=timezone.now())
+        image = Image.objects.create(
+            data_url="https://example.com/1", retrieved=timezone.now()
+        )
 
-        with self.settings(IMAGES_FETCH_DATA=True), patch.object(tasks, 'retrieve_image_data') as retrieve_image_data:
+        with patch.object(tasks, "retrieve_image_data") as retrieve_image_data:
             image.queue_retrieve_data()
 
-        retrieve_image_data.s.assert_called_with(image.pk, if_not_retrieved_since=DateTimeTimestampMatcher(image.retrieved))
+        retrieve_image_data.s.assert_called_with(
+            image.pk, if_not_retrieved_since=DateTimeTimestampMatcher(image.retrieved)
+        )
         retrieve_image_data.s.return_value.delay.assert_called_with()  # from on_commit
 
 
 class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
-
     def test_can_create_square_from_rect(self):
-        self.given_image_with_data('im.png')
+        self.given_image_with_data("im.png")
 
         self.image.create_square_representation(32)
 
         # convert - -resize '^32x32>' -gravity center -extent 32x32 - < linotak/images/test-data/im.png > linotak/images/test-data/im-32sq.png
         self.assertEqual(self.image.representations.count(), 1)
         rep = self.image.representations.all()[0]
-        self.assert_representation(rep, 'image/png', 32, 32, is_cropped=True)
-        self.assert_same_PNG_as_file(rep, 'im-32sq.png')
+        self.assert_representation(rep, "image/png", 32, 32, is_cropped=True)
+        self.assert_same_PNG_as_file(rep, "im-32sq.png")
 
     def test_offsets_crop_to_suit_focus(self):
-        self.given_image_with_data('im.png', focus_x=0.333, focus_y=0.75)
+        self.given_image_with_data("im.png", focus_x=0.333, focus_y=0.75)
 
         self.image.create_square_representation(32)
 
@@ -382,34 +405,53 @@ class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
         # The +7 comes from (52.6 - 32) * 0.333.
         self.assertEqual(self.image.representations.count(), 1)
         rep = self.image.representations.all()[0]
-        self.assert_representation(rep, 'image/png', 32, 32, is_cropped=True)
-        self.assert_same_PNG_as_file(rep, 'im-32sq2.png')
+        self.assert_representation(rep, "image/png", 32, 32, is_cropped=True)
+        self.assert_same_PNG_as_file(rep, "im-32sq2.png")
+
+    def test_crops_within_crop_if_specified(self):
+        self.given_image_with_data(
+            "im.png",
+            crop_left=13 / 69,
+            crop_top=3 / 42,
+            crop_width=48 / 69,
+            crop_height=36 / 42,
+            focus_x=0.75,
+        )
+
+        self.image.create_square_representation(32)
+
+        # convert - -crop 48x36+13+3 +repage -resize '^32x32>' -extent 32x32+8+0 - < linotak/images/test-data/im.png > linotak/images/test-data/im-32sq3.png
+        # The +8 comes from ((48 * 32 / 36) - 32) * 0.75.
+        self.assertEqual(self.image.representations.count(), 1)
+        rep = self.image.representations.all()[0]
+        self.assert_representation(rep, "image/png", 32, 32, is_cropped=True)
+        self.assert_same_PNG_as_file(rep, "im-32sq3.png")
 
     def test_doesnt_tag_square_from_square_as_cropped(self):
-        self.given_image_with_data('frost-100x101.jpeg')
+        self.given_image_with_data("frost-100x101.jpeg")
 
         self.image.create_square_representation(32)
 
         self.assertEqual(self.image.representations.count(), 1)
         rep = self.image.representations.all()[0]
-        self.assert_representation(rep, 'image/jpeg', 32, 32, is_cropped=False)
+        self.assert_representation(rep, "image/jpeg", 32, 32, is_cropped=False)
 
     def test_doesnt_scale_too_small_image(self):
-        self.given_image_with_data('frost-100x101.jpeg')
+        self.given_image_with_data("frost-100x101.jpeg")
 
         self.image.create_square_representation(256)
 
         # It does create a representation, but it is the original image data (unscaled).
         self.assertEqual(self.image.representations.count(), 1)
         rep = self.image.representations.all()[0]
-        self.assert_representation(rep, 'image/jpeg', 100, 101, is_cropped=False)
-        self.assert_same_data_as_file(rep, 'frost-100x101.jpeg')
+        self.assert_representation(rep, "image/jpeg", 100, 101, is_cropped=False)
+        self.assert_same_data_as_file(rep, "frost-100x101.jpeg")
 
     def test_is_idempotent(self):
-        self.given_image_with_data('frost-100x101.jpeg')
+        self.given_image_with_data("frost-100x101.jpeg")
         self.image.create_square_representation(32)
 
-        with patch('subprocess.run') as mock_run:
+        with patch("subprocess.run") as mock_run:
             self.image.create_square_representation(32)
 
         self.assertFalse(mock_run.called)
@@ -420,9 +462,9 @@ class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
         self.assertEqual(rep.width, width)
         self.assertEqual(rep.height, height)
         if is_cropped:
-            self.assertTrue(rep.is_cropped, 'Expected is_cropped')
+            self.assertTrue(rep.is_cropped, "Expected is_cropped")
         else:
-            self.assertFalse(rep.is_cropped, 'Expected not is_cropped')
+            self.assertFalse(rep.is_cropped, "Expected not is_cropped")
 
         # Check the content actually maches the metadata.
         with rep.content.open() as f:
@@ -435,7 +477,9 @@ class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
         expected = (data_dir / file_name).read_bytes()
         with rep.content.open() as f:
             actual = f.read()
-        self.assertEqual(actual, expected, 'expected content of %s to match %s' % (rep, file_name))
+        self.assertEqual(
+            actual, expected, "expected content of %s to match %s" % (rep, file_name)
+        )
 
     def assert_same_PNG_as_file(self, rep, file_name):
         expected = (data_dir / file_name).read_bytes()
@@ -459,9 +503,13 @@ class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
         files using a different PNG library from ImageMagick.
         """
         if ignore_chunks is None:
-            ignore_chunks = {b'tIME', b'tEXt'}
-        chunks_a = [(t, d, c) for t, d, c in _iter_PNG_chunks(a) if t not in ignore_chunks]
-        chunks_b = [(t, d, c) for t, d, c in _iter_PNG_chunks(b) if t not in ignore_chunks]
+            ignore_chunks = {b"tIME", b"tEXt"}
+        chunks_a = [
+            (t, d, c) for t, d, c in _iter_PNG_chunks(a) if t not in ignore_chunks
+        ]
+        chunks_b = [
+            (t, d, c) for t, d, c in _iter_PNG_chunks(b) if t not in ignore_chunks
+        ]
         self.assertEqual(chunks_a, chunks_b)
 
 
@@ -470,34 +518,36 @@ PNG_SIGNATURE = bytes([137, 80, 78, 71, 13, 10, 26, 10])
 
 def _iter_PNG_chunks(data):
     if data[:8] != PNG_SIGNATURE:
-        raise ValueError('Data did not start with PNG signature')
+        raise ValueError("Data did not start with PNG signature")
     pos = 8
     while pos < len(data):
-        (chunk_size, chunk_type), pos = struct.unpack('!L4s', data[pos:pos + 8]), pos + 8
-        chunk_data, pos = data[pos:pos + chunk_size], pos + chunk_size
-        chunk_crc, pos = struct.unpack('!L', data[pos:pos + 4]), pos + 4
+        (chunk_size, chunk_type), pos = (
+            struct.unpack("!L4s", data[pos : pos + 8]),
+            pos + 8,
+        )
+        chunk_data, pos = data[pos : pos + chunk_size], pos + chunk_size
+        chunk_crc, pos = struct.unpack("!L", data[pos : pos + 4]), pos + 4
         yield chunk_type, chunk_data, chunk_crc
     if pos != len(data):
-        raise ValueError('Bad chunk(s) in PNG data')
+        raise ValueError("Bad chunk(s) in PNG data")
 
 
 class TestSizeSpec(TestCase):
-
     def test_can_parse_widthxheight(self):
-        result = SizeSpec.parse('600x500')
+        result = SizeSpec.parse("600x500")
 
         self.assertEqual(result.width, 600)
         self.assertEqual(result.height, 500)
 
     def test_can_parse_min_ratio(self):
-        result = SizeSpec.parse('600x500 min 2:1')
+        result = SizeSpec.parse("600x500 min 2:1")
 
         self.assertEqual(result.width, 600)
         self.assertEqual(result.height, 500)
         self.assertEqual(result.min_ratio, (2, 1))
 
     def test_can_parse_min_max_ratio(self):
-        result = SizeSpec.parse('550x500 min 3:4 max 6:5')
+        result = SizeSpec.parse("550x500 min 3:4 max 6:5")
 
         self.assertEqual(result.width, 550)
         self.assertEqual(result.height, 500)
@@ -507,65 +557,69 @@ class TestSizeSpec(TestCase):
     def test_can_write_spec(self):
         result = SizeSpec(1280, 768).unparse()
 
-        self.assertEqual(result, '1280x768')
+        self.assertEqual(result, "1280x768")
 
     def test_can_write_spec_with_min_max(self):
         result = SizeSpec(1280, 768, (2, 3), (4, 5)).unparse()
 
-        self.assertEqual(result, '1280x768 min 2:3 max 4:5')
+        self.assertEqual(result, "1280x768 min 2:3 max 4:5")
 
     def test_scales_down_to_fit_box(self):
         self.assertEqual(
-            SizeSpec(640, 480).scale_and_crop_to_match(1000, 2000),
-            ((240, 480), None))
+            SizeSpec(640, 480).scale_and_crop_to_match(1000, 2000), ((240, 480), None)
+        )
         self.assertEqual(
-            SizeSpec(640, 480).scale_and_crop_to_match(2000, 1000),
-            ((640, 320), None))
+            SizeSpec(640, 480).scale_and_crop_to_match(2000, 1000), ((640, 320), None)
+        )
         self.assertEqual(
-            SizeSpec(640, 320).scale_and_crop_to_match(2000, 1000),
-            ((640, 320), None))
+            SizeSpec(640, 320).scale_and_crop_to_match(2000, 1000), ((640, 320), None)
+        )
         self.assertEqual(
-            SizeSpec(640, 480).scale_and_crop_to_match(2000, 2000),
-            ((480, 480), None))
+            SizeSpec(640, 480).scale_and_crop_to_match(2000, 2000), ((480, 480), None)
+        )
         self.assertEqual(
-            SizeSpec(640, 360).scale_and_crop_to_match(4000, 3000),
-            ((480, 360), None))
+            SizeSpec(640, 360).scale_and_crop_to_match(4000, 3000), ((480, 360), None)
+        )
 
     def test_crops_to_make_not_as_tall(self):
         self.assertEqual(
             SizeSpec(640, 480, min_ratio=(3, 4)).scale_and_crop_to_match(1000, 2000),
-            ((360, 720), (360, 480)))
+            ((360, 720), (360, 480)),
+        )
 
     def test_crops_to_make_not_as_wide(self):
         self.assertEqual(
             SizeSpec(640, 480, max_ratio=(3, 2)).scale_and_crop_to_match(2000, 1000),
-            ((853, 427), (640, 427)))
+            ((853, 427), (640, 427)),
+        )
 
     def test_rounds_to_nearest_int(self):
         self.assertEqual(
-            SizeSpec(480, 320).scale_and_crop_to_match(3500, 2400),
-            ((467, 320), None))
+            SizeSpec(480, 320).scale_and_crop_to_match(3500, 2400), ((467, 320), None)
+        )
         self.assertEqual(
-            SizeSpec(320, 480).scale_and_crop_to_match(2400, 3500),
-            ((320, 467), None))
+            SizeSpec(320, 480).scale_and_crop_to_match(2400, 3500), ((320, 467), None)
+        )
 
     def test_does_not_scale_up(self):
         self.assertEqual(
-            SizeSpec(1600, 900).scale_and_crop_to_match(600, 500),
-            ((600, 500), None))
+            SizeSpec(1600, 900).scale_and_crop_to_match(600, 500), ((600, 500), None)
+        )
 
     def test_can_make_squares(self):
         self.assertEqual(
-            SizeSpec(600, 600, min_ratio=(1, 1), max_ratio=(1, 1)).scale_and_crop_to_match(3000, 2000),
-            ((900, 600), (600, 600)))
+            SizeSpec(
+                600, 600, min_ratio=(1, 1), max_ratio=(1, 1)
+            ).scale_and_crop_to_match(3000, 2000),
+            ((900, 600), (600, 600)),
+        )
 
 
 class TestImageFindSquareRepresentation(ImageTestMixin, TestCase):
-
     def setUp(self):
         """Create image with data and a reasonably large soure size."""
-        self.image = Image.objects.create(data_url='im.png', width=1280, height=768)
-        self.image.cached_data.save('foo.png', ContentFile(b'LOLWAT'))
+        self.image = Image.objects.create(data_url="im.png", width=1280, height=768)
+        self.image.cached_data.save("foo.png", ContentFile(b"LOLWAT"))
 
     def test_returns_exact_match_if_exists(self):
         rep = self.image.representations.create(width=100, height=100, is_cropped=True)
@@ -581,7 +635,7 @@ class TestImageFindSquareRepresentation(ImageTestMixin, TestCase):
         self.image.representations.create(width=200, height=200, is_cropped=True)
         self.image.representations.create(width=128, height=77, is_cropped=False)
 
-        with patch.object(self.image, 'queue_representation') as queue_representation:
+        with patch.object(self.image, "queue_representation") as queue_representation:
             result = self.image.find_square_representation(150)
 
         self.assertEqual(result, rep)
@@ -590,35 +644,41 @@ class TestImageFindSquareRepresentation(ImageTestMixin, TestCase):
     def test_returns_nothing_if_none_suitable(self):
         self.image.representations.create(width=640, height=384, is_cropped=True)
 
-        with patch.object(self.image, 'queue_representation') as queue_representation:
+        with patch.object(self.image, "queue_representation") as queue_representation:
             result = self.image.find_square_representation(150)
 
         self.assertFalse(result)
         queue_representation.assert_called_with(SizeSpec.of_square(150))
 
+    @override_settings(IMAGES_FETCH_DATA=True)
     def test_queues_retrieval_if_no_cached_data(self):
-        self.image = Image.objects.create(data_url='http://example.com/69')  # No data
+        self.image = Image.objects.create(data_url="http://example.com/69")  # No data
 
-        with self.settings(IMAGES_FETCH_DATA=True), \
-                patch.object(tasks, 'create_image_representation') as create_image_representation, \
-                patch.object(tasks, 'retrieve_image_data') as retrieve_image_data, \
-                patch.object(signal_handlers, 'chain') as chain:
+        with patch.object(
+            tasks, "create_image_representation"
+        ) as create_image_representation, patch.object(
+            tasks, "retrieve_image_data"
+        ) as retrieve_image_data, patch.object(
+            signal_handlers, "chain"
+        ) as chain:
             result = self.image.find_square_representation(150)
 
         self.assertFalse(result)
         chain.assert_called_with(
             retrieve_image_data.s(self.image.pk, if_not_retrieved_since=None),
-            create_image_representation.si(self.image.pk, SizeSpec.of_square(150).unparse()))
+            create_image_representation.si(
+                self.image.pk, SizeSpec.of_square(150).unparse()
+            ),
+        )
         chain.return_value.delay.assert_called_with()
 
 
+@override_settings(IMAGES_FETCH_DATA=True)
 class TestImageWantsSize(TestCase):
-
     def test_queues_retrieve_if_no_cached_data(self):
-        image = Image.objects.create(data_url='https://example.com/images/1.jpeg')
+        image = Image.objects.create(data_url="https://example.com/images/1.jpeg")
 
-        with self.settings(IMAGES_FETCH_DATA=True), \
-                patch.object(image, 'queue_retrieve_data') as queue_retrieve_data:
+        with patch.object(image, "queue_retrieve_data") as queue_retrieve_data:
             image.wants_size()
 
         queue_retrieve_data.assert_called_with()
@@ -629,7 +689,9 @@ class TestImageRepresentationTag(TestCase):
     maxDiff = None
 
     def test_given_svg_generates_svg(self):
-        image = Image.objects.create(data_url='http://example.com/foo.svg', media_type='image/svg+xml')
+        image = Image.objects.create(
+            data_url="http://example.com/foo.svg", media_type="image/svg+xml"
+        )
         size_spec = SizeSpec(1000, 500)
 
         result = _image_representation(image, size_spec)
@@ -638,10 +700,16 @@ class TestImageRepresentationTag(TestCase):
             result,
             '<svg width="1000px" height="500px" viewBox="0 0 1000 500">'
             '<image width="1000" height="500" xlink:href="http://example.com/foo.svg"/>'
-            '</svg>')
+            "</svg>",
+        )
 
     def test_skrinks_to_fit_svg_if_size_known(self):
-        image = Image.objects.create(data_url='http://example.com/foo.svg', media_type='image/svg+xml', width=600, height=400)
+        image = Image.objects.create(
+            data_url="http://example.com/foo.svg",
+            media_type="image/svg+xml",
+            width=600,
+            height=400,
+        )
         size_spec = SizeSpec(300, 300)
 
         result = _image_representation(image, size_spec)
@@ -650,10 +718,16 @@ class TestImageRepresentationTag(TestCase):
             result,
             '<svg width="300px" height="200px" viewBox="0 0 300 200">'
             '<image width="300" height="200" xlink:href="http://example.com/foo.svg"/>'
-            '</svg>')
+            "</svg>",
+        )
 
     def test_scales_up_svg(self):
-        image = Image.objects.create(data_url='http://example.com/foo.svg', media_type='image/svg+xml', width=600, height=400)
+        image = Image.objects.create(
+            data_url="http://example.com/foo.svg",
+            media_type="image/svg+xml",
+            width=600,
+            height=400,
+        )
         size_spec = SizeSpec(900, 900)
 
         result = _image_representation(image, size_spec)
@@ -662,10 +736,16 @@ class TestImageRepresentationTag(TestCase):
             result,
             '<svg width="900px" height="600px" viewBox="0 0 900 600">'
             '<image width="900" height="600" xlink:href="http://example.com/foo.svg"/>'
-            '</svg>')
+            "</svg>",
+        )
 
     def test_slices_if_cropped(self):
-        image = Image.objects.create(data_url='http://example.com/foo.svg', media_type='image/svg+xml', width=600, height=400)
+        image = Image.objects.create(
+            data_url="http://example.com/foo.svg",
+            media_type="image/svg+xml",
+            width=600,
+            height=400,
+        )
         size_spec = SizeSpec.of_square(600)
 
         result = _image_representation(image, size_spec)
@@ -674,7 +754,8 @@ class TestImageRepresentationTag(TestCase):
             result,
             '<svg width="600px" height="600px" viewBox="0 0 900 600" preserveAspectRatio="xMidYMid slice">'
             '<image width="900" height="600" xlink:href="http://example.com/foo.svg"/>'
-            '</svg>')
+            "</svg>",
+        )
 
 
 # identify -colorspace Lab -verbose linotak/images/test-data/234x123.png
@@ -723,7 +804,7 @@ sample_verbose = b"""Image: linotak/images/test-data/234x123.png
       entropy: 0.146701
   """
 
-sample_bad_utf8 = b'''Image:
+sample_bad_utf8 = b"""Image:
   Filename: /tmp/magick-_-c6Vz592SYSHWGo5h_tJmcgmeaG7_9W
   Base filename: -
   Format: JPEG (Joint Photographic Experts Group JFIF format)
@@ -789,36 +870,39 @@ sample_bad_utf8 = b'''Image:
       Original Transmission Reference[2,103]: \x8b\xa4\x82a\x82R\x82s\x82Q\x82O\x82Q\x82T\x93d\x90\xe0\x82R\x82X\x82O\x82r
       Headline[2,105]: \x8bL\x94O\x8eB\x89e\x82\xcc\x90\x9b\x8e\xf1\x91\x8a\x82\xe7
       Caption[2,120]: \x81@\x94F\x8f\xd8\x8e\xae\x82\xf0\x8fI\x82\xa6\x81A\x8bL\x94O\x8e\xca\x90^\x82\xc9\x94[\x82\xdc\x82\xe9\x90\x9b\x8b`\x88\xcc\x8e\xf1\x91\x8a\x81i\x91O\x97\xf1\x92\x86\x89\x9b\x81j\x82\xc6\x8at\x97\xbb\x82\xe7\x81\x81\x82P\x82U\x93\xfa\x8c\xdf\x8c\xe3\x82W\x8e\x9e\x82P\x82S\x95\xaa\x81A\x8b{\x93a\x81E\x96k\x8e\xd4\x8a\xf1\x81i\x91\xe3\x95\\\x8eB\x89e\x81j
-'''
+"""
 
 
 class TestExtractStats(TestCase):
-
     def test_extracts_stats_by_path(self):
         spec = [
-            ['Channel statistics', 'Channel 0', 'mean'],
-            ['Channel statistics', 'Channel 1', 'mean'],
-            ['Channel statistics', 'Channel 2', 'mean'],
+            ["Channel statistics", "Channel 0", "mean"],
+            ["Channel statistics", "Channel 1", "mean"],
+            ["Channel statistics", "Channel 2", "mean"],
         ]
 
         result = _comb_imagemagick_verbose(spec, sample_verbose)
 
-        self.assertEqual(result, ('164.582 (0.64542)', '176.387 (0.691714)', '94.3706 (0.370081)'))
+        self.assertEqual(
+            result, ("164.582 (0.64542)", "176.387 (0.691714)", "94.3706 (0.370081)")
+        )
 
     def test_wortks_around_bad_UTF_8(self):
         spec = [
-            ['Channel statistics', 'Channel 0', 'mean'],
-            ['Channel statistics', 'Channel 1', 'mean'],
-            ['Channel statistics', 'Channel 2', 'mean'],
+            ["Channel statistics", "Channel 0", "mean"],
+            ["Channel statistics", "Channel 1", "mean"],
+            ["Channel statistics", "Channel 2", "mean"],
         ]
 
         result = _comb_imagemagick_verbose(spec, sample_bad_utf8)
 
-        self.assertEqual(result, ('92.3088 (0.361995)', '128.073 (0.502249)', '133.11 (0.521999)'))
+        self.assertEqual(
+            result, ("92.3088 (0.361995)", "128.073 (0.502249)", "133.11 (0.521999)")
+        )
 
     def test_extracts_Lab_from_verbose_bits(self):
         l_star, a_star, b_star = _lab_from_imagemagick_verbose_bits(
-            ('164.582 (0.64542)', '176.387 (0.691714)', '94.3706 (0.370081)')
+            ("164.582 (0.64542)", "176.387 (0.691714)", "94.3706 (0.370081)")
         )
 
         self.assertAlmostEqual(l_star, 64.542, 3)
@@ -826,12 +910,16 @@ class TestExtractStats(TestCase):
         self.assertAlmostEqual(b_star, -33.629, 3)
 
     def test_Lab_from_bits_white(self):
-        l_star, a_star, b_star = _lab_from_imagemagick_verbose_bits(('0 (0)', '127.5 (0.5)', '127.5 (0.5)'))
+        l_star, a_star, b_star = _lab_from_imagemagick_verbose_bits(
+            ("0 (0)", "127.5 (0.5)", "127.5 (0.5)")
+        )
 
         self.assertAlmostEqual(l_star, 0.0, 3)
 
     def test_Lab_from_bits_black(self):
-        l_star, a_star, b_star = _lab_from_imagemagick_verbose_bits(('255 (1)', '127.5 (0.5)', '127.5 (0.5)'))
+        l_star, a_star, b_star = _lab_from_imagemagick_verbose_bits(
+            ("255 (1)", "127.5 (0.5)", "127.5 (0.5)")
+        )
 
         self.assertAlmostEqual(l_star, 100.0, 3)
 
