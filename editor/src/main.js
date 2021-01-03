@@ -2,27 +2,38 @@ import FocusPoint from './FocusPoint.svelte';
 
 // Extract info from original form …
 const form = document.getElementById('focus-ui-form');
-const focusX = form.focus_x.value;
-const focusY = form.focus_y.value;
 const elt = document.getElementById('focus-ui');
-const labelElt = elt.querySelector('label');
-const label = labelElt.innerText;
+
 const imgElt = elt.querySelector('img');
 const src = imgElt.src;
-const width = imgElt.width;
-const height = imgElt.height;
-
-// … and replace it with editor UI.
-// labelElt.remove();
 imgElt.remove();
-// form.focus_x.remove();
-// form.focus_y.remove();
+
+const { width, height, placeholder } = JSON.parse(document.getElementById("imageData").text);
 
 const handleFocusPointChange = (e) => {
     const { detail: { focusX, focusY } } = e;
-    console.log('handleFocusPointChange')
+    console.log('focuschange', focusX, focusY);
     form.focus_x.value = focusX;
     form.focus_y.value = focusY;
+}
+const handleCropChange = (e) => {
+    const { detail: { cropLeft, cropTop, cropWidth, cropHeight } } = e;
+    console.log('cropchange', cropLeft, cropTop, cropWidth, cropHeight);
+    form.crop_left.value = cropLeft;
+    form.crop_top.value = cropTop;
+    form.crop_width.value = cropWidth;
+    form.crop_height.value = cropHeight;
+}
+
+const focus = {
+    focusX: form.focus_x.value,
+    focusY: form.focus_y.value,
+}
+const crop = {
+    cropLeft: form.crop_left.value,
+    cropTop: form.crop_top.value,
+    cropWidth: form.crop_width.value,
+    cropHeight: form.crop_height.value,
 }
 
 const app = new FocusPoint({
@@ -31,10 +42,12 @@ const app = new FocusPoint({
         src,
         width,
         height,
-        focusX,
-        focusY,
+        ...focus,
+        ...crop,
+        placeholder,
     },
 });
 app.$on('focuspointchange', handleFocusPointChange);
+app.$on('cropchange', handleCropChange);
 
 export default app;

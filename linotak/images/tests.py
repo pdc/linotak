@@ -81,6 +81,53 @@ class ImageTestMixin:
         self.assertTrue(self.image.retrieved)
 
 
+class TestImageToJSON(TestCase):
+    def test_has_cmale_case_keywords(self):
+        image = Image(
+            width=1001,
+            height=202,
+            crop_left=0.1,
+            crop_top=0.2,
+            crop_width=0.3,
+            crop_height=0.4,
+            focus_x=0.5,
+            focus_y=0.6,
+            placeholder="#B0A",
+            etag=b"12345678",
+        )
+
+        result = image.to_json()
+
+        expected = {
+            "width": 1001,
+            "height": 202,
+            "cropLeft": 0.1,
+            "cropTop": 0.2,
+            "cropWidth": 0.3,
+            "cropHeight": 0.4,
+            "focusX": 0.5,
+            "focusY": 0.6,
+            "placeholder": "#B0A",
+        }
+        for k, v in expected.items():
+            self.assertEqual(result[k], v)
+        # Check that this includes all the fields of the Image model:
+        included = {x.lower() for x in result.keys()}
+        for f in Image._meta.get_fields():
+            if not hasattr(f, "related_name"):
+                name = f.name.replace("_", "")
+                if f.name in {
+                    "data_url",
+                    "cached_data",
+                    "media_type",
+                    "retrieved",
+                    "etag",
+                }:
+                    self.assertNotIn(name, included)
+                else:
+                    self.assertIn(name, included)
+
+
 class TestImageSniff(ImageTestMixin, TestCase):
     """Test Image.sniff."""
 

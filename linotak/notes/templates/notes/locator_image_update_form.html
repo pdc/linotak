@@ -64,6 +64,7 @@
 {% endblock %}
 
 {% block scripts %}
+    {{ image.to_json|json_script:"imageData"}}
     <link rel="stylesheet" href="{% static 'notes/bundle.css' %}" type="text/css"/>
     <script defer src="{% static 'notes/bundle.js' %}"></script>
 {% endblock %}

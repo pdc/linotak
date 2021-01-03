@@ -161,6 +161,31 @@ class Image(models.Model):
             return "%s…%s" % (last_part[:30], last_part[-20:])
         return last_part
 
+    NOT_IN_JSON = {
+        "data_url",
+        "cached_data",
+        "media_type",
+        "retrieved",
+        "etag",
+    }
+
+    def to_json(self):
+        """JSON summary for use in editor page."""
+        result = {
+            json_name(f.name): f.value_from_object(self)
+            for f in Image._meta.get_fields()
+            if f.name not in self.NOT_IN_JSON and not hasattr(f, "related_name")
+        }
+        return result
+
+    def crop_unique(self):
+        """Return a value that changes if crop rect is changed."""
+        return self.crop_left, self.crop_top, self.crop_width, self.crop_height
+
+    def focus_unique(self):
+        """Return a value that changes if focus point is changed."""
+        return self.focus_x, self.focus_y
+
     def retrieve_data_task(self):
         """Celery signature to arrange for async download of this image."""
         from . import tasks
@@ -389,6 +414,11 @@ class Image(models.Model):
         if self.width and self.height:
             return
         wants_data.send(self.__class__, instance=self)
+
+
+def json_name(x):
+    parts = x.split("_")
+    return parts[0] + "".join(x.title() for x in parts[1:])
 
 
 GEOMETRY_RE = re.compile(r"(\d+)x(\d+)\+0\+0")

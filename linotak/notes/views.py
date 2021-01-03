@@ -339,10 +339,21 @@ class LocatorImageUpdateView(NoteLocatorMixin, SeriesMixin, UpdateView):
     template_name = "notes/locator_image_update_form.html"
     pk_url_kwarg = "image_pk"
 
+    def post(self, request, *args, **kwargs):
+        """Make a note of the old values of some fields."""
+        instance = self.get_object()
+        self.focus0 = instance.focus_unique()
+        self.crop0 = instance.crop_unique()
+        return super().post(request, *args, **kwargs)
+
     def form_valid(self, form, *args, **kwargs):
         """Delete cropped representations in case change of focus point invalidated them."""
-        self.object.representations.filter(is_cropped=True).delete()
-        return super().form_valid(form, *args, **kwargs)
+        result = super().form_valid(form, *args, **kwargs)
+        if self.crop0 != self.object.crop_unique():
+            self.object.representations.all().delete()
+        elif self.focus0 != self.object.focus_unique():
+            self.object.representations.filter(is_cropped=True).delete()
+        return result
 
     def get_success_url(self):
         """Return to images list."""
