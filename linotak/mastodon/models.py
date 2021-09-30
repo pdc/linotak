@@ -223,7 +223,7 @@ class Post(models.Model):
         """Issue request to Mastodion instance to create a status."""
 
         if self.posted:
-            logger.warn(f'Tried to repost {self.pk} ({self.note}) to {self.connection}')
+            logger.warning(f'Tried to repost {self.pk} ({self.note}) to {self.connection}')
             return
 
         # Before starting transaction do stuff that can be harmlessly repeated,
@@ -255,7 +255,7 @@ class Post(models.Model):
 
         with transaction.atomic():
             if self.posted:
-                logger.warn(f'Tried to repost {self.pk} ({self.note}) to {self.connection}')
+                logger.warning(f'Tried to repost {self.pk} ({self.note}) to {self.connection}')
                 return
             self.posted = timezone.now()
             self.save()

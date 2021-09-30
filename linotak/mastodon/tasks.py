@@ -17,4 +17,4 @@ def post_post_to_mastodon(pk):
         post.post_to_mastodon()
         logger.info(f'posted note {post.note.pk} ({post.note}) to {post.connection}')
     except Post.DoesNotExist:
-        logger.warn(f'{pk}: post does not exist')
+        logger.warning(f'{pk}: post does not exist')
