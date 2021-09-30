@@ -21,6 +21,19 @@ Use Pipenv:
     pipenv run ./manage.py runserver 0:8004
 
 
+
+Testing scanning
+----------------
+
+Try this
+
+    URL=https://foo.example.com/bar
+    FILE=samples/foobar.html
+
+    curl $URL > $FILE
+    pipenv run ./manage.py linotakscan --base=$URL $FILE
+
+
 Localization
 ------------
 
