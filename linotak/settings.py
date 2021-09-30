@@ -116,6 +116,7 @@ DATABASES = {
     'default': env.db(default='sqlite:///%s' % os.path.join(BASE_DIR, 'db.sqlite3')),
 }
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 AUTH_USER_MODEL = 'customuser.Login'
 
