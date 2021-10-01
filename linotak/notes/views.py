@@ -238,8 +238,13 @@ class NoteFormMixin:
 
 
 class NoteCreateView(LoginRequiredMixin, NotesMixin, NoteFormMixin, CreateView):
-    def form_valid(self, form):
-        return super().form_valid(form)
+    def get_initial(self, **kwargs):
+        """Get default text based on query params."""
+        initial = super().get_initial(**kwargs)
+        xss = [self.request.GET.getlist(x) for x in ["t", "u"]]
+        if not initial.get("text") and any(xss):
+            initial["text"] = "\n\n".join("\n".join(xs) for xs in xss)
+        return initial
 
 
 class NoteUpdateView(LoginRequiredMixin, NotesMixin, NoteFormMixin, UpdateView):
