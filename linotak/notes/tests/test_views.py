@@ -435,3 +435,24 @@ class TestLocatorImageUpdateView(TestCase):
         self.assertEqual((image.focus_x, image.focus_y), (0.333, 0.667))
         self.assertFalse(Representation.objects.filter(pk=cropped.pk).exists())
         self.assertTrue(Representation.objects.filter(pk=not_cropped.pk).exists())
+
+
+@override_settings(NOTES_DOMAIN="example.com", ALLOWED_HOSTS=[".example.com"])
+class TestNotCreateFormView(TestCase):
+    def test_supplies_image(self):
+        author = PersonFactory.create()
+        self.given_logged_in_as(author)
+        SeriesFactory.create(name="smoo", editors=[author])
+
+        r = self.client.get(
+            f"/new?u=https:%2F%2Fexample.net%2F1&t=Text+from+query+string",
+            HTTP_HOST="smoo.example.com",
+        )
+
+        form = r.context['form']
+        self.assertEqual(form.initial['text'], 'Text from query string\n\nhttps://example.net/1')
+
+    def given_logged_in_as(self, person):
+        self.client.login(username=person.login.username, password="secret")
+
+

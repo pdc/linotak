@@ -10,7 +10,7 @@ Development
 
 Stack:
 
-  * Django 3.0
+  * Django 3.2
   * Celery 4.4
   * Python 3.8
 
