@@ -39,6 +39,8 @@
             <a href="{% url 'about:index' %}" class="link">{% blocktrans with series_title=series.title %}About {{ series_title }}{% endblocktrans %}</a>
             · <a href="{% url 'about:page' name='privacy' %}" class="link">{% trans "Privacy policy" %}</a>
 {% if request.user.is_authenticated %}
+
+            · <a href="javascript:location.href='{% note_list_url 'new' with_host=True %}?u='+encodeURIComponent(location.href)+'&amp;t='+encodeURIComponent(document.title)+'&amp;t='+encodeURIComponent(window.getSelection().toString())" class="link">{% trans "Bookmarklet" %}</a>
             · <a href="{% url 'logout' %}" class="action-btn">{% trans "Log out" context button %}</a>
 {% else %}
             · <a href="{% url 'login' %}?next={% note_list_url %}" class="link">{% trans "Log in" context button %}</a>
