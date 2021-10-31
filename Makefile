@@ -33,6 +33,6 @@ tests:
 requirements.txt: Pipfile Pipfile.lock
 	pipenv lock -r > $@
 
-$(JS_BUNDLE): editor/src/FocusPoint.svelte editor/src/main.js editor/src/pannable.js
+$(JS_BUNDLE): editor/src/FocusPoint.svelte editor/src/main.js editor/src/pannable.js editor/yarn.lock
 	cd editor && yarn && yarn build
 	cp -p editor/public/build/bundle.* linotak/notes/static/notes/

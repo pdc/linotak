@@ -26,5 +26,8 @@
   },
   "dependencies": {
     "sirv-cli": "^1.0.0"
+  },
+  "resolutions": {
+    "immer":"^9.0.6"
   }
 }
