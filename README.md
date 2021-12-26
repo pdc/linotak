@@ -46,6 +46,13 @@ Upload `.po` files to <POEditor.com> and download and then run
     pipenv run django-admin compilemessages
 
 
+Bookmarklet
+-----------
+
+Edit the following URL
+
+    javascript:location.href='https://pdc.ooble.uk/new?u='+encodeURIComponent(location.href)+'&t='+encodeURIComponent(document.title)
+
 
 
 
