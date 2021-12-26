@@ -28,6 +28,9 @@
     "sirv-cli": "^1.0.0"
   },
   "resolutions": {
-    "immer":"^9.0.6"
+    "glob-parent": "^6.0.2",
+    "immer":"^9.0.6",
+    "set-value": "^4.0.1",
+    "trim": "^1.0.0"
   }
 }
