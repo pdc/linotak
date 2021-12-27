@@ -1,7 +1,7 @@
 {% extends 'notes/base.html' %}
 {% load i18n %}
 
-{% block title %}{% trans "Connect to Mastodon" %}{% endblock %}
+{% block title %}{% translate "Connect to Mastodon" %}{% endblock %}
 
 {% block styles %}
         <style>
@@ -24,7 +24,7 @@
             </ul>
 
             <div class="form-action-bar">
-                <input class="form-action" type="submit" value="{% trans 'Connect' context 'button' %}">
+                <input class="form-action" type="submit" value="{% translate 'Connect' context 'button' %}">
             </div>
         </form>
     </main>

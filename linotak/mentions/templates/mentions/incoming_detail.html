@@ -28,11 +28,11 @@
     <body>
         <h1>{% blocktrans with number=incoming.pk %}Incoming Webmention #{{ number  }}{% endblocktrans %}</h1>
 
-        <p>{% trans "The mention has not yet been verified." %}</p>
+        <p>{% translate "The mention has not yet been verified." %}</p>
 
-        <h2>{% trans "Source web page" %}</h2>
+        <h2>{% translate "Source web page" %}</h2>
         <p>
-            {% trans "A Webmention notification was received on behalf of the following web page:" %}
+            {% translate "A Webmention notification was received on behalf of the following web page:" %}
         </p>
 
         {% if incoming.source %}
@@ -66,18 +66,18 @@
             <code>{{ incoming.source_url }}</code>
         {% endif %}
 
-        <h2>{% trans "Target web page" %}</h2>
+        <h2>{% translate "Target web page" %}</h2>
         <p>
-            {% trans "Associated with the following note:" %}
+            {% translate "Associated with the following note:" %}
         </p>
         <a href="{{ incoming.target.get_absolute_url }}">{{ incoming.target }}</a>
 
-        <h2>{% trans "Details" %}</h2>
+        <h2>{% translate "Details" %}</h2>
 
         <dl>
-            <dt>{% trans "Received" %}</dt>
+            <dt>{% translate "Received" %}</dt>
             <dd>{{ incoming.created }}</dd>
-            <dt>{% trans "User agent" %}</dt>
+            <dt>{% translate "User agent" %}</dt>
             <dd>{{ incoming.user_agent }}</dd>
         </dl>
 

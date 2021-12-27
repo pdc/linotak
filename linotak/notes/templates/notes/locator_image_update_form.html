@@ -40,11 +40,11 @@
             {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
             <div class="focus-frm-focus" id="focus-ui">
                 {{ object|with_class:"focus-frm-img"|representation:"640x640" }}
-                <label for="{{ form.crop_left.id_for_label }}">{% trans 'Crop left top' %}</label>
+                <label for="{{ form.crop_left.id_for_label }}">{% translate 'Crop left top' %}</label>
                 {{ form.crop_left }}{{ form.crop_top }}
-                <label for="{{ form.crop_width.id_for_label }}">{% trans 'Crop size' %}</label>
+                <label for="{{ form.crop_width.id_for_label }}">{% translate 'Crop size' %}</label>
                 {{ form.crop_width }}{{ form.crop_height }}
-                <label for="{{ form.focus_x.id_for_label }}">{% trans 'Focus point:' %}</label>
+                <label for="{{ form.focus_x.id_for_label }}">{% translate 'Focus point:' %}</label>
                 {{ form.focus_x }}{{ form.focus_y }}
                 {% if form.focus_x.errors or form.focus_y.errors %}
                 <ul class="errorlist">
@@ -55,8 +55,8 @@
             </div>
 
             <div class="form-action-bar">
-                <input class="form-action" type="submit" value="{% trans 'Save' context 'button' %}">
-                <a href="{% note_url 'locator_images' locator_pk=locator.pk %}" class="link">{% trans 'Cancel' context 'button' %}</a>
+                <input class="form-action" type="submit" value="{% translate 'Save' context 'button' %}">
+                <a href="{% note_url 'locator_images' locator_pk=locator.pk %}" class="link">{% translate 'Cancel' context 'button' %}</a>
             </div>
         </form>
     </main>

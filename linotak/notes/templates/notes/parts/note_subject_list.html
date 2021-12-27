@@ -8,9 +8,9 @@
                         <li class="note-subject-item loc-item loc-p{{ puff }}{% if forloop.first %}A{% else %}B{% endif %}">
                             <a class="note-subject loc" href="{{ locator.url }}">
                                 {% if puff >= 4 and forloop.first %}
-                                    {{ locator.main_image|with_class:"loc-img"|representation:"800x600 min 2:3 max 16:9" }}
+                                    {{ locator.main_image | with_class:"loc-img" | representation:"800x600 min 2:3 max 16:9" }}
                                 {% elif puff >= 4 or puff >= 3 and forloop.first %}
-                                    {{ locator.main_image|with_class:"loc-img"|square_representation:80 }}
+                                    {{ locator.main_image | with_class:"loc-img" | square_representation:80 }}
                                 {% endif %}
                                 <div class="loc-text">
                                     {% if locator.title %}
@@ -36,9 +36,9 @@
                             </a>
                             {% if puff >= 4 and can_edit_as %}
                             <div class="note-actions">
-                                <a class="link" href="{% note_url 'locator_images' locator_pk=locator.pk %}" title="{% trans 'Choose which image is shown' %}">{% trans "Images" context button %}</a>
+                                <a class="link" href="{% note_url 'locator_images' locator_pk=locator.pk %}" title="{% translate 'Choose which image is shown' %}">{% translate "Images" context "button" %}  </a>
                                 {% if user.is_staff %}
-                                    <a class="link" href="{% url 'admin:notes_locator_change' object_id=locator.pk %}" title="{% trans 'Edit this locator in the Admin app' %}">{% trans "Admin" context button %}</a>
+                                    <a class="link" href="{% url 'admin:notes_locator_change' object_id=locator.pk %}" title="{% translate 'Edit this locator in the Admin app' %}">{% translate "Admin" context "button" %}  </a>
                                 {% endif %}
                             </div>
                             {% endif %}

@@ -18,6 +18,6 @@
         {% endblocktrans %}
     {% endif %}
 {% else %}
-                <a class="link" href="{% note_url 'detail' %}"><strong>{% trans "Unpublished" %}</strong></a>
-                <a class="link" href="{% note_url 'edit' %}">{% trans "Edit" context "button" %}</a>
+                <a class="link" href="{% note_url 'detail' %}"><strong>{% translate "Unpublished" %}</strong></a>
+                <a class="link" href="{% note_url 'edit' %}">{% translate "Edit" context "button" %} </a>
 {% endif %}
