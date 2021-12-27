@@ -48,6 +48,10 @@ DEBUG = env('DEBUG')
 
 # Used to avoid making network requests from tests.
 TEST = 'test' in sys.argv
+if TEST:
+    import multiprocessing
+    multiprocessing.set_start_method('fork')  # Needed to support parallel processing
+
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'secret-key-value' if DEBUG else env('SECRET_KEY')

@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "==3.2.*"
+django = "==3.2.10"
 django-environ = "*"
 celery = "==4.4.*"
 httpretty = "*"
@@ -12,6 +12,7 @@ requests = "*"
 "psycopg2" = "==2.8.*"
 markdown = "*"
 requests-oauthlib = "*"
+tblib = "*"
 
 [dev-packages]
 tblib = "*"
