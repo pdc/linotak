@@ -43,7 +43,7 @@ def note_list_url(context, view=None, series=None, tag_filter=None, drafts=None,
             'drafts': drafts or False,
             'page': (page or 1) if not view or view == 'list' else 1,
         })
-    if with_host or series != context_series:
+    if series and (with_host or series != context_series):
         return series.make_absolute_url(path)
     return path
 
