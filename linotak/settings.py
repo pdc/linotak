@@ -31,7 +31,7 @@ env = environ.Env(
     MENTIONS_POST_NOTIFICATIONS=(bool, False),
     MASTODON_POST_STATUSES=(bool, False),
     LOGGING=(str, None),
-    LOG_LEVEL=(str, 'WARNING'),
+    LOG_LEVEL=(str, 'INFO'),
 )
 environ.Env.read_env()
 
@@ -225,8 +225,11 @@ else:
                 'class': 'logging.StreamHandler',
             },
         },
-        'root': {
-            'handlers': ['console'],
-            'level': env('LOG_LEVEL'),
+        'loggers': {
+            'django': {
+                'handlers': ['console'],
+                'level': 'INFO' if TEST else env('LOG_LEVEL'),
+                'propagate': True,
+            },
         },
     }
