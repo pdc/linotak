@@ -21,14 +21,14 @@ def expand_qname(qname, prefix_namespaces):
     prefix, lname = split_qname(qname)
     if prefix:
         return prefix_namespaces[prefix], lname
-    if '' in prefix_namespaces:
-        return prefix_namespaces[''], lname
+    if "" in prefix_namespaces:
+        return prefix_namespaces[""], lname
     return None, qname
 
 
 def split_qname(qname):
     """Given a qname, return prefix and lname."""
-    parts = qname.split(':', 1)
+    parts = qname.split(":", 1)
     if len(parts) == 1:
         return None, qname
     return parts
@@ -43,7 +43,7 @@ class Element:
         """Create instance with this QName and attrs."""
         self.qname = qname
         self.attrs = attrs
-        self.text = text or ''
+        self.text = text or ""
         self.tail = None
         self.child_elements = []
 
@@ -58,8 +58,8 @@ class Element:
         prefix, _ = split_qname(self.qname)
         if prefix:
             prefixes.add(prefix)
-        elif '' in prefix_namespaces:
-            prefixes.add('')
+        elif "" in prefix_namespaces:
+            prefixes.add("")
         for child in self.child_elements:
             child.add_prefixes_used(prefix_namespaces, prefixes)
         return prefixes
@@ -70,17 +70,24 @@ class Element:
         This is used to render the document by
         targeting an XMLGenerator instance.
         """
-        attributes_ns = {expand_qname(qname, prefix_namespaces): value for qname, value in self.attrs.items()} if self.attrs else {}
+        attributes_ns = (
+            {
+                expand_qname(qname, prefix_namespaces): value
+                for qname, value in self.attrs.items()
+            }
+            if self.attrs
+            else {}
+        )
         namespace_url, lname = expand_qname(self.qname, prefix_namespaces)
         if indent:
-            handler.ignorableWhitespace('\n' + ' ' * (self.indent_amount * indent))
+            handler.ignorableWhitespace("\n" + " " * (self.indent_amount * indent))
         handler.startElementNS((namespace_url, lname), self.qname, attributes_ns)
         if self.text:
             handler.characters(self.text)
         for elt in self.child_elements:
             elt.sax_to(handler, prefix_namespaces, indent + 1)
         if self.child_elements:
-            handler.ignorableWhitespace('\n' + ' ' * (self.indent_amount * indent))
+            handler.ignorableWhitespace("\n" + " " * (self.indent_amount * indent))
         handler.endElementNS((namespace_url, lname), self.qname)
         if self.tail:
             handler.characters(self.tail)
@@ -90,7 +97,7 @@ class Document(Element):
     """A blob of XML to be written to a file."""
 
     prefix_namespaces = {
-        'xml': 'http://www.w3.org/XML/1998/namespace',
+        "xml": "http://www.w3.org/XML/1998/namespace",
     }
 
     def __init__(self, qname, attrs=None, text=None, prefix_namespaces=None):
@@ -113,7 +120,7 @@ class Document(Element):
 
     def write_to(self, output):
         """Write indented XML to this file-like object."""
-        generator = XMLGenerator(output, 'UTF-8', short_empty_elements=True)
+        generator = XMLGenerator(output, "UTF-8", short_empty_elements=True)
         generator.startDocument()
 
         prefixes_used = list(self.add_prefixes_used(self.prefix_namespaces, set()))

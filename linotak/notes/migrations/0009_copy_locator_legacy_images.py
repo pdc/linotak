@@ -9,10 +9,12 @@ def copy_legacy_to_images(apps, schema_editor):
     LocatorImage = apps.get_model("notes", "LocatorImage")
     db_alias = schema_editor.connection.alias
     for locator in Locator.objects.using(db_alias).all():
-        LocatorImage.objects.using(db_alias).bulk_create([
-            LocatorImage(locator=locator, image=image)
-            for image in locator.legacy_images.all()
-        ])
+        LocatorImage.objects.using(db_alias).bulk_create(
+            [
+                LocatorImage(locator=locator, image=image)
+                for image in locator.legacy_images.all()
+            ]
+        )
 
 
 def copy_images_to_legacy(apps, schema_editor):
@@ -29,9 +31,7 @@ def copy_images_to_legacy(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('notes', '0008_add_locator_field_images'),
+        ("notes", "0008_add_locator_field_images"),
     ]
 
-    operations = [
-        migrations.RunPython(copy_legacy_to_images, copy_images_to_legacy)
-    ]
+    operations = [migrations.RunPython(copy_legacy_to_images, copy_images_to_legacy)]

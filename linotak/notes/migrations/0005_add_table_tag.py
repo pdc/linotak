@@ -7,26 +7,52 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('notes', '0004_embiggen_text_fields'),
+        ("notes", "0004_embiggen_text_fields"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Tag',
+            name="Tag",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.SlugField(help_text='Internal name of the tag, as lowercase words separated by dashes.', max_length=4000, unique=True)),
-                ('label', models.CharField(help_text='Conventional capitalization of this tag, as words separated by spaces.', max_length=4000, unique=True)),
-                ('created', models.DateTimeField(default=django.utils.timezone.now)),
-                ('modified', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "name",
+                    models.SlugField(
+                        help_text="Internal name of the tag, as lowercase words separated by dashes.",
+                        max_length=4000,
+                        unique=True,
+                    ),
+                ),
+                (
+                    "label",
+                    models.CharField(
+                        help_text="Conventional capitalization of this tag, as words separated by spaces.",
+                        max_length=4000,
+                        unique=True,
+                    ),
+                ),
+                ("created", models.DateTimeField(default=django.utils.timezone.now)),
+                ("modified", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['label'],
+                "ordering": ["label"],
             },
         ),
         migrations.AddField(
-            model_name='note',
-            name='tags',
-            field=models.ManyToManyField(related_name='occurences', related_query_name='occurrence', to='notes.Tag'),
+            model_name="note",
+            name="tags",
+            field=models.ManyToManyField(
+                related_name="occurences",
+                related_query_name="occurrence",
+                to="notes.Tag",
+            ),
         ),
     ]

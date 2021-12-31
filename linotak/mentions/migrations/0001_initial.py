@@ -10,29 +10,95 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('notes', '0013_series_apple_touch_icon'),
+        ("notes", "0013_series_apple_touch_icon"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Receiver',
+            name="Receiver",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('url', models.URLField(max_length=4000, unique=True)),
-                ('created', models.DateTimeField(default=django.utils.timezone.now)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("url", models.URLField(max_length=4000, unique=True)),
+                ("created", models.DateTimeField(default=django.utils.timezone.now)),
             ],
         ),
         migrations.CreateModel(
-            name='Outgoing',
+            name="Outgoing",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('discovered', models.DateTimeField(blank=True, help_text='When the discovery phase of WebMention protocol concluded (successfully or otherwise).', null=True)),
-                ('notified', models.DateTimeField(blank=True, help_text='When the notification of the receiver concluded (successfully or otherwise)', null=True)),
-                ('response_status', models.PositiveIntegerField(blank=True, help_text='HTTP status code returned by receiver when notified.', null=True)),
-                ('created', models.DateTimeField(default=django.utils.timezone.now)),
-                ('receiver', models.ForeignKey(blank=True, help_text='Receiver handling mentions for the target, if known.', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='outgoing_mentions', related_query_name='outgoing_mention', to='mentions.Receiver')),
-                ('source', models.ForeignKey(help_text='Mentions an external resource.', on_delete=django.db.models.deletion.CASCADE, related_name='outgoing_mentions', related_query_name='outgoing_mention', to='notes.Note')),
-                ('target', models.ForeignKey(help_text='External resource mentioned in this note.', on_delete=django.db.models.deletion.CASCADE, related_name='outgoing_mentions', related_query_name='outgoing_mention', to='notes.Locator')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "discovered",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="When the discovery phase of WebMention protocol concluded (successfully or otherwise).",
+                        null=True,
+                    ),
+                ),
+                (
+                    "notified",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="When the notification of the receiver concluded (successfully or otherwise)",
+                        null=True,
+                    ),
+                ),
+                (
+                    "response_status",
+                    models.PositiveIntegerField(
+                        blank=True,
+                        help_text="HTTP status code returned by receiver when notified.",
+                        null=True,
+                    ),
+                ),
+                ("created", models.DateTimeField(default=django.utils.timezone.now)),
+                (
+                    "receiver",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Receiver handling mentions for the target, if known.",
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="outgoing_mentions",
+                        related_query_name="outgoing_mention",
+                        to="mentions.Receiver",
+                    ),
+                ),
+                (
+                    "source",
+                    models.ForeignKey(
+                        help_text="Mentions an external resource.",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="outgoing_mentions",
+                        related_query_name="outgoing_mention",
+                        to="notes.Note",
+                    ),
+                ),
+                (
+                    "target",
+                    models.ForeignKey(
+                        help_text="External resource mentioned in this note.",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="outgoing_mentions",
+                        related_query_name="outgoing_mention",
+                        to="notes.Locator",
+                    ),
+                ),
             ],
         ),
     ]

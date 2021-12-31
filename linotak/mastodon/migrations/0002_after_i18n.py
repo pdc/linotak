@@ -7,14 +7,21 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('notes', '0018_locator_sensitive'),
-        ('mastodon', '0001_initial'),
+        ("notes", "0018_locator_sensitive"),
+        ("mastodon", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='post',
-            name='note',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='mastodon_posts', related_query_name='mastodon_post', to='notes.Note', verbose_name='note'),
+            model_name="post",
+            name="note",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="mastodon_posts",
+                related_query_name="mastodon_post",
+                to="notes.Note",
+                verbose_name="note",
+            ),
         ),
     ]

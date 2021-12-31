@@ -6,14 +6,14 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('images', '0003_image_retrieved'),
-        ('notes', '0002_locator_scanned'),
+        ("images", "0003_image_retrieved"),
+        ("notes", "0002_locator_scanned"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='locator',
-            name='images',
-            field=models.ManyToManyField(to='images.Image'),
+            model_name="locator",
+            name="images",
+            field=models.ManyToManyField(to="images.Image"),
         ),
     ]

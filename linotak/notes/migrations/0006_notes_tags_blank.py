@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('notes', '0005_add_table_tag'),
+        ("notes", "0005_add_table_tag"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='note',
-            name='tags',
-            field=models.ManyToManyField(blank=True, related_name='occurences', related_query_name='occurrence', to='notes.Tag'),
+            model_name="note",
+            name="tags",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="occurences",
+                related_query_name="occurrence",
+                to="notes.Tag",
+            ),
         ),
     ]

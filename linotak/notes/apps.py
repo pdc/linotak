@@ -2,7 +2,7 @@ from django.apps import AppConfig
 
 
 class NotesConfig(AppConfig):
-    name = 'linotak.notes'
+    name = "linotak.notes"
 
     def ready(self):
         """Wire uop signals for this app."""

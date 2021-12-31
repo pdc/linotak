@@ -3,12 +3,12 @@
 import re
 
 
-G_RE = re.compile(r'^\s*(\d+)\s*x\s*(\d+)\s*')
-M_RE = re.compile(r'^(min|max)\s*(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)\s*')
+G_RE = re.compile(r"^\s*(\d+)\s*x\s*(\d+)\s*")
+M_RE = re.compile(r"^(min|max)\s*(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)\s*")
 
 
 class SizeSpec:
-    __slots__ = 'width', 'height', 'min_ratio', 'max_ratio'
+    __slots__ = "width", "height", "min_ratio", "max_ratio"
 
     def __init__(self, width, height, min_ratio=None, max_ratio=None):
         """Create an instance.
@@ -38,32 +38,32 @@ class SizeSpec:
         min_ratio = max_ratio = None
         m = G_RE.search(string)
         if not m:
-            raise ValueError('%r: size spec should start with WIDTHxHEIGHT' % string)
+            raise ValueError("%r: size spec should start with WIDTHxHEIGHT" % string)
         width, height = int(m[1]), int(m[2])
-        string = string[m.end(0):].lstrip()
+        string = string[m.end(0) :].lstrip()
         while string:
             m = M_RE.search(string)
             if not m:
-                raise ValueError('%r: size spec not understood' % string)
+                raise ValueError("%r: size spec not understood" % string)
 
             which, w, h = m[1], float(m[2]), float(m[3])
-            if which == 'min':
+            if which == "min":
                 min_ratio = w, h
             else:
                 max_ratio = w, h
             assert m.end(0) > 0
-            string = string[m.end(0):]
+            string = string[m.end(0) :]
         if width and height:
             return SizeSpec(width, height, min_ratio, max_ratio)
 
     def unparse(self):
         """Write a string in our little spec language."""
-        parts = ['%dx%d' % (self.width, self.height)]
+        parts = ["%dx%d" % (self.width, self.height)]
         if self.min_ratio:
-            parts.append('min %g:%g' % self.min_ratio)
+            parts.append("min %g:%g" % self.min_ratio)
         if self.max_ratio:
-            parts.append('max %g:%g' % self.max_ratio)
-        return ' '.join(parts)
+            parts.append("max %g:%g" % self.max_ratio)
+        return " ".join(parts)
 
     def __str__(self):
         return self.unparse()
@@ -72,7 +72,7 @@ class SizeSpec:
         return self.width, self.height, self.min_ratio, self.max_ratio
 
     def __repr__(self):
-        return '%s%r' % (self.__class__.__name__, self._unique())
+        return "%s%r" % (self.__class__.__name__, self._unique())
 
     def __eq__(self, other):
         return self._unique() == other._unique()
@@ -93,7 +93,11 @@ class SizeSpec:
             and CROPPED is (WIDTH, HEIGHT) to crop out of this scaled image,
             or None if the scaled image is already OK.
         """
-        if source_width <= self.width and source_height <= self.height and not allow_upscale:
+        if (
+            source_width <= self.width
+            and source_height <= self.height
+            and not allow_upscale
+        ):
             return (source_width, source_height), None  # Do not scale up!
         if self.min_ratio:
             w, h = self.min_ratio
@@ -101,7 +105,10 @@ class SizeSpec:
                 # Too narrow, so crop top and bottom.
                 # scaling by height * w / h / source_width
                 scaled_width = round(self.height * w / h)
-                scaled = (scaled_width, round(source_height * self.height * w / h / source_width))
+                scaled = (
+                    scaled_width,
+                    round(source_height * self.height * w / h / source_width),
+                )
                 cropped = (scaled_width, self.height)
                 return scaled, cropped if cropped != scaled else None
         if self.max_ratio:
@@ -110,7 +117,10 @@ class SizeSpec:
                 # Too wide, so crop left and right.
                 # Scaling by width * h / w / source_height
                 scaled_height = round(self.width * h / w)
-                scaled = (round(source_width * self.width * h / w / source_height), scaled_height)
+                scaled = (
+                    round(source_width * self.width * h / w / source_height),
+                    scaled_height,
+                )
                 cropped = (self.width, scaled_height)
                 return scaled, cropped if cropped != scaled else None
         if source_width * self.height > self.width * source_height:

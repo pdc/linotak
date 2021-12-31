@@ -6,18 +6,29 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('mentions', '0004_incoming_received'),
+        ("mentions", "0004_incoming_received"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='incoming',
-            name='intent',
-            field=models.PositiveSmallIntegerField(blank=True, choices=[(0, 'Mention'), (1, 'Like'), (2, 'Repost'), (3, 'Reply')], help_text='Inferred intent of the mention.', null=True, verbose_name='intent'),
+            model_name="incoming",
+            name="intent",
+            field=models.PositiveSmallIntegerField(
+                blank=True,
+                choices=[(0, "Mention"), (1, "Like"), (2, "Repost"), (3, "Reply")],
+                help_text="Inferred intent of the mention.",
+                null=True,
+                verbose_name="intent",
+            ),
         ),
         migrations.AddField(
-            model_name='incoming',
-            name='scanned',
-            field=models.DateTimeField(blank=True, help_text='When source erntry was scanned', null=True, verbose_name='scanned'),
+            model_name="incoming",
+            name="scanned",
+            field=models.DateTimeField(
+                blank=True,
+                help_text="When source erntry was scanned",
+                null=True,
+                verbose_name="scanned",
+            ),
         ),
     ]

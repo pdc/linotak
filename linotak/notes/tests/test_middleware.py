@@ -8,11 +8,10 @@ from ..middleware import SubdomainSeriesMiddleware
 
 
 class TestSubdomainSeriesMiddleware(TestCase):
-
     def test_passes_request_through(self):
-        with self.settings(NOTES_DOMAIN='example.org'):
-            get_response = MagicMock(name='get_response')
-            get_response.return_value = MagicMock(name='**RESPONSE**')
+        with self.settings(NOTES_DOMAIN="example.org"):
+            get_response = MagicMock(name="get_response")
+            get_response.return_value = MagicMock(name="**RESPONSE**")
             middleware = SubdomainSeriesMiddleware(get_response)
 
             request = self.make_request_with_domain()
@@ -22,24 +21,24 @@ class TestSubdomainSeriesMiddleware(TestCase):
             get_response.assert_called_once_with(request)
 
     def test_sets_series_name_if_subdomain(self):
-        with self.settings(NOTES_DOMAIN='example.org'):
+        with self.settings(NOTES_DOMAIN="example.org"):
             middleware = SubdomainSeriesMiddleware(MagicMock())
 
-            request = self.make_request_with_domain('foo.example.org')
+            request = self.make_request_with_domain("foo.example.org")
             middleware(request)
 
-        self.assertEqual(request.series_name, 'foo')
+        self.assertEqual(request.series_name, "foo")
 
     def test_sets_series_name_if_subdomain_with_port(self):
-        with self.settings(NOTES_DOMAIN='example.org:8080'):
+        with self.settings(NOTES_DOMAIN="example.org:8080"):
             middleware = SubdomainSeriesMiddleware(MagicMock())
 
-            request = self.make_request_with_domain('foo.example.org:8080')
+            request = self.make_request_with_domain("foo.example.org:8080")
             middleware(request)
 
-        self.assertEqual(request.series_name, 'foo')
+        self.assertEqual(request.series_name, "foo")
 
-    def make_request_with_domain(self, host='example.com'):
+    def make_request_with_domain(self, host="example.com"):
         request = HttpRequest()
-        request.META['HTTP_HOST'] = host
+        request.META["HTTP_HOST"] = host
         return request

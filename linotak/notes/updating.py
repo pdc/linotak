@@ -29,14 +29,18 @@ def fetch_page_update_locator(locator, if_not_scanned_since):
     an argument when queuing a call to this function,
     and it prevents double scanning of the page.
     """
-    if locator.scanned and (not if_not_scanned_since or if_not_scanned_since < locator.scanned):
+    if locator.scanned and (
+        not if_not_scanned_since or if_not_scanned_since < locator.scanned
+    ):
         return
 
     locator.scanned = timezone.now()  # This is rolled back if the scan fails.
     # Setting it early should help prevent simultanous processing of the same page.
 
-    with requests.get(locator.url, stream=True,  headers={'User-Agent': 'Linotak/0.1'}) as r:
-        stuff = parse_link_header(locator.url, r.headers.get('Link', ''))
+    with requests.get(
+        locator.url, stream=True, headers={"User-Agent": "Linotak/0.1"}
+    ) as r:
+        stuff = parse_link_header(locator.url, r.headers.get("Link", ""))
         scanner = PageScanner(locator.url)
         for chunk in r.iter_content(10_000, decode_unicode=True):
             scanner.feed(chunk)
@@ -49,10 +53,10 @@ def fetch_page_update_locator(locator, if_not_scanned_since):
     return True
 
 
-COMMA = re.compile(r'\s*,\s*')
-SEMICOLON = re.compile(r'\s*;\s*')
-EQUALS = re.compile(r'\s*=\s*')
-LINK_HREF = re.compile(r'^<(.*)>$')
+COMMA = re.compile(r"\s*,\s*")
+SEMICOLON = re.compile(r"\s*;\s*")
+EQUALS = re.compile(r"\s*=\s*")
+LINK_HREF = re.compile(r"^<(.*)>$")
 QUOTED = re.compile(r'^"(.*)"$')
 
 
@@ -63,11 +67,11 @@ def parse_link_header(base_url, comma_separated):
         if not link_spec:
             continue
         href_part, *parts = SEMICOLON.split(link_spec)
-        href = urljoin(base_url, LINK_HREF.sub(r'\1', href_part))
+        href = urljoin(base_url, LINK_HREF.sub(r"\1", href_part))
         for part in parts:
             prop, val = EQUALS.split(part, 1)
-            if prop == 'rel':
-                rel = QUOTED.sub(r'\1', val).split()
+            if prop == "rel":
+                rel = QUOTED.sub(r"\1", val).split()
                 break
         else:
             rel = None
@@ -80,7 +84,9 @@ def update_locator_with_stuff(locator, stuff):
 
     Does not save the locator.
     """
-    titles = []  # Candidates for title of the form (WEIGHT, TITLE) where WEIGHT is a positive integer and TITLE is nonemoty.
+    titles = (
+        []
+    )  # Candidates for title of the form (WEIGHT, TITLE) where WEIGHT is a positive integer and TITLE is nonemoty.
     images = []  # Candidate images
     for thing in stuff:
         if isinstance(thing, Title):
@@ -100,20 +106,28 @@ def update_locator_with_stuff(locator, stuff):
         if title:
             locator.title = title
     for img in images:
-        if img.width and img.width < MIN_IMAGE_SIZE or img.height and img.height < MIN_IMAGE_SIZE:
+        if (
+            img.width
+            and img.width < MIN_IMAGE_SIZE
+            or img.height
+            and img.height < MIN_IMAGE_SIZE
+        ):
             continue
         thing, is_new = LocatorImage.objects.get_or_create(
-            locator=locator,
-            image=image_of_img(img))
+            locator=locator, image=image_of_img(img)
+        )
 
 
 def image_of_img(img):
     """Find or create the Image instance corresponding to this Img."""
-    image, is_new = Image.objects.get_or_create(data_url=img.src, defaults={
-        'media_type': img.type,
-        'width': img.width,
-        'height': img.height,
-    })
+    image, is_new = Image.objects.get_or_create(
+        data_url=img.src,
+        defaults={
+            "media_type": img.type,
+            "width": img.width,
+            "height": img.height,
+        },
+    )
     if not is_new and img.type or img.width or img.height:
         if img.type:
             image.media_type = img.type

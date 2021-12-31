@@ -7,13 +7,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('images', '0006_embiggen_text_fields'),
+        ("images", "0006_embiggen_text_fields"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='image',
-            name='media_type',
-            field=models.CharField(blank=True, max_length=4000, null=True, validators=[django.core.validators.RegexValidator('^(image|application)/[\\w.+-]+(;\\s*\\w+=.*)?$')]),
+            model_name="image",
+            name="media_type",
+            field=models.CharField(
+                blank=True,
+                max_length=4000,
+                null=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        "^(image|application)/[\\w.+-]+(;\\s*\\w+=.*)?$"
+                    )
+                ],
+            ),
         ),
     ]

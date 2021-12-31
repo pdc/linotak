@@ -6,18 +6,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('images', '0009_add_imagee_focus'),
+        ("images", "0009_add_imagee_focus"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='image',
-            name='focus_x',
-            field=models.FloatField(default=0.5, help_text='Range 0.0 to 1.0. Fraction of the way from the left edge of the focal point', verbose_name='focus x'),
+            model_name="image",
+            name="focus_x",
+            field=models.FloatField(
+                default=0.5,
+                help_text="Range 0.0 to 1.0. Fraction of the way from the left edge of the focal point",
+                verbose_name="focus x",
+            ),
         ),
         migrations.AlterField(
-            model_name='image',
-            name='focus_y',
-            field=models.FloatField(default=0.5, help_text='Range 0.0 to 1.0. Fraction of the way down from the top of the focal point', verbose_name='focus y'),
+            model_name="image",
+            name="focus_y",
+            field=models.FloatField(
+                default=0.5,
+                help_text="Range 0.0 to 1.0. Fraction of the way down from the top of the focal point",
+                verbose_name="focus y",
+            ),
         ),
     ]

@@ -10,19 +10,21 @@ class PersonFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Person
 
-    native_name = factory.Faker('name')
-    login = factory.LazyAttribute(lambda x: get_user_model().objects.create_user(
-        username='.'.join(x.native_name.lower().split()),
-        password='secret',
-    ))
+    native_name = factory.Faker("name")
+    login = factory.LazyAttribute(
+        lambda x: get_user_model().objects.create_user(
+            username=".".join(x.native_name.lower().split()),
+            password="secret",
+        )
+    )
 
 
 class SeriesFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Series
 
-    name = factory.Sequence(lambda n: 'series%d' % n)
-    title = factory.Sequence(lambda n: 'series%d' % n)
+    name = factory.Sequence(lambda n: "series%d" % n)
+    title = factory.Sequence(lambda n: "series%d" % n)
 
     @factory.post_generation
     def editors(self, create, extracted, **kwargs):
@@ -54,7 +56,7 @@ class TagFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Tag
 
-    name = factory.Sequence(lambda n: 'tag%d' % n)
+    name = factory.Sequence(lambda n: "tag%d" % n)
     label = factory.LazyAttribute(lambda x: wordify(x.name))
 
 
@@ -63,7 +65,7 @@ class NoteFactory(factory.django.DjangoModelFactory):
         model = Note
 
     series = factory.SubFactory(SeriesFactory)
-    text = factory.Sequence(lambda n: 'text of note %d' % n)
+    text = factory.Sequence(lambda n: "text of note %d" % n)
     author = factory.LazyAttribute(lambda x: x.series.editors.all()[0])
     published = None
 
@@ -89,9 +91,9 @@ class LocatorFactory(factory.django.DjangoModelFactory):
         model = Locator
 
     author = factory.SubFactory(PersonFactory)
-    url = factory.Sequence(lambda n: 'https://example.com/%d' % n)
-    title = factory.Sequence(lambda n: 'Locator %d' % n)
-    text = factory.Sequence(lambda n: 'Text of locator %d' % n)
+    url = factory.Sequence(lambda n: "https://example.com/%d" % n)
+    title = factory.Sequence(lambda n: "Locator %d" % n)
+    text = factory.Sequence(lambda n: "Text of locator %d" % n)
     published = factory.Sequence(lambda n: timezone.now() - timedelta(days=n))
 
     @factory.post_generation

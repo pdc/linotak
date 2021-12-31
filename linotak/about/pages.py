@@ -16,6 +16,7 @@ from pathlib import Path
 
 class Page:
     """One page of text that can be displayed."""
+
     request = None
 
     def __init__(self, name, title, text):
@@ -36,22 +37,22 @@ class Page:
         if isinstance(input, str):
             input = StringIO(input)
         message = Parser().parse(input)
-        title = message['title']
+        title = message["title"]
         text = message.get_payload()
         return Page(name, title, text)
 
     @classmethod
     def content_root(cls):
-        result = getattr(settings, 'ABOUT_CONTENT_ROOT', None)
+        result = getattr(settings, "ABOUT_CONTENT_ROOT", None)
         if result:
             return Path(result)
-        config = apps.get_app_config('about')
-        return Path(config.path) / 'content'
+        config = apps.get_app_config("about")
+        return Path(config.path) / "content"
 
     @classmethod
     def find_with_name(cls, name):
-        path = cls.content_root() / ((name or 'index') + '.mmd')
-        with open(path, 'r', encoding='UTF-8') as f:
+        path = cls.content_root() / ((name or "index") + ".mmd")
+        with open(path, "r", encoding="UTF-8") as f:
             return cls.parse(name, f)
 
     def set_context(self, context, request=None):
@@ -63,11 +64,13 @@ class Page:
     @mark_safe
     def formatted(self):
         """Text of this page, formatted with Markdown."""
-        django_engine = engines['django']
+        django_engine = engines["django"]
         template = django_engine.from_string(self.text)
         text = template.render(self.context)
-        formatted = markdown.markdown(text, output='HTML5')
-        pos = formatted.find('</h1>')
+        formatted = markdown.markdown(text, output="HTML5")
+        pos = formatted.find("</h1>")
         if pos >= 0:
-            formatted = formatted[:pos + 5] + '\n<div>' + formatted[pos + 5:] + '\n</div>'
+            formatted = (
+                formatted[: pos + 5] + "\n<div>" + formatted[pos + 5 :] + "\n</div>"
+            )
         return formatted

@@ -19,4 +19,6 @@ def handle_note_post_save(sender, instance, created, raw, **kwargs):
         if settings.MASTODON_POST_STATUSES:
             for post, _ in post_is_news:
                 if not post.posted:
-                    transaction.on_commit(lambda: tasks.post_post_to_mastodon.delay(post.pk))
+                    transaction.on_commit(
+                        lambda: tasks.post_post_to_mastodon.delay(post.pk)
+                    )

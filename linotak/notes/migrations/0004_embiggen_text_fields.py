@@ -6,33 +6,36 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('notes', '0003_locator_images'),
+        ("notes", "0003_locator_images"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='locator',
-            name='title',
+            model_name="locator",
+            name="title",
             field=models.CharField(blank=True, max_length=4000),
         ),
         migrations.AlterField(
-            model_name='locator',
-            name='url',
+            model_name="locator",
+            name="url",
             field=models.URLField(max_length=4000, unique=True),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='label',
-            field=models.CharField(help_text='How to display the username or equivalent for this person on this site. E.g., @damiancugley if on twitter.', max_length=4000),
+            model_name="profile",
+            name="label",
+            field=models.CharField(
+                help_text="How to display the username or equivalent for this person on this site. E.g., @damiancugley if on twitter.",
+                max_length=4000,
+            ),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='url',
+            model_name="profile",
+            name="url",
             field=models.URLField(max_length=4000),
         ),
         migrations.AlterField(
-            model_name='series',
-            name='title',
+            model_name="series",
+            name="title",
             field=models.CharField(max_length=4000),
         ),
     ]

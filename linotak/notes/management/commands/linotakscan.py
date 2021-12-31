@@ -12,18 +12,22 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'files', nargs='+',
-            help='File(s) to examine for links.',
+            "files",
+            nargs="+",
+            help="File(s) to examine for links.",
         )
         parser.add_argument(
-            '--base-url', '-b',
-            help='Specifies base URL.',
+            "--base-url",
+            "-b",
+            help="Specifies base URL.",
         )
 
     def handle(self, *args, **options):
-        for file_path in options['files']:
-            scanner = PageScanner(options['base_url'] or 'file://' + os.path.abspath(file_path))
-            with open(file_path, 'r', encoding='UTF-8') as input:
+        for file_path in options["files"]:
+            scanner = PageScanner(
+                options["base_url"] or "file://" + os.path.abspath(file_path)
+            )
+            with open(file_path, "r", encoding="UTF-8") as input:
                 scanner.feed(input.read())
             scanner.close()
             for thing in scanner.stuff:

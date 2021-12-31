@@ -9,22 +9,49 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Image',
+            name="Image",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('data_url', models.URLField(max_length=1000, unique=True)),
-                ('media_type', models.CharField(blank=True, max_length=200, null=True, validators=[django.core.validators.RegexValidator('^(image|application)/\\w+(;\\s*\\w+=.*)?$')])),
-                ('width', models.PositiveIntegerField(blank=True, null=True)),
-                ('height', models.PositiveIntegerField(blank=True, null=True)),
-                ('etag', models.BinaryField(blank=True, help_text='Hash of the image data when retrieved.', max_length=16, null=True)),
-                ('scanned', models.DateTimeField(blank=True, null=True)),
-                ('created', models.DateTimeField(default=django.utils.timezone.now)),
-                ('modified', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("data_url", models.URLField(max_length=1000, unique=True)),
+                (
+                    "media_type",
+                    models.CharField(
+                        blank=True,
+                        max_length=200,
+                        null=True,
+                        validators=[
+                            django.core.validators.RegexValidator(
+                                "^(image|application)/\\w+(;\\s*\\w+=.*)?$"
+                            )
+                        ],
+                    ),
+                ),
+                ("width", models.PositiveIntegerField(blank=True, null=True)),
+                ("height", models.PositiveIntegerField(blank=True, null=True)),
+                (
+                    "etag",
+                    models.BinaryField(
+                        blank=True,
+                        help_text="Hash of the image data when retrieved.",
+                        max_length=16,
+                        null=True,
+                    ),
+                ),
+                ("scanned", models.DateTimeField(blank=True, null=True)),
+                ("created", models.DateTimeField(default=django.utils.timezone.now)),
+                ("modified", models.DateTimeField(auto_now=True)),
             ],
         ),
     ]

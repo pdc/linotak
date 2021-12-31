@@ -9,106 +9,166 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('images', '0007_validate_media_type'),
+        ("images", "0007_validate_media_type"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='image',
-            options={'verbose_name': 'image', 'verbose_name_plural': 'images'},
+            name="image",
+            options={"verbose_name": "image", "verbose_name_plural": "images"},
         ),
         migrations.AlterModelOptions(
-            name='representation',
-            options={'verbose_name': 'representation', 'verbose_name_plural': 'representations'},
+            name="representation",
+            options={
+                "verbose_name": "representation",
+                "verbose_name_plural": "representations",
+            },
         ),
         migrations.AlterField(
-            model_name='image',
-            name='cached_data',
-            field=models.FileField(blank=True, help_text='A copy of the image data from which we can generate scaled representations.', null=True, upload_to='cached-images', verbose_name='cached data'),
+            model_name="image",
+            name="cached_data",
+            field=models.FileField(
+                blank=True,
+                help_text="A copy of the image data from which we can generate scaled representations.",
+                null=True,
+                upload_to="cached-images",
+                verbose_name="cached data",
+            ),
         ),
         migrations.AlterField(
-            model_name='image',
-            name='created',
-            field=models.DateTimeField(default=django.utils.timezone.now, verbose_name='created'),
+            model_name="image",
+            name="created",
+            field=models.DateTimeField(
+                default=django.utils.timezone.now, verbose_name="created"
+            ),
         ),
         migrations.AlterField(
-            model_name='image',
-            name='data_url',
-            field=models.URLField(max_length=4000, unique=True, verbose_name='data URL'),
+            model_name="image",
+            name="data_url",
+            field=models.URLField(
+                max_length=4000, unique=True, verbose_name="data URL"
+            ),
         ),
         migrations.AlterField(
-            model_name='image',
-            name='etag',
-            field=models.BinaryField(blank=True, help_text='Hash of the image data when retrieved.', max_length=16, null=True, verbose_name='etag'),
+            model_name="image",
+            name="etag",
+            field=models.BinaryField(
+                blank=True,
+                help_text="Hash of the image data when retrieved.",
+                max_length=16,
+                null=True,
+                verbose_name="etag",
+            ),
         ),
         migrations.AlterField(
-            model_name='image',
-            name='height',
-            field=models.PositiveIntegerField(blank=True, null=True, verbose_name='height'),
+            model_name="image",
+            name="height",
+            field=models.PositiveIntegerField(
+                blank=True, null=True, verbose_name="height"
+            ),
         ),
         migrations.AlterField(
-            model_name='image',
-            name='media_type',
-            field=models.CharField(blank=True, help_text='MIME media-type for this image source, such as image/jpeg', max_length=4000, null=True, validators=[django.core.validators.RegexValidator('^(image|application)/[\\w.+-]+(;\\s*\\w+=.*)?$')], verbose_name='media-type'),
+            model_name="image",
+            name="media_type",
+            field=models.CharField(
+                blank=True,
+                help_text="MIME media-type for this image source, such as image/jpeg",
+                max_length=4000,
+                null=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        "^(image|application)/[\\w.+-]+(;\\s*\\w+=.*)?$"
+                    )
+                ],
+                verbose_name="media-type",
+            ),
         ),
         migrations.AlterField(
-            model_name='image',
-            name='modified',
-            field=models.DateTimeField(auto_now=True, verbose_name='modified'),
+            model_name="image",
+            name="modified",
+            field=models.DateTimeField(auto_now=True, verbose_name="modified"),
         ),
         migrations.AlterField(
-            model_name='image',
-            name='retrieved',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='retrieved'),
+            model_name="image",
+            name="retrieved",
+            field=models.DateTimeField(blank=True, null=True, verbose_name="retrieved"),
         ),
         migrations.AlterField(
-            model_name='image',
-            name='width',
-            field=models.PositiveIntegerField(blank=True, null=True, verbose_name='width'),
+            model_name="image",
+            name="width",
+            field=models.PositiveIntegerField(
+                blank=True, null=True, verbose_name="width"
+            ),
         ),
         migrations.AlterField(
-            model_name='representation',
-            name='content',
-            field=models.FileField(blank=True, help_text='Content of the image representation.', null=True, upload_to='i', verbose_name='content'),
+            model_name="representation",
+            name="content",
+            field=models.FileField(
+                blank=True,
+                help_text="Content of the image representation.",
+                null=True,
+                upload_to="i",
+                verbose_name="content",
+            ),
         ),
         migrations.AlterField(
-            model_name='representation',
-            name='created',
-            field=models.DateTimeField(default=django.utils.timezone.now, verbose_name='created'),
+            model_name="representation",
+            name="created",
+            field=models.DateTimeField(
+                default=django.utils.timezone.now, verbose_name="created"
+            ),
         ),
         migrations.AlterField(
-            model_name='representation',
-            name='etag',
-            field=models.BinaryField(help_text='Hash of the image data when generated.', max_length=16, verbose_name='etag'),
+            model_name="representation",
+            name="etag",
+            field=models.BinaryField(
+                help_text="Hash of the image data when generated.",
+                max_length=16,
+                verbose_name="etag",
+            ),
         ),
         migrations.AlterField(
-            model_name='representation',
-            name='height',
-            field=models.PositiveIntegerField(verbose_name='height'),
+            model_name="representation",
+            name="height",
+            field=models.PositiveIntegerField(verbose_name="height"),
         ),
         migrations.AlterField(
-            model_name='representation',
-            name='image',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='representations', related_query_name='representation', to='images.Image', verbose_name='representation'),
+            model_name="representation",
+            name="image",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="representations",
+                related_query_name="representation",
+                to="images.Image",
+                verbose_name="representation",
+            ),
         ),
         migrations.AlterField(
-            model_name='representation',
-            name='is_cropped',
-            field=models.BooleanField(verbose_name='is cropped'),
+            model_name="representation",
+            name="is_cropped",
+            field=models.BooleanField(verbose_name="is cropped"),
         ),
         migrations.AlterField(
-            model_name='representation',
-            name='media_type',
-            field=models.CharField(max_length=4000, validators=[django.core.validators.RegexValidator('^(image|application)/\\w+(;\\s*\\w+=.*)?$')], verbose_name='media-type'),
+            model_name="representation",
+            name="media_type",
+            field=models.CharField(
+                max_length=4000,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        "^(image|application)/\\w+(;\\s*\\w+=.*)?$"
+                    )
+                ],
+                verbose_name="media-type",
+            ),
         ),
         migrations.AlterField(
-            model_name='representation',
-            name='modified',
-            field=models.DateTimeField(auto_now=True, verbose_name='modified'),
+            model_name="representation",
+            name="modified",
+            field=models.DateTimeField(auto_now=True, verbose_name="modified"),
         ),
         migrations.AlterField(
-            model_name='representation',
-            name='width',
-            field=models.PositiveIntegerField(verbose_name='width'),
+            model_name="representation",
+            name="width",
+            field=models.PositiveIntegerField(verbose_name="width"),
         ),
     ]

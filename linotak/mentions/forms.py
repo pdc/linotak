@@ -34,19 +34,21 @@ class IncomingForm(forms.Form):
         Returns:
             Newly created `Incoming` instance.
         """
-        source_url = self.cleaned_data['source']
-        target_url = self.cleaned_data['target']
+        source_url = self.cleaned_data["source"]
+        target_url = self.cleaned_data["target"]
 
         target = None
         parsed = urlparse(target_url)
         # Check the host & port part of the target URL is  one of ours.
-        m = SubdomainSeriesMiddleware.regex_from_domain(settings.NOTES_DOMAIN).match(parsed.netloc)
+        m = SubdomainSeriesMiddleware.regex_from_domain(settings.NOTES_DOMAIN).match(
+            parsed.netloc
+        )
         if m:
             series_name = m.group(1)
             try:
                 match = resolve(parsed.path)
-                if match.url_name == 'detail':
-                    pk = match.kwargs.get('pk')
+                if match.url_name == "detail":
+                    pk = match.kwargs.get("pk")
                     if pk:
                         target = Note.objects.get(pk=pk, series__name=series_name)
             except Resolver404:
@@ -64,10 +66,10 @@ class IncomingForm(forms.Form):
             source_url=source_url,
             target_url=target_url,
             defaults={
-                'user_agent': http_user_agent,
-                'source': source,
-                'target': target,
-                'received': timezone.now(),
+                "user_agent": http_user_agent,
+                "source": source,
+                "target": target,
+                "received": timezone.now(),
             },
         )
         return result

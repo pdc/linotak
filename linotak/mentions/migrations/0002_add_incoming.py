@@ -8,35 +8,114 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('notes', '0013_series_apple_touch_icon'),
-        ('mentions', '0001_initial'),
+        ("notes", "0013_series_apple_touch_icon"),
+        ("mentions", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='outgoing',
-            name='receiver',
-            field=models.ForeignKey(blank=True, help_text='Receiver used when notifying this locator.', null=True, on_delete=django.db.models.deletion.CASCADE, to='mentions.Receiver'),
+            model_name="outgoing",
+            name="receiver",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Receiver used when notifying this locator.",
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="mentions.Receiver",
+            ),
         ),
         migrations.CreateModel(
-            name='LocatorReceiver',
+            name="LocatorReceiver",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(default=django.utils.timezone.now)),
-                ('locator', models.OneToOneField(help_text='Locator that is associated with receiver.', on_delete=django.db.models.deletion.CASCADE, related_name='mentions_info', to='notes.Locator')),
-                ('receiver', models.ForeignKey(blank=True, help_text='Receiver handling mentions targeting the locator.', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='associated_locators', related_query_name='associated_locator', to='mentions.Receiver')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created", models.DateTimeField(default=django.utils.timezone.now)),
+                (
+                    "locator",
+                    models.OneToOneField(
+                        help_text="Locator that is associated with receiver.",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="mentions_info",
+                        to="notes.Locator",
+                    ),
+                ),
+                (
+                    "receiver",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Receiver handling mentions targeting the locator.",
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="associated_locators",
+                        related_query_name="associated_locator",
+                        to="mentions.Receiver",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Incoming',
+            name="Incoming",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('source_url', models.URLField(help_text='URL of a page mentioning oine of our notes, as supplied by caller.', max_length=4000)),
-                ('target_url', models.URLField(help_text='URL of one of our notes, as supplied by caller.', max_length=4000)),
-                ('user_agent', models.CharField(blank=True, help_text='What software the caller claims to be running.', max_length=4000, null=True)),
-                ('created', models.DateTimeField(default=django.utils.timezone.now)),
-                ('source', models.ForeignKey(blank=True, help_text='Location of a post that mentions one of our notes, if known.', null=True, on_delete=django.db.models.deletion.SET_NULL, to='notes.Locator')),
-                ('target', models.ForeignKey(blank=True, help_text='The note that is mentioned by the source, if known.', null=True, on_delete=django.db.models.deletion.SET_NULL, to='notes.Note')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "source_url",
+                    models.URLField(
+                        help_text="URL of a page mentioning oine of our notes, as supplied by caller.",
+                        max_length=4000,
+                    ),
+                ),
+                (
+                    "target_url",
+                    models.URLField(
+                        help_text="URL of one of our notes, as supplied by caller.",
+                        max_length=4000,
+                    ),
+                ),
+                (
+                    "user_agent",
+                    models.CharField(
+                        blank=True,
+                        help_text="What software the caller claims to be running.",
+                        max_length=4000,
+                        null=True,
+                    ),
+                ),
+                ("created", models.DateTimeField(default=django.utils.timezone.now)),
+                (
+                    "source",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Location of a post that mentions one of our notes, if known.",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="notes.Locator",
+                    ),
+                ),
+                (
+                    "target",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="The note that is mentioned by the source, if known.",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="notes.Note",
+                    ),
+                ),
             ],
         ),
     ]

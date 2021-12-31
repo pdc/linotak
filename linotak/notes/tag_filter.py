@@ -2,12 +2,12 @@
 
 import re
 
-_camel_word_re = re.compile(r'(.)([A-Z][a-z])')
-_camel_prefix_re = re.compile(r'([a-z]+)([A-Z0-9])')
-_whitespace_re = re.compile(r'\s+')
-_title_word_re = re.compile(r'\b[A-Z][a-z]+\b')
+_camel_word_re = re.compile(r"(.)([A-Z][a-z])")
+_camel_prefix_re = re.compile(r"([a-z]+)([A-Z0-9])")
+_whitespace_re = re.compile(r"\s+")
+_title_word_re = re.compile(r"\b[A-Z][a-z]+\b")
 
-_plus_minus_re = re.compile(r'([+-])')
+_plus_minus_re = re.compile(r"([+-])")
 
 
 def canonicalize_tag_name(proto_name):
@@ -18,7 +18,7 @@ def canonicalize_tag_name(proto_name):
     with no dashes or underscores.
     """
     if not proto_name:
-        raise ValueError('Tag name cannot be absent or empty')
+        raise ValueError("Tag name cannot be absent or empty")
     return proto_name.lower()
 
 
@@ -28,10 +28,10 @@ def wordify(proto_name):
     This is used as the first approximation to the label of the tag.
     """
     if not proto_name:
-        raise ValueError('Tag name cannot be absent or empty')
-    n = _camel_word_re.sub(r'\1 \2', proto_name)
-    n = _camel_prefix_re.sub(r'\1 \2', n)
-    n = _whitespace_re.sub(' ', n)
+        raise ValueError("Tag name cannot be absent or empty")
+    n = _camel_word_re.sub(r"\1 \2", proto_name)
+    n = _camel_prefix_re.sub(r"\1 \2", n)
+    n = _whitespace_re.sub(" ", n)
     if n[0].islower():
         n = _title_word_re.sub(lambda m: m.group(0).lower(), n)
     return n
@@ -41,13 +41,13 @@ def camel_from_words(words):
     """Given a string with whitespace-separated words, return camel-case."""
     parts = words.split()
     parts[1:] = [x[0].upper() + x[1:] for x in parts[1:]]
-    return ''.join(parts)
+    return "".join(parts)
 
 
 class TagFilter:
     """Specification of how to filter notes."""
 
-    __slots__ = 'included', 'excluded'
+    __slots__ = "included", "excluded"
 
     def __init__(self, include=None, exclude=None):
         """Create instance with these reuirements.
@@ -80,18 +80,18 @@ class TagFilter:
             if first:
                 incl = [first]
             while parts:
-                which = incl if parts.pop(0) == '+' else excl
+                which = incl if parts.pop(0) == "+" else excl
                 which.append(parts.pop(0))
             return TagFilter(incl, excl)
 
     def unparse(self):
         """Return the spec that will be parsed to this TagFilter instance."""
-        positif = '+'.join(sorted(self.included))
+        positif = "+".join(sorted(self.included))
         if self.excluded:
-            return positif + '-' + '-'.join(sorted(self.excluded))
+            return positif + "-" + "-".join(sorted(self.excluded))
         return positif
 
-    def apply(self, queryset, selector='tags__name'):
+    def apply(self, queryset, selector="tags__name"):
         """Apply this filter to this queryset."""
         for t in sorted(self.included):
             queryset = queryset.filter(**{selector: t})
@@ -111,7 +111,7 @@ class TagFilter:
         return self.unparse()
 
     def __repr__(self):
-        return '%s%r' % (type(self).__name__, self._unique())
+        return "%s%r" % (type(self).__name__, self._unique())
 
     def __bool__(self):
         return bool(self.included or self.excluded)
@@ -127,4 +127,4 @@ class TagFilter:
     def _unique(self):
         if self.excluded:
             return sorted(self.included or []), sorted(self.excluded)
-        return sorted(self.included),
+        return (sorted(self.included),)

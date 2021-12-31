@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('notes', '0009_copy_locator_legacy_images'),
+        ("notes", "0009_copy_locator_legacy_images"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='locator',
-            name='legacy_images',
+            model_name="locator",
+            name="legacy_images",
         ),
     ]

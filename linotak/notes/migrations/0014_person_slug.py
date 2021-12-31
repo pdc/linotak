@@ -6,13 +6,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('notes', '0013_series_apple_touch_icon'),
+        ("notes", "0013_series_apple_touch_icon"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='person',
-            name='slug',
-            field=models.SlugField(blank=True, help_text='Identifies profile page for this person.', max_length=64, null=True, unique=True),
+            model_name="person",
+            name="slug",
+            field=models.SlugField(
+                blank=True,
+                help_text="Identifies profile page for this person.",
+                max_length=64,
+                null=True,
+                unique=True,
+            ),
         ),
     ]

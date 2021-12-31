@@ -2,7 +2,7 @@ from django.apps import AppConfig
 
 
 class MastodonConfig(AppConfig):
-    name = 'linotak.mastodon'
+    name = "linotak.mastodon"
 
     def ready(self):
         """Wire up signals for this app."""

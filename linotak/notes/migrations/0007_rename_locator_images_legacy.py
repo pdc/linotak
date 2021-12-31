@@ -6,13 +6,13 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('notes', '0006_notes_tags_blank'),
+        ("notes", "0006_notes_tags_blank"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='locator',
-            old_name='images',
-            new_name='legacy_images',
+            model_name="locator",
+            old_name="images",
+            new_name="legacy_images",
         ),
     ]

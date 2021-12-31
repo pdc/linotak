@@ -6,13 +6,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('images', '0010_alter_image_focus_verbose'),
+        ("images", "0010_alter_image_focus_verbose"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='image',
-            name='placeholder',
-            field=models.CharField(blank=True, help_text='CSS colour for a blank rect shown while awaiting image proper', max_length=255, null=True, verbose_name='placeholder'),
+            model_name="image",
+            name="placeholder",
+            field=models.CharField(
+                blank=True,
+                help_text="CSS colour for a blank rect shown while awaiting image proper",
+                max_length=255,
+                null=True,
+                verbose_name="placeholder",
+            ),
         ),
     ]

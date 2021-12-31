@@ -449,10 +449,10 @@ class TestNotCreateFormView(TestCase):
             HTTP_HOST="smoo.example.com",
         )
 
-        form = r.context['form']
-        self.assertEqual(form.initial['text'], 'Text from query string\n\nhttps://example.net/1')
+        form = r.context["form"]
+        self.assertEqual(
+            form.initial["text"], "Text from query string\n\nhttps://example.net/1"
+        )
 
     def given_logged_in_as(self, person):
         self.client.login(username=person.login.username, password="secret")
-
-

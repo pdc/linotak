@@ -10,7 +10,14 @@ import time
 from ..images.size_spec import SizeSpec
 from ..notes.models import Series, Note
 
-from .protocol import authorize_path, token_path, verify_credentials_path, media_path, statuses_path, necessary_scopes
+from .protocol import (
+    authorize_path,
+    token_path,
+    verify_credentials_path,
+    media_path,
+    statuses_path,
+    necessary_scopes,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +29,6 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectionManager(models.Manager):
-
     def create_connection(self, series, domain):
         """Create a connection instance to authenticate with this domain.
 
@@ -35,26 +41,28 @@ class ConnectionManager(models.Manager):
             (and so needs to gop through the OAuth2 dance to be of any use).
         """
         r = requests.post(
-            f'https://{domain}/api/v1/apps',
+            f"https://{domain}/api/v1/apps",
             data={
-                'client_name': series.domain,
-                'redirect_uris': series.make_absolute_url(reverse('mastodon:callback')),
-                'scopes': ' '.join(necessary_scopes),
-                'website': series.make_absolute_url('/'),
+                "client_name": series.domain,
+                "redirect_uris": series.make_absolute_url(reverse("mastodon:callback")),
+                "scopes": " ".join(necessary_scopes),
+                "website": series.make_absolute_url("/"),
             },
             headers={
-                'Accept': 'application/json',
-            }
+                "Accept": "application/json",
+            },
         )
         response_body = r.json()
         if r.status_code in (200, 201):
             return self.create(
                 series=series,
                 domain=domain,
-                client_id=response_body['client_id'],
-                client_secret=response_body['client_secret'],
+                client_id=response_body["client_id"],
+                client_secret=response_body["client_secret"],
             )
-        logger.error(f"Could not enroll with {domain}: {response_body.get('error', response_body)}")
+        logger.error(
+            f"Could not enroll with {domain}: {response_body.get('error', response_body)}"
+        )
 
 
 class Connection(models.Model):
@@ -63,79 +71,88 @@ class Connection(models.Model):
     series = models.ForeignKey(
         Series,
         models.CASCADE,
-        related_name='mastodon_connections',
-        related_query_name='mastodon_connection',
-        verbose_name=_('series'),
+        related_name="mastodon_connections",
+        related_query_name="mastodon_connection",
+        verbose_name=_("series"),
     )
 
     domain = models.CharField(
-        _('domain'),
+        _("domain"),
         max_length=255,
-        help_text=_('Domain name of the Mastodon instance.'),
+        help_text=_("Domain name of the Mastodon instance."),
     )
     name = models.CharField(
-        _('name'),
+        _("name"),
         max_length=255,  # Could not find definitive limit on the size of a username on Mastodon.
-        help_text=_('Name of user on that instance (without the @ signs and without the domain name)')
+        help_text=_(
+            "Name of user on that instance (without the @ signs and without the domain name)"
+        ),
     )
     client_id = models.CharField(
-        _('client ID'),
+        _("client ID"),
         max_length=255,
-        help_text=_('OAuth2 credential supplied by Mastodon instance when enrolling the app.'),
+        help_text=_(
+            "OAuth2 credential supplied by Mastodon instance when enrolling the app."
+        ),
     )
     client_secret = models.CharField(
-        _('client secret'),
+        _("client secret"),
         max_length=255,
-        help_text=_('OAuth2 credential supplied by Mastodon instance when enrolling the app.'),
+        help_text=_(
+            "OAuth2 credential supplied by Mastodon instance when enrolling the app."
+        ),
     )
     access_token = models.TextField(
-        _('access token'),
+        _("access token"),
         null=True,
         blank=True,
     )
     refresh_token = models.TextField(
-        _('refresh token'),
+        _("refresh token"),
         null=True,
         blank=True,
     )
     expires_at = models.BigIntegerField(
-        _('expires at'),
-        null=True, blank=True,
-        help_text=_('When the access token expires, in seconds since 1970-01-01, or null'),
+        _("expires at"),
+        null=True,
+        blank=True,
+        help_text=_(
+            "When the access token expires, in seconds since 1970-01-01, or null"
+        ),
     )
-    created = models.DateTimeField(_('created'), default=timezone.now)
-    modified = models.DateTimeField(_('modified'), auto_now=True)
+    created = models.DateTimeField(_("created"), default=timezone.now)
+    modified = models.DateTimeField(_("modified"), auto_now=True)
 
     objects = ConnectionManager()
 
     class Meta:
-        unique_together = (('series', 'domain', 'name'),)
-        verbose_name = _('connection')
-        verbose_name_plural = _('connections')
+        unique_together = (("series", "domain", "name"),)
+        verbose_name = _("connection")
+        verbose_name_plural = _("connections")
 
     def __str__(self):
         """Return Mastodon username in full form."""
-        return f'@{self.name}@{self.domain}'
+        return f"@{self.name}@{self.domain}"
 
     @property
     def authorize_url(self):
-        return f'https://{self.domain}{authorize_path}'
+        return f"https://{self.domain}{authorize_path}"
 
     @property
     def token_url(self):
-        return f'https://{self.domain}{token_path}'
+        return f"https://{self.domain}{token_path}"
 
     @property
     def verify_credentials_url(self):
-        return f'https://{self.domain}{verify_credentials_path}'
+        return f"https://{self.domain}{verify_credentials_path}"
 
     @property
     def media_url(self):
-        return f'https://{self.domain}{media_path}'
+        return f"https://{self.domain}{media_path}"
 
     @property
     def statuses_url(self):
-        return f'https://{self.domain}{statuses_path}'
+        return f"https://{self.domain}{statuses_path}"
 
     def make_oauth(self):
         """Return an OAuth2 porocessor.
@@ -150,7 +167,7 @@ class Connection(models.Model):
             )
 
         # Forced to return an aunauthenticated token.
-        redirect_uri = self.series.make_absolute_url(reverse('mastodon:callback'))
+        redirect_uri = self.series.make_absolute_url(reverse("mastodon:callback"))
         return requests_oauthlib.OAuth2Session(
             self.client_id,
             redirect_uri=redirect_uri,
@@ -158,16 +175,20 @@ class Connection(models.Model):
         )
 
     def save_token(self, token, save=True):
-        self.access_token = token['access_token']
-        self.refresh_token = token.get('refresh_token')
-        self.expires_at = int(time.time() + float(token['expires_in'])) if 'expires_in' in token else None
+        self.access_token = token["access_token"]
+        self.refresh_token = token.get("refresh_token")
+        self.expires_at = (
+            int(time.time() + float(token["expires_in"]))
+            if "expires_in" in token
+            else None
+        )
         if save:
             self.save()
 
     def retrieve_token(self):
         return {
-            'access_token': self.access_token,
-            'token_type': 'Bearer',
+            "access_token": self.access_token,
+            "token_type": "Bearer",
         }
 
 
@@ -178,52 +199,54 @@ class Post(models.Model):
     """
 
     max_media = 4
-    media_size_spec = SizeSpec(1280, 1280)  # Mastodon docs say images are limited to 1.6 MPixel
+    media_size_spec = SizeSpec(
+        1280, 1280
+    )  # Mastodon docs say images are limited to 1.6 MPixel
 
     connection = models.ForeignKey(
         Connection,
         models.SET_NULL,
         null=True,  # Null means the connection was destroyed after post created.
-        verbose_name=_('connection'),
-        help_text=_('Mastodon instance where this note was created'),
+        verbose_name=_("connection"),
+        help_text=_("Mastodon instance where this note was created"),
     )
     note = models.ForeignKey(
         Note,
         models.SET_NULL,  # Even if we destroy the record of why we created the post the post still exists.
         null=True,  # Null means the note was destroyed after post created.
-        related_name='mastodon_posts',
-        related_query_name='mastodon_post',
-        verbose_name=_('note'),
+        related_name="mastodon_posts",
+        related_query_name="mastodon_post",
+        verbose_name=_("note"),
     )
 
     their_id = models.CharField(
-        _('their ID'),
+        _("their ID"),
         max_length=255,
-        help_text=_('Identifies the post in the scope of the instance'),
+        help_text=_("Identifies the post in the scope of the instance"),
     )
     url = models.URLField(
-        _('URL'),
-        max_length=1024,
-        help_text=_('Canonical web page of the post')
+        _("URL"), max_length=1024, help_text=_("Canonical web page of the post")
     )
-    posted = models.DateTimeField(_('posted'), null=True, blank=True)
-    created = models.DateTimeField(_('created'), default=timezone.now)
-    modified = models.DateTimeField(_('modified'), auto_now=True)
+    posted = models.DateTimeField(_("posted"), null=True, blank=True)
+    created = models.DateTimeField(_("created"), default=timezone.now)
+    modified = models.DateTimeField(_("modified"), auto_now=True)
 
     class Meta:
-        unique_together = (('connection', 'note'),)
-        ordering = ('-created',)
-        verbose_name = _('post')
-        verbose_name_plural = _('posts')
+        unique_together = (("connection", "note"),)
+        ordering = ("-created",)
+        verbose_name = _("post")
+        verbose_name_plural = _("posts")
 
     def __str__(self):
-        return f'{self.note} ({self.connection})'
+        return f"{self.note} ({self.connection})"
 
     def post_to_mastodon(self):
         """Issue request to Mastodion instance to create a status."""
 
         if self.posted:
-            logger.warning(f'Tried to repost {self.pk} ({self.note}) to {self.connection}')
+            logger.warning(
+                f"Tried to repost {self.pk} ({self.note}) to {self.connection}"
+            )
             return
 
         # Before starting transaction do stuff that can be harmlessly repeated,
@@ -231,31 +254,41 @@ class Post(models.Model):
 
         oauth = self.connection.make_oauth()
         data = {
-            'status': self.note.text_with_links(max_length=500, url_length=23),
+            "status": self.note.text_with_links(max_length=500, url_length=23),
         }
 
         for locator in self.note.subjects.all():
-            if (image := locator.main_image()):
-                if len(data.setdefault('media_ids', [])) < self.max_media:
+            if image := locator.main_image():
+                if len(data.setdefault("media_ids", [])) < self.max_media:
                     representation = image.create_representation(self.media_size_spec)
-                    files = {'file': (representation.content.name, representation.content.open(), representation.media_type)}
+                    files = {
+                        "file": (
+                            representation.content.name,
+                            representation.content.open(),
+                            representation.media_type,
+                        )
+                    }
                     if image.focus_x == 0.5 and image.focus_y == 0.5:
                         r = oauth.post(self.connection.media_url, files=files)
                     else:
                         r = oauth.post(
                             self.connection.media_url,
                             files=files,
-                            data={'focus': f'{2.0 * image.focus_x - 1.0},{-2.0 * image.focus_y + 1.0}'},
+                            data={
+                                "focus": f"{2.0 * image.focus_x - 1.0},{-2.0 * image.focus_y + 1.0}"
+                            },
                         )
                     r.raise_for_status()
                     media = r.json()
-                    data['media_ids'].append(media['id'])
+                    data["media_ids"].append(media["id"])
                     if locator.sensitive:
-                        data['sensitive'] = True
+                        data["sensitive"] = True
 
         with transaction.atomic():
             if self.posted:
-                logger.warning(f'Tried to repost {self.pk} ({self.note}) to {self.connection}')
+                logger.warning(
+                    f"Tried to repost {self.pk} ({self.note}) to {self.connection}"
+                )
                 return
             self.posted = timezone.now()
             self.save()
@@ -264,13 +297,13 @@ class Post(models.Model):
                 self.connection.statuses_url,
                 json=data,
                 headers={
-                    'Accept': 'application/json',
-                    'Idempotency-Key': self.note.get_absolute_url(with_host=True),
+                    "Accept": "application/json",
+                    "Idempotency-Key": self.note.get_absolute_url(with_host=True),
                 },
             )
             r.raise_for_status()
             status = r.json()
 
-            self.their_id = status.get('id')
-            self.url = status.get('url')
+            self.their_id = status.get("id")
+            self.url = status.get("url")
             self.save()

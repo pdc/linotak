@@ -7,19 +7,33 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('images', '0007_validate_media_type'),
-        ('notes', '0012_series_icon'),
+        ("images", "0007_validate_media_type"),
+        ("notes", "0012_series_icon"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='series',
-            name='apple_touch_icon',
-            field=models.ForeignKey(blank=True, help_text='Optional apple-touch-icon. Not transparent.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='apple_touch_series_set', related_query_name='apple_touch_series', to='images.Image'),
+            model_name="series",
+            name="apple_touch_icon",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Optional apple-touch-icon. Not transparent.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="apple_touch_series_set",
+                related_query_name="apple_touch_series",
+                to="images.Image",
+            ),
         ),
         migrations.AlterField(
-            model_name='series',
-            name='icon',
-            field=models.ForeignKey(blank=True, help_text='Optional favicon. Can use transparency. GIF or PNG.', null=True, on_delete=django.db.models.deletion.SET_NULL, to='images.Image'),
+            model_name="series",
+            name="icon",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Optional favicon. Can use transparency. GIF or PNG.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="images.Image",
+            ),
         ),
     ]

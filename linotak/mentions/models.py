@@ -16,16 +16,16 @@ class Receiver(models.Model):
     """A WebMention endpoint referenced, possibly indirectly, from a resource."""
 
     url = models.URLField(
-        _('URL'),
+        _("URL"),
         max_length=4000,
         unique=True,
     )
 
-    created = models.DateTimeField(_('created'), default=timezone.now)
+    created = models.DateTimeField(_("created"), default=timezone.now)
 
     class Meta:
-        verbose_name = _('receiver')
-        verbose_name_plural = _('receivers')
+        verbose_name = _("receiver")
+        verbose_name_plural = _("receivers")
 
     def __str__(self):
         return self.url
@@ -37,26 +37,26 @@ class LocatorReceiver(models.Model):
     locator = models.OneToOneField(
         Locator,
         on_delete=models.CASCADE,
-        related_name='mentions_info',
-        verbose_name=_('locator'),
-        help_text=_('Locator that is associated with receiver.'),
+        related_name="mentions_info",
+        verbose_name=_("locator"),
+        help_text=_("Locator that is associated with receiver."),
     )
     receiver = models.ForeignKey(
         Receiver,
         models.CASCADE,
         null=True,  # It is null if we have scaned locator and not found webmention link.
         blank=True,
-        related_name='associated_locators',
-        related_query_name='associated_locator',
-        verbose_name=_('receiver'),
-        help_text=_('Receiver handling mentions targeting the locator.'),
+        related_name="associated_locators",
+        related_query_name="associated_locator",
+        verbose_name=_("receiver"),
+        help_text=_("Receiver handling mentions targeting the locator."),
     )
 
-    created = models.DateTimeField(_('created'), default=timezone.now)
+    created = models.DateTimeField(_("created"), default=timezone.now)
 
     class Meta:
-        verbose_name = _('locator receiver')
-        verbose_name_plural = _('locator receivers')
+        verbose_name = _("locator receiver")
+        verbose_name_plural = _("locator receivers")
 
     def __str__(self):
         return str(self.locator)
@@ -75,52 +75,56 @@ class Outgoing(models.Model):
     source = models.ForeignKey(
         Note,
         on_delete=models.CASCADE,
-        related_name='outgoing_mentions',
-        related_query_name='outgoing_mention',
-        verbose_name=_('source'),
-        help_text=_('Mentions an external resource.'),
+        related_name="outgoing_mentions",
+        related_query_name="outgoing_mention",
+        verbose_name=_("source"),
+        help_text=_("Mentions an external resource."),
     )
     target = models.ForeignKey(
         Locator,
         on_delete=models.CASCADE,
-        related_name='outgoing_mentions',
-        related_query_name='outgoing_mention',
-        verbose_name=('target'),
-        help_text=_('External resource mentioned in this note.'),
+        related_name="outgoing_mentions",
+        related_query_name="outgoing_mention",
+        verbose_name=("target"),
+        help_text=_("External resource mentioned in this note."),
     )
     receiver = models.ForeignKey(  # Copied from locator when notifying in case it changes later.
         Receiver,
         on_delete=models.CASCADE,
         null=True,  # It is null if we havent scanned locaotr or if we did not find webmention link.
         blank=True,
-        verbose_name=_('receiver'),
-        help_text=_('Receiver used when notifying this locator.'),
+        verbose_name=_("receiver"),
+        help_text=_("Receiver used when notifying this locator."),
     )
 
     discovered = models.DateTimeField(
-        _('discovered'),
+        _("discovered"),
         blank=True,
         null=True,
-        help_text=_('When the discovery phase of WebMention protocol concluded (successfully or otherwise).'),
+        help_text=_(
+            "When the discovery phase of WebMention protocol concluded (successfully or otherwise)."
+        ),
     )
     notified = models.DateTimeField(
-        _('notified'),
+        _("notified"),
         blank=True,
         null=True,
-        help_text=_('When the notification of the receiver concluded (successfully or otherwise)'),
+        help_text=_(
+            "When the notification of the receiver concluded (successfully or otherwise)"
+        ),
     )
     response_status = models.PositiveIntegerField(
-        _('response status'),
+        _("response status"),
         null=True,
         blank=True,
-        help_text=_('HTTP status code returned by receiver when notified.'),
+        help_text=_("HTTP status code returned by receiver when notified."),
     )
 
-    created = models.DateTimeField(_('created'), default=timezone.now)
+    created = models.DateTimeField(_("created"), default=timezone.now)
 
     class Meta:
-        verbose_name = 'outgoing mention'
-        verbose_name_plural = 'outgoing mentions'
+        verbose_name = "outgoing mention"
+        verbose_name_plural = "outgoing mentions"
 
     def make_discovered(self, now, receiver):
         """Discovery has discovered the Webmention endpoint relevant to this mention.
@@ -142,7 +146,9 @@ class Outgoing(models.Model):
         """Queue the HTTP request to the Webmention endpoint."""
         from .tasks import notify_outgoing_webmention_receiver
 
-        transaction.on_commit(lambda: notify_outgoing_webmention_receiver.delay(self.pk))
+        transaction.on_commit(
+            lambda: notify_outgoing_webmention_receiver.delay(self.pk)
+        )
 
 
 class Incoming(models.Model):
@@ -158,7 +164,7 @@ class Incoming(models.Model):
 
     MENTION, LIKE, REPOST, REPLY = range(4)
     INTENTS = MENTION, LIKE, REPOST, REPLY
-    INTENT_LABELS = _('Mention'), _('Like'), _('Repost'), _('Reply')
+    INTENT_LABELS = _("Mention"), _("Like"), _("Repost"), _("Reply")
     INTENT_CHOICES = zip(INTENTS, INTENT_LABELS)
 
     source = models.ForeignKey(
@@ -166,46 +172,50 @@ class Incoming(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name=_('source'),
-        help_text=_('Location of a post that mentions one of our notes, if known.'),
+        verbose_name=_("source"),
+        help_text=_("Location of a post that mentions one of our notes, if known."),
     )
     target = models.ForeignKey(
         Note,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name=_('target'),
-        help_text=_('The note that is mentioned by the source, if known.'),
+        verbose_name=_("target"),
+        help_text=_("The note that is mentioned by the source, if known."),
     )
 
     source_url = models.URLField(
-        _('source URL'),
+        _("source URL"),
         max_length=4000,
-        help_text=_('URL of a page mentioning oine of our notes, as supplied by caller.'),
+        help_text=_(
+            "URL of a page mentioning oine of our notes, as supplied by caller."
+        ),
     )
     target_url = models.URLField(
-        _('targeet URL'),
+        _("targeet URL"),
         max_length=4000,
-        help_text=_('URL of one of our notes, as supplied by caller.'),
+        help_text=_("URL of one of our notes, as supplied by caller."),
     )
     user_agent = models.CharField(
-        _('user agent'),
+        _("user agent"),
         max_length=4000,
         null=True,
         blank=True,
-        help_text=_('What software the caller claims to be running.'),
+        help_text=_("What software the caller claims to be running."),
     )
     intent = models.PositiveSmallIntegerField(
-        _('intent'),
+        _("intent"),
         null=True,
         blank=True,
         choices=INTENT_CHOICES,
-        help_text=_('Inferred intent of the mention.')
+        help_text=_("Inferred intent of the mention."),
     )
 
-    created = models.DateTimeField(_('created'), default=timezone.now)
-    received = models.DateTimeField(_('received'), default=timezone.now)
-    scanned = models.DateTimeField(_('scanned'), null=True, blank=True, help_text='When source erntry was scanned')
+    created = models.DateTimeField(_("created"), default=timezone.now)
+    received = models.DateTimeField(_("received"), default=timezone.now)
+    scanned = models.DateTimeField(
+        _("scanned"), null=True, blank=True, help_text="When source erntry was scanned"
+    )
     # target_acquired = models.DateTimeField(
     #     blank=True,
     #     null=True,
@@ -223,14 +233,14 @@ class Incoming(models.Model):
     # )
 
     class Meta:
-        verbose_name = _('incoming mention')
-        verbose_name_plural = _('incoming mentions')
+        verbose_name = _("incoming mention")
+        verbose_name_plural = _("incoming mentions")
 
     def __str__(self):
         return self.source_url
 
     def get_absolute_url(self):
-        return reverse('incoming-detail', kwargs={'pk': self.pk})
+        return reverse("incoming-detail", kwargs={"pk": self.pk})
 
 
 def handle_note_post_save(sender, instance, created, raw, **kwargs):
@@ -241,13 +251,15 @@ def handle_note_post_save(sender, instance, created, raw, **kwargs):
     if not raw and instance.published:
         for locator in instance.subjects.all():
             outgoing = Outgoing.objects.create(source=instance, target=locator)
-            if hasattr(locator, 'mentions_info'):  # Discovery has already happened.
-                outgoing.make_discovered(locator.mentions_info.created, locator.mentions_info.receiver)
+            if hasattr(locator, "mentions_info"):  # Discovery has already happened.
+                outgoing.make_discovered(
+                    locator.mentions_info.created, locator.mentions_info.receiver
+                )
 
 
 CLASS_INTENTS = {
-    'u-like-of': Incoming.LIKE,
-    'u-repost-of': Incoming.REPOST,
+    "u-like-of": Incoming.LIKE,
+    "u-repost-of": Incoming.REPOST,
 }
 
 
@@ -255,7 +267,7 @@ def handle_locator_post_scanned(sender, locator, stuff, **kwargs):
     """Called after a locator has been scanned. Look for webmention links."""
     # Find if ther is an endpoint for outgoing Webmention notifications.
     for link in entry_links(stuff):
-        if 'webmention' in link.rel:
+        if "webmention" in link.rel:
             receiver, is_new = Receiver.objects.get_or_create(url=link.href)
             break
     else:
@@ -277,7 +289,7 @@ def handle_locator_post_scanned(sender, locator, stuff, **kwargs):
         for link in entry_links(stuff):
             if link.href == incoming.target_url:
                 for css_class in link.classes:
-                    if (intent := CLASS_INTENTS.get(css_class)):
+                    if intent := CLASS_INTENTS.get(css_class):
                         break
                 else:
                     intent = Incoming.MENTION
@@ -307,9 +319,12 @@ def notify_webmention_receiver(mention):
             # Mark as done prematurely to prevent accidental concurrent notifications.
             mention.notified = timezone.now()
             mention.save()
-            r = requests.post(mention.target.mentions_info.receiver.url, data={
-                'source': mention.source.get_absolute_url(with_host=True),
-                'target': mention.target.url
-            })
+            r = requests.post(
+                mention.target.mentions_info.receiver.url,
+                data={
+                    "source": mention.source.get_absolute_url(with_host=True),
+                    "target": mention.target.url,
+                },
+            )
             mention.response_status = r.status_code
             mention.save()

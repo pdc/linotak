@@ -10,48 +10,169 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('notes', '0017_auto_20200621_2139'),
+        ("notes", "0017_auto_20200621_2139"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Connection',
+            name="Connection",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('domain', models.CharField(help_text='Domain name of the Mastodon instance.', max_length=255, verbose_name='domain')),
-                ('name', models.CharField(help_text='Name of user on that instance (without the @ signs and without the domain name)', max_length=255, verbose_name='name')),
-                ('client_id', models.CharField(help_text='OAuth2 credential supplied by Mastodon instance when enrolling the app.', max_length=255, verbose_name='client ID')),
-                ('client_secret', models.CharField(help_text='OAuth2 credential supplied by Mastodon instance when enrolling the app.', max_length=255, verbose_name='client secret')),
-                ('access_token', models.TextField(blank=True, null=True, verbose_name='access token')),
-                ('refresh_token', models.TextField(blank=True, null=True, verbose_name='refresh token')),
-                ('expires_at', models.BigIntegerField(blank=True, help_text='When the access token expires, in seconds since 1970-01-01, or null', null=True, verbose_name='expires at')),
-                ('created', models.DateTimeField(default=django.utils.timezone.now, verbose_name='created')),
-                ('modified', models.DateTimeField(auto_now=True, verbose_name='modified')),
-                ('series', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='mastodon_connections', related_query_name='mastodon_connection', to='notes.Series', verbose_name='series')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "domain",
+                    models.CharField(
+                        help_text="Domain name of the Mastodon instance.",
+                        max_length=255,
+                        verbose_name="domain",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(
+                        help_text="Name of user on that instance (without the @ signs and without the domain name)",
+                        max_length=255,
+                        verbose_name="name",
+                    ),
+                ),
+                (
+                    "client_id",
+                    models.CharField(
+                        help_text="OAuth2 credential supplied by Mastodon instance when enrolling the app.",
+                        max_length=255,
+                        verbose_name="client ID",
+                    ),
+                ),
+                (
+                    "client_secret",
+                    models.CharField(
+                        help_text="OAuth2 credential supplied by Mastodon instance when enrolling the app.",
+                        max_length=255,
+                        verbose_name="client secret",
+                    ),
+                ),
+                (
+                    "access_token",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="access token"
+                    ),
+                ),
+                (
+                    "refresh_token",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="refresh token"
+                    ),
+                ),
+                (
+                    "expires_at",
+                    models.BigIntegerField(
+                        blank=True,
+                        help_text="When the access token expires, in seconds since 1970-01-01, or null",
+                        null=True,
+                        verbose_name="expires at",
+                    ),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, verbose_name="created"
+                    ),
+                ),
+                (
+                    "modified",
+                    models.DateTimeField(auto_now=True, verbose_name="modified"),
+                ),
+                (
+                    "series",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="mastodon_connections",
+                        related_query_name="mastodon_connection",
+                        to="notes.Series",
+                        verbose_name="series",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'connection',
-                'verbose_name_plural': 'connections',
-                'unique_together': {('series', 'domain', 'name')},
+                "verbose_name": "connection",
+                "verbose_name_plural": "connections",
+                "unique_together": {("series", "domain", "name")},
             },
         ),
         migrations.CreateModel(
-            name='Post',
+            name="Post",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('their_id', models.CharField(help_text='Identifies the post in the scope of the instance', max_length=255, verbose_name='their ID')),
-                ('url', models.URLField(help_text='Canonical web page of the post', max_length=1024, verbose_name='URL')),
-                ('posted', models.DateTimeField(blank=True, null=True, verbose_name='posted')),
-                ('created', models.DateTimeField(default=django.utils.timezone.now, verbose_name='created')),
-                ('modified', models.DateTimeField(auto_now=True, verbose_name='modified')),
-                ('connection', models.ForeignKey(help_text='Mastodon instance where this note was created', null=True, on_delete=django.db.models.deletion.SET_NULL, to='mastodon.Connection', verbose_name='connection')),
-                ('note', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='notes.Note', verbose_name='note')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "their_id",
+                    models.CharField(
+                        help_text="Identifies the post in the scope of the instance",
+                        max_length=255,
+                        verbose_name="their ID",
+                    ),
+                ),
+                (
+                    "url",
+                    models.URLField(
+                        help_text="Canonical web page of the post",
+                        max_length=1024,
+                        verbose_name="URL",
+                    ),
+                ),
+                (
+                    "posted",
+                    models.DateTimeField(blank=True, null=True, verbose_name="posted"),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, verbose_name="created"
+                    ),
+                ),
+                (
+                    "modified",
+                    models.DateTimeField(auto_now=True, verbose_name="modified"),
+                ),
+                (
+                    "connection",
+                    models.ForeignKey(
+                        help_text="Mastodon instance where this note was created",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="mastodon.Connection",
+                        verbose_name="connection",
+                    ),
+                ),
+                (
+                    "note",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="notes.Note",
+                        verbose_name="note",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'post',
-                'verbose_name_plural': 'posts',
-                'ordering': ('-created',),
-                'unique_together': {('connection', 'note')},
+                "verbose_name": "post",
+                "verbose_name_plural": "posts",
+                "ordering": ("-created",),
+                "unique_together": {("connection", "note")},
             },
         ),
     ]

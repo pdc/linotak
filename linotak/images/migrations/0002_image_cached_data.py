@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('images', '0001_initial'),
+        ("images", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='image',
-            name='cached_data',
-            field=models.FileField(blank=True, help_text='A copy of the image data from which we can generate scaled representations.', null=True, upload_to='cached-images'),
+            model_name="image",
+            name="cached_data",
+            field=models.FileField(
+                blank=True,
+                help_text="A copy of the image data from which we can generate scaled representations.",
+                null=True,
+                upload_to="cached-images",
+            ),
         ),
     ]

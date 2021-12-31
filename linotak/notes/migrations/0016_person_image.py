@@ -7,14 +7,20 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('images', '0007_validate_media_type'),
-        ('notes', '0015_person_description'),
+        ("images", "0007_validate_media_type"),
+        ("notes", "0015_person_description"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='person',
-            name='image',
-            field=models.ForeignKey(blank=True, help_text='Depicts this user.', null=True, on_delete=django.db.models.deletion.SET_NULL, to='images.Image'),
+            model_name="person",
+            name="image",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Depicts this user.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="images.Image",
+            ),
         ),
     ]

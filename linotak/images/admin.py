@@ -14,7 +14,7 @@ def queue_retrieve(model_admin, request, queryset):
         img.queue_retrieve_data()
 
 
-queue_retrieve.short_description = _('Queue retrieval of image data')
+queue_retrieve.short_description = _("Queue retrieval of image data")
 
 
 def sniff_again(model_admin, request, queryset):
@@ -24,7 +24,7 @@ def sniff_again(model_admin, request, queryset):
         image.save()
 
 
-sniff_again.short_description = _('Sniff again')
+sniff_again.short_description = _("Sniff again")
 
 
 def delete_cropped_representations(model_admin, request, queryset):
@@ -32,7 +32,7 @@ def delete_cropped_representations(model_admin, request, queryset):
     Representation.objects.filter(image__in=queryset, is_cropped=True).delete()
 
 
-delete_cropped_representations.short_description = _('Delete cropped representations')
+delete_cropped_representations.short_description = _("Delete cropped representations")
 
 
 def delete_all_representations(model_admin, request, queryset):
@@ -40,7 +40,7 @@ def delete_all_representations(model_admin, request, queryset):
     Representation.objects.filter(image__in=queryset).delete()
 
 
-delete_all_representations.short_description = _('Delete all representations')
+delete_all_representations.short_description = _("Delete all representations")
 
 
 def delete_if_small(model_admin, request, queryset):
@@ -49,37 +49,52 @@ def delete_if_small(model_admin, request, queryset):
         image.delete_if_small()
 
 
-delete_if_small.short_description = _('Delete if small')
+delete_if_small.short_description = _("Delete if small")
 
 
 def small_thumbnail(image):
     return format_html(
         '<div style="display: inline-block; background-color: #DED">'
-        '{representation}</div>',
-        representation=square_representation(image, 40) or '–')
+        "{representation}</div>",
+        representation=square_representation(image, 40) or "–",
+    )
     return
 
 
 def large_thumbnail(image):
     return format_html(
         '<div style="display: inline-block; background-color: #DED">'
-        '{representation}</div>',
-        representation=representation(image, '320x320') or '–')
+        "{representation}</div>",
+        representation=representation(image, "320x320") or "–",
+    )
 
 
-small_thumbnail.short_description = _('Thumbnail')
-large_thumbnail.short_description = _('Thumbnail')
+small_thumbnail.short_description = _("Thumbnail")
+large_thumbnail.short_description = _("Thumbnail")
 
 
 class ImageAdmin(admin.ModelAdmin):
-    actions = [queue_retrieve, sniff_again, delete_cropped_representations, delete_all_representations, delete_if_small]
-    date_hierarchy = 'created'
-    list_display = ['__str__', small_thumbnail, 'media_type', 'width', 'height', 'retrieved']
-    list_filter = [
-        'media_type',
-        'retrieved',
+    actions = [
+        queue_retrieve,
+        sniff_again,
+        delete_cropped_representations,
+        delete_all_representations,
+        delete_if_small,
     ]
-    search_fields = ['data_url']
+    date_hierarchy = "created"
+    list_display = [
+        "__str__",
+        small_thumbnail,
+        "media_type",
+        "width",
+        "height",
+        "retrieved",
+    ]
+    list_filter = [
+        "media_type",
+        "retrieved",
+    ]
+    search_fields = ["data_url"]
     readonly_fields = [large_thumbnail]
 
 
