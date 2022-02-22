@@ -5,14 +5,14 @@
 }
 
 h1 {
-    font-family: "Playfair Display", serif;
-    font-style: italic;
+    font-family: "NaN Jaune Maxi", serif;
     color: rgba(187, 0, 170, 0.48);
     color: var(--hdg);
+    line-height: 1;
 }
 
 strong {
-    font-weight: 600;
+    font-weight: 500;
 }
 
 a:link {

@@ -1,5 +1,14 @@
 @font-face {
     font-family: "NaN Jaune Maxi";
+    font-weight: 100;
+    src: local("NaNJaune-MaxiThin"),
+        url(NaNJaune-MaxiThin.woff2) format("woff2"),
+        url(NaNJaune-MaxiThin.woff) format("woff");
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "NaN Jaune Maxi";
     font-weight: 900;
     src: local("NaNJaune-MaxiBlack"),
         url(NaNJaune-MaxiBlack.woff2) format("woff2"),
