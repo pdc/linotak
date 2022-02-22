@@ -1,6 +1,7 @@
 
 h1 {
-    font-family: "Abril Fatface", serif;
+    font-family: "NaN Jaune Maxi", serif;
+    font-weight:  900;
     color: rgba(187, 0, 170, 0.48);
     color: var(--hdg);
 }
