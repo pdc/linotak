@@ -30,8 +30,8 @@ deploy: tests requirements.txt $(JS_BUNDLE)
 tests:
 	$(PYTHON) manage.py test --keep --fail
 
-requirements.txt: Pipfile Pipfile.lock
-	pipenv lock -r > $@
+requirements.txt: pyproject.toml poetry.lock
+	poetry export --format=requirements.txt --output=requirements.txt --without-hashes
 
 $(JS_BUNDLE): editor/src/FocusPoint.svelte editor/src/main.js editor/src/pannable.js editor/yarn.lock
 	cd editor && yarn && yarn build

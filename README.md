@@ -14,12 +14,13 @@ Stack:
   * Celery 4.4
   * Python 3.8
 
-Use Pipenv:
+Use Poetry:
 
-    pipenv run ./manage.py test
-    pipenv run celery -A linotak.celery worker --loglevel=info
-    pipenv run ./manage.py runserver 0:8004
+    poetry run -- ./manage.py test
+    poetry run -- celery -A linotak.celery worker --loglevel=info
+    poetry run -- ./manage.py runserver 0:8004
 
+Or use `poetry shell` to avoid typing `poetry run` all the time.
 
 
 Testing scanning
@@ -31,7 +32,7 @@ Try this
     FILE=samples/foobar.html
 
     curl $URL > $FILE
-    pipenv run ./manage.py linotakscan --base=$URL $FILE
+    poetry run -- ./manage.py linotakscan --base=$URL $FILE
 
 
 Localization
@@ -39,11 +40,11 @@ Localization
 
 Freshen the extracted translation files with
 
-    pipenv run django-admin makemessages -l eo
+    poetry run -- django-admin makemessages -l eo
 
 Upload `.po` files to <POEditor.com> and download and then run
 
-    pipenv run django-admin compilemessages
+    poetry run -- django-admin compilemessages
 
 
 Bookmarklet
