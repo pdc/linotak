@@ -1,8 +1,8 @@
 """Test for some views."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from django.utils.timezone import now
 from django.test import Client, TestCase, override_settings
-from django.utils import timezone
 import logging
 from unittest.mock import patch
 
@@ -22,10 +22,10 @@ class TestNoteListView(TestCase):
 
     def test_filters_by_series(self):
         series = SeriesFactory.create(name="bar")
-        note = NoteFactory.create(series=series, published=timezone.now())
+        note = NoteFactory.create(series=series, published=now())
         other = SeriesFactory.create()
         NoteFactory.create(
-            series=other, published=timezone.now()
+            series=other, published=now()
         )  # Will be omitted because wrong series
 
         r = self.client.get("/", HTTP_HOST="bar.example.com")
@@ -36,10 +36,10 @@ class TestNoteListView(TestCase):
 
     def test_filters_by_series_with_tilde(self):
         series = SeriesFactory.create(name="bar")
-        note = NoteFactory.create(series=series, published=timezone.now())
+        note = NoteFactory.create(series=series, published=now())
         other = SeriesFactory.create()
         NoteFactory.create(
-            series=other, published=timezone.now()
+            series=other, published=now()
         )  # Will be omitted because wrong series
 
         r = self.client.get("/~bar/", HTTP_HOST="example.com")
@@ -52,9 +52,7 @@ class TestNoteListView(TestCase):
         series = SeriesFactory.create(name="bar")
         author = PersonFactory.create()
         series.note_set.create(text="note1", author=author)
-        note2 = series.note_set.create(
-            text="note2", author=author, published=timezone.now()
-        )
+        note2 = series.note_set.create(text="note2", author=author, published=now())
         self.client.logout()
 
         r = self.client.get("/", HTTP_HOST="bar.example.com")
@@ -79,7 +77,7 @@ class TestNoteListView(TestCase):
         series = SeriesFactory.create(name="bar", editors=[author])
         note = NoteFactory.create(author=author, series=series, text="text of note")
         NoteFactory.create(
-            author=author, series=series, text="published", published=timezone.now()
+            author=author, series=series, text="published", published=now()
         )
         self.given_logged_in_as(author)
 
@@ -109,11 +107,11 @@ class TestNoteListView(TestCase):
     def test_fitered_by_tag_if_specified(self):
         series = SeriesFactory.create(name="alpha")
         note1 = NoteFactory.create(
-            series=series, tags=["foo", "bar", "baz"], published=timezone.now()
+            series=series, tags=["foo", "bar", "baz"], published=now()
         )
-        NoteFactory.create(series=series, tags=["bar", "baz"], published=timezone.now())
+        NoteFactory.create(series=series, tags=["bar", "baz"], published=now())
         note3 = NoteFactory.create(
-            series=series, tags=["qux", "foo", "bar"], published=timezone.now()
+            series=series, tags=["qux", "foo", "bar"], published=now()
         )
 
         r = self.client.get("/tagged/foo+bar/", HTTP_HOST="alpha.example.com")
@@ -232,9 +230,7 @@ class TestNoteListPagination(TestCase):
     def setUpTestData(cls):
         cls.series = SeriesFactory.create(name="bar")
         cls.notes = [
-            NoteFactory.create(
-                series=cls.series, published=(timezone.now() - timedelta(days=i))
-            )
+            NoteFactory.create(series=cls.series, published=(now() - timedelta(days=i)))
             for i in range(64)
         ]
 
