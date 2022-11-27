@@ -238,7 +238,9 @@ class TestPropertyCapture(ScanMixin, TestCase):
             stuff,
             [
                 Property(
-                    "dt-published", datetime.date(2018, 10, 24), original="2018-10-24"
+                    "dt-published",
+                    datetime.datetime(2018, 10, 24),
+                    original="2018-10-24",
                 )
             ],
         )
@@ -246,7 +248,7 @@ class TestPropertyCapture(ScanMixin, TestCase):
     def test_uses_datetime_attr_if_provided(self):
         stuff = self.scan('<time class="dt-start" datetime="2013-06-22">June 22</time>')
         self.assertEqual(
-            stuff, [Property("dt-start", datetime.date(2013, 6, 22), "June 22")]
+            stuff, [Property("dt-start", datetime.datetime(2013, 6, 22), "June 22")]
         )
 
     def test_simple_abbr_property(self):
@@ -299,9 +301,13 @@ class TestHSomethingCapture(ScanMixin, TestCase):
                             classes=["p-name", "u-url"],
                         ),
                         Property(
-                            "dt-start", datetime.date(2013, 6, 22), original="June 22"
+                            "dt-start",
+                            datetime.datetime(2013, 6, 22),
+                            original="June 22",
                         ),
-                        Property("dt-end", datetime.date(2013, 6, 23), original="23"),
+                        Property(
+                            "dt-end", datetime.datetime(2013, 6, 23), original="23"
+                        ),
                         HSomething(
                             "h-adr",
                             ["p-location"],
@@ -452,7 +458,7 @@ class TestHCiteMixin(ScanMixin, TestCase):
                     ),
                     Img("https://seblog.nl/photo.jpg", classes=["u-photo"]),
                 ),
-                published=datetime.date(2018, 5, 9),
+                published=datetime.datetime(2018, 5, 9),
             ),
             stuff,
         )
@@ -470,7 +476,7 @@ class TestHCiteMixin(ScanMixin, TestCase):
                 "http://tantek.com/2013/073/b1/silos-vs-open-social-web",
                 title="On Silos vs an Open Social Web [#indieweb]",
                 classes=["h-cite"],
-                published=datetime.date(2013, 3, 14),
+                published=datetime.datetime(2013, 3, 14),
                 author=HCard("Tantek Çelik", short_name="Çelik", classes=["p-author"]),
             ),
             stuff,

@@ -8,15 +8,14 @@ from .templatetags.image_representations import square_representation, represent
 from .models import Image, Representation
 
 
+@admin.display(description=_("Queue retrieval of image data"))
 def queue_retrieve(model_admin, request, queryset):
     """Queue the images to be retrieved."""
     for img in queryset:
         img.queue_retrieve_data()
 
 
-queue_retrieve.short_description = _("Queue retrieval of image data")
-
-
+@admin.display(description=_("Sniff again"))
 def sniff_again(model_admin, request, queryset):
     """Delete images if they are less than 80×80 pixels."""
     for image in queryset.filter(cached_data__isnull=False):
@@ -24,53 +23,41 @@ def sniff_again(model_admin, request, queryset):
         image.save()
 
 
-sniff_again.short_description = _("Sniff again")
-
-
+@admin.display(description=_("Delete cropped representations"))
 def delete_cropped_representations(model_admin, request, queryset):
     """Delete representations that are cropped (e.g., because focus changed)."""
     Representation.objects.filter(image__in=queryset, is_cropped=True).delete()
 
 
-delete_cropped_representations.short_description = _("Delete cropped representations")
-
-
+@admin.display(description=_("Delete all representations"))
 def delete_all_representations(model_admin, request, queryset):
     """Delete representations, forcing them to be regenerated."""
     Representation.objects.filter(image__in=queryset).delete()
 
 
-delete_all_representations.short_description = _("Delete all representations")
-
-
+@admin.display(description=_("Delete if small"))
 def delete_if_small(model_admin, request, queryset):
     """Delete images if they are less than 80×80 pixels."""
     for image in queryset.all():
         image.delete_if_small()
 
 
-delete_if_small.short_description = _("Delete if small")
-
-
+@admin.display(description=_("Thumbnail"))
 def small_thumbnail(image):
     return format_html(
         '<div style="display: inline-block; background-color: #DED">'
         "{representation}</div>",
         representation=square_representation(image, 40) or "–",
     )
-    return
 
 
+@admin.display(description=_("Thumbnail"))
 def large_thumbnail(image):
     return format_html(
         '<div style="display: inline-block; background-color: #DED">'
         "{representation}</div>",
         representation=representation(image, "320x320") or "–",
     )
-
-
-small_thumbnail.short_description = _("Thumbnail")
-large_thumbnail.short_description = _("Thumbnail")
 
 
 class ImageAdmin(admin.ModelAdmin):
