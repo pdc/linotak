@@ -1,6 +1,6 @@
 # Makefile because what the hell.
 
-PYTHON=pipenv run python
+PYTHON=poetry run python
 SITE=ooble
 PACKAGE=linotak
 HOST=$(SITE)@spreadsite.org
