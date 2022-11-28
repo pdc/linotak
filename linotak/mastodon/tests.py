@@ -358,7 +358,9 @@ class TestPost(TestCase):
                         files={"file": (ANY, ANY, "image/jpeg")},
                         data={
                             "focus": "0.0,-0.5"
-                        },  # Mastodon coordinates are from -1 to +1 AND y axis is positive upwards
+                            # Mastodon coordinates are from -1 to +1
+                            # AND y axis is positive upwards
+                        },
                     ),
                     self.expected_post_call_with_json(media_ids=["100001"]),
                 ]
@@ -367,7 +369,40 @@ class TestPost(TestCase):
                 oauth.post.call_args_list[0], b"*file*content*"
             )
 
-    def test_adds_sensitive_flag_to_post_of_niote_with_locator_with_sensitive_flag(
+    def test_adds_description_image_when_set(self):
+        self.create_note_with_locator()
+        self.with_image_with_representation(description="Text of description")
+
+        with patch.object(
+            requests_oauthlib, "OAuth2Session"
+        ) as OAuth2Session, self.settings(NOTES_DOMAIN="example.com"):
+            oauth = OAuth2Session.return_value
+            oauth.post.side_effect = [
+                mock_json_response({"id": "100001"}),  # Response when creating media.
+                mock_json_response(
+                    {  # Response when creating post.
+                        "id": "200002",
+                        "url": "https://mast.example.com/@spoo/134269",
+                    }
+                ),
+            ]
+            self.post.post_to_mastodon()
+
+            oauth.post.assert_has_calls(
+                [
+                    call(
+                        "https://mast.example.com/api/v1/media",
+                        files={"file": (ANY, ANY, "image/jpeg")},
+                        data={"description": "Text of description"},
+                    ),
+                    self.expected_post_call_with_json(media_ids=["100001"]),
+                ]
+            )
+            self.assert_files_file_stream_arg_contains(
+                oauth.post.call_args_list[0], b"*file*content*"
+            )
+
+    def test_adds_sensitive_flag_to_post_of_note_with_locator_with_sensitive_flag(
         self,
     ):
         self.create_note_with_locator(sensitive=True)

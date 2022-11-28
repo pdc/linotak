@@ -268,16 +268,23 @@ class Post(models.Model):
                             representation.media_type,
                         )
                     }
-                    if image.focus_x == 0.5 and image.focus_y == 0.5:
-                        r = oauth.post(self.connection.media_url, files=files)
-                    else:
+                    image_data = {}
+                    if image.description.strip():
+                        image_data["description"] = image.description
+                    if image.focus_x != 0.5 or image.focus_y != 0.5:
+                        x, y = image.focus_x, image.focus_y
+                        # Mastodon coordinates are from -1 to +1
+                        # AND y axis is positive upwards
+                        # AND this value is supplied as a string not a tuple:
+                        value = f"{2.0 * x - 1.0},{-2.0 * y + 1.0}"
+                        image_data["focus"] = value
+
+                    if image_data:
                         r = oauth.post(
-                            self.connection.media_url,
-                            files=files,
-                            data={
-                                "focus": f"{2.0 * image.focus_x - 1.0},{-2.0 * image.focus_y + 1.0}"
-                            },
+                            self.connection.media_url, files=files, data=image_data
                         )
+                    else:
+                        r = oauth.post(self.connection.media_url, files=files)
                     r.raise_for_status()
                     media = r.json()
                     data["media_ids"].append(media["id"])

@@ -74,6 +74,15 @@ class Image(models.Model):
         blank=True,
         help_text=_("MIME media-type for this image source, such as image/jpeg"),
     )
+    description = models.TextField(
+        _("description"),
+        max_length=4000,
+        blank=True,
+        help_text=_(
+            "Description of the image that might be used in a longdesc attribute "
+            "or as the alt text for Mastodon et al."
+        ),
+    )
     cached_data = models.FileField(
         _("cached data"),
         upload_to="cached-images",
