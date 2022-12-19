@@ -2,6 +2,7 @@
 
 from django import template
 
+from linotak.utils import create_data_url
 from ..size_spec import SizeSpec
 
 
@@ -14,7 +15,7 @@ IMAGE_TEMPLATE = template.Template(
     {% if representation %}
         <img src="{{ representation.content.url }}" {% if srcset %}srcset="{{srcset}}" sizes="{{sizes}}"{% endif %}
             {% if image.with_class %}class="{{ image.with_class }}" {% endif %}width="{{ representation.width }}" height="{{ representation.height }}"
-            alt="">
+            alt="" aria-label="thumbnail"{% if longdesc %}longdesc="{{ longdesc }}"{% endif %}>
     {% endif %}
     {% if image.placeholder %}</div>{% endif %}
 {% endspaceless %}"""
@@ -26,6 +27,15 @@ SVG_TEMPLATE = template.Template(
         <image width="{{ image_width }}" height="{{ image_height }}" xlink:href="{{ image.data_url }}"/>
     </svg>
 {% endspaceless %}"""
+)
+
+
+LONGDESC_TEMPLATE = template.Template(
+    """<?DOCTYPE html>
+<html>
+  <head><meta charset="UTF-8"></head>
+  <body>{{ text|linebreaks }}</body>
+</html>"""
 )
 
 
@@ -102,6 +112,7 @@ def _image_representation(image, spec):
                 if srcset_needed
                 else None
             ),
+            "longdesc": _image_longdesc_attr(image),
         }
     )
     return IMAGE_TEMPLATE.render(context)
@@ -118,3 +129,12 @@ def with_class(value, arg):
     if value:
         value.with_class = arg
     return value
+
+
+def _image_longdesc_attr(image):
+    """Return a URL suitable for the longdesc attribute of an image."""
+    if text := image.description and image.description.strip():
+        context = template.Context({"text": text})
+        return create_data_url(
+            'text/html; charset="UTF-8"', LONGDESC_TEMPLATE.render(context)
+        )

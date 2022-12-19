@@ -42,6 +42,11 @@ def delete_if_small(model_admin, request, queryset):
         image.delete_if_small()
 
 
+@admin.display(description=_("Has description"), boolean=True)
+def has_description(image):
+    return image.description.strip() != ""
+
+
 @admin.display(description=_("Thumbnail"))
 def small_thumbnail(image):
     return format_html(
@@ -71,6 +76,7 @@ class ImageAdmin(admin.ModelAdmin):
     date_hierarchy = "created"
     list_display = [
         "__str__",
+        has_description,
         small_thumbnail,
         "media_type",
         "width",

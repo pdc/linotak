@@ -12,6 +12,7 @@ import pathlib
 import struct
 from unittest.mock import patch
 
+from linotak.utils import create_data_url
 from ..matchers_for_mocks import DateTimeTimestampMatcher
 from .models import (
     Image,
@@ -25,7 +26,10 @@ from .models import (
     sRGB_from_Lab,
 )
 from .size_spec import SizeSpec
-from .templatetags.image_representations import _image_representation
+from .templatetags.image_representations import (
+    _image_representation,
+    _image_longdesc_attr,
+)
 from . import models, signal_handlers, tasks  # For mocking
 
 
@@ -532,9 +536,9 @@ class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
         expected = (data_dir / file_name).read_bytes()
         with rep.content.open() as f:
             actual = f.read()
-        self.asset_same_PNG_data(actual, expected)
+        self.assert_same_PNG_data(actual, expected)
 
-    def asset_same_PNG_data(self, a, b, ignore_chunks=None):
+    def assert_same_PNG_data(self, a, b, ignore_chunks=None):
         """Check these are essentially the same PNG data.
 
         Arguments --
@@ -977,3 +981,56 @@ class TestExtractStats(TestCase):
         self.assertAlmostEqual(r, 213, 3)
         self.assertAlmostEqual(g, 124, 3)
         self.assertAlmostEqual(b, 217, 3)
+
+
+class TestImageLongdescAttr(ImageTestMixin, TestCase):
+    def test_no_descfription_means_no_longdesc_attr(self):
+        self.given_image_with_data("37x57.jpeg")
+
+        self.assertFalse(_image_longdesc_attr(self.image))
+
+    def test_converts_description_to_url(self):
+        self.given_image_with_data("37x57.jpeg", description="Text of description.")
+
+        self.assertRegex(
+            _image_longdesc_attr(self.image),
+            r"^data:text/html;charset=UTF-8,.*Text%20of%20description\..*",
+        )
+
+
+class TestDataURL(TestCase):
+    def test_url_encodes_text_by_default(self):
+        result = create_data_url("text/html;charset=UTF-8", "Hello, world!")
+
+        self.assertEqual(result, "data:text/html;charset=UTF-8,Hello%2C%20world%21")
+
+    def test_base64_encodes_bytes_by_default(self):
+        result = create_data_url("text/html;charset=UTF-8", b"Hello, World!")
+
+        self.assertEqual(
+            result, "data:text/html;charset=UTF-8;base64,SGVsbG8sIFdvcmxkIQ=="
+        )
+
+    def test_can_base64_encode_text(self):
+        result = create_data_url("text/plain;charset=UTF-8", "ハローワールド！", base64=True)
+
+        self.assertEqual(
+            result,
+            "data:text/plain;charset=UTF-8;base64,44OP44Ot44O844Ov44O844Or44OJ77yB",
+        )
+
+    def test_can_url_encode_bytes_i_guess(self):
+        # When we supply a bytes value but specify it not be base64-encoded …
+        result = create_data_url(
+            "text/plain;charset=UTF-8", "ハローワールド！".encode("UTF-8"), base64=False
+        )
+
+        # Then the result is the same as encoding the decoded text.
+        expected = create_data_url("text/plain;charset=UTF-8", "ハローワールド！")
+        self.assertEqual(result, expected)
+
+    def test_can_reformat_content_type_attributes(self):
+        # When the content type contains spaces or quotes …
+        result = create_data_url('text/html; charset="UTF-8"', "foo")
+
+        self.assertEqual(result, "data:text/html;charset=UTF-8,foo")
