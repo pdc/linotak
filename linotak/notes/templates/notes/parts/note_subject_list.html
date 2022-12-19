@@ -36,8 +36,16 @@
                             </a>
                             {% if puff >= 4 and can_edit_as %}
                             <div class="note-actions">
-                                <a class="link" href="{% note_url 'locator_images' locator_pk=locator.pk %}" title="{% translate 'Choose which image is shown' %}">{% translate "Images" context "button" %}  </a>
+                                {% if locator.main_image %}
+                                    {% if not locator.main_image.description %}
+                                    <strong>Description needed</strong>
+                                    {% endif %}
+                                    <a class="link" href="{% note_url 'locator_image' locator_pk=locator.pk image_pk=locator.main_image.pk %}" title="{% translate 'Edit description of image' %}">{% translate "Edit image" context "button" %}</a>
+                                    •
+                                {% endif %}
+                                <a class="link" href="{% note_url 'locator_images' locator_pk=locator.pk %}" title="{% translate 'Choose which image is shown' %}">{% translate "Choose image" context "button" %}  </a>
                                 {% if user.is_staff %}
+                                    •
                                     <a class="link" href="{% url 'admin:notes_locator_change' object_id=locator.pk %}" title="{% translate 'Edit this locator in the Admin app' %}">{% translate "Admin" context "button" %}  </a>
                                 {% endif %}
                             </div>

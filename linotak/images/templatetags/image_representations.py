@@ -112,7 +112,7 @@ def _image_representation(image, spec):
                 if srcset_needed
                 else None
             ),
-            "longdesc": _image_longdesc_attr(image),
+            "longdesc": image and _image_longdesc_attr(image),
         }
     )
     return IMAGE_TEMPLATE.render(context)
@@ -133,6 +133,8 @@ def with_class(value, arg):
 
 def _image_longdesc_attr(image):
     """Return a URL suitable for the longdesc attribute of an image."""
+    if not image:
+        raise ValueError("Image cannot be None")
     if text := image.description and image.description.strip():
         context = template.Context({"text": text})
         return create_data_url(

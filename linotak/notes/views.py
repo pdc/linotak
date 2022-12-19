@@ -340,6 +340,7 @@ class LocatorImageUpdateView(NoteLocatorMixin, SeriesMixin, UpdateView):
         "crop_height",
         "focus_x",
         "focus_y",
+        "description",
     ]
     template_name = "notes/locator_image_update_form.html"
     pk_url_kwarg = "image_pk"

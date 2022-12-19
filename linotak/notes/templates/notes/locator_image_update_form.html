@@ -15,44 +15,70 @@
             {% include 'notes/inline-styles/nav.css' %}
             {% include 'notes/inline-styles/locator_image_form.css' %}
         </style>
-
         <style>
-          main {
-            height: 100vh;
-            display: grid;
-            grid-template-rows: max-content 1fr;
-          }
-
-          @media (min-width: 640px) {
-            main {
-              max-width: none;
+            form {
+                justify-self: start;
+                display: grid;
+                grid-template-columns: max-content max-content max-content;
             }
-          }
+
+            label,
+            textarea {
+                margin: 0.25em ;
+                width: inherit;
+            }
+
+            .focus-frm-fullwidth-label,
+            textarea {
+                grid-column: 1 / 4;
+            }
+
+            .form-action-bar {
+                grid-column: 1 / 4;
+                justify-self: stretch;
+            }
+
+            @media (min-width: calc(640px + 24em)) {
+                main {
+                    display: grid;
+                    grid-template-columns: max-content 1fr;
+                    gap: 20px;
+                    align-items: start;
+                    justify-content: start;
+                }
+            }
         </style>
 {% endblock %}
 
 {% block content %}
 
     <main>
+        <div class="focus-frm-focus" id="focus-ui">
+            {{ object|with_class:"focus-frm-img"|representation:"640x640" }}
+        </div>
         <form method="POST" class="focus-frm" id="focus-ui-form">
             {% csrf_token %}
             {% for field in form.hidden_fields %}{{ field }}{% endfor %}
             {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
-            <div class="focus-frm-focus" id="focus-ui">
-                {{ object|with_class:"focus-frm-img"|representation:"640x640" }}
-                <label for="{{ form.crop_left.id_for_label }}">{% translate 'Crop left top' %}</label>
-                {{ form.crop_left }}{{ form.crop_top }}
-                <label for="{{ form.crop_width.id_for_label }}">{% translate 'Crop size' %}</label>
-                {{ form.crop_width }}{{ form.crop_height }}
-                <label for="{{ form.focus_x.id_for_label }}">{% translate 'Focus point:' %}</label>
-                {{ form.focus_x }}{{ form.focus_y }}
-                {% if form.focus_x.errors or form.focus_y.errors %}
-                <ul class="errorlist">
-                    {% for error in form.focus_x.errors %}<li>{{ error }}</li>{% endfor %}
-                    {% for error in form.focus_y.errors %}<li>{{ error }}</li>{% endfor %}
-                </ul>
-                {% endif %}
-            </div>
+
+            <label for="{{ form.crop_left.id_for_label }}">{% translate 'Crop left top' %}</label>
+            {{ form.crop_left }}{{ form.crop_top }}
+
+            <label for="{{ form.crop_width.id_for_label }}">{% translate 'Crop size' %}</label>
+            {{ form.crop_width }}{{ form.crop_height }}
+
+            <label for="{{ form.focus_x.id_for_label }}">{% translate 'Focus point:' %}</label>
+            {{ form.focus_x }}{{ form.focus_y }}
+
+            <label for="{{ form.desciption.id_for_label }}" class="focus-frm-fullwidth-label">{% translate 'Description:' %}</label>
+            {{ form.description }}
+
+            {% if form.focus_x.errors or form.focus_y.errors %}
+            <ul class="errorlist">
+                {% for error in form.focus_x.errors %}<li>{{ error }}</li>{% endfor %}
+                {% for error in form.focus_y.errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+            {% endif %}
 
             <div class="form-action-bar">
                 <input class="form-action" type="submit" value="{% translate 'Save' context 'button' %}">
