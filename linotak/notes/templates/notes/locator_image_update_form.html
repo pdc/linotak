@@ -16,6 +16,17 @@
             {% include 'notes/inline-styles/locator_image_form.css' %}
         </style>
         <style>
+            main {
+                width: inherit;
+                margin: 0;
+
+                display: flex;
+                flex-flow: row wrap;
+                gap: 20px;
+                align-items: start;
+                align-content: start;
+                justify-content: start;
+            }
             form {
                 justify-self: start;
                 display: grid;
@@ -38,15 +49,6 @@
                 justify-self: stretch;
             }
 
-            @media (min-width: calc(640px + 24em)) {
-                main {
-                    display: grid;
-                    grid-template-columns: max-content 1fr;
-                    gap: 20px;
-                    align-items: start;
-                    justify-content: start;
-                }
-            }
         </style>
 {% endblock %}
 
