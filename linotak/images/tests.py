@@ -545,7 +545,7 @@ class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
             a, b -- bytes objects containing PNG data.
             ignore_chunks -- optional set of chunk types to disregard when comparing.
                 By default ignores time and text chunks since they
-                vary eacy time PNG is generated.
+                vary each time PNG is generated.
 
         This test is still stricter than it should be:
         it expects the same sequence of IDAT chunks,
@@ -554,13 +554,20 @@ class TestImageCreateSquareRepresentation(ImageTestMixin, TestCase):
         files using a different PNG library from ImageMagick.
         """
         if ignore_chunks is None:
-            ignore_chunks = {b"tIME", b"tEXt"}
-        chunks_a = [
-            (t, d, c) for t, d, c in _iter_PNG_chunks(a) if t not in ignore_chunks
-        ]
-        chunks_b = [
-            (t, d, c) for t, d, c in _iter_PNG_chunks(b) if t not in ignore_chunks
-        ]
+            ignore_chunks = {
+                b"tIME",
+                b"tEXt",
+                (b"gAMA", b"\x00\x00\xb1\x8f", (201089285,)),
+            }
+
+        def chunk_relevant(chunk):
+            t, d, c = chunk
+            if chunk in ignore_chunks or t in ignore_chunks:
+                return False
+            return True
+
+        chunks_a = [chunk for chunk in _iter_PNG_chunks(a) if chunk_relevant(chunk)]
+        chunks_b = [chunk for chunk in _iter_PNG_chunks(b) if chunk_relevant(chunk)]
         self.assertEqual(chunks_a, chunks_b)
 
 
