@@ -22,6 +22,7 @@ class PersonFactory(factory.django.DjangoModelFactory):
 class SeriesFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Series
+        skip_postgeneration_save = True
 
     name = factory.Sequence(lambda n: "series%d" % n)
     title = factory.Sequence(lambda n: "series%d" % n)
@@ -63,6 +64,7 @@ class TagFactory(factory.django.DjangoModelFactory):
 class NoteFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Note
+        skip_postgeneration_save = True
 
     series = factory.SubFactory(SeriesFactory)
     text = factory.Sequence(lambda n: "text of note %d" % n)
@@ -89,6 +91,7 @@ class NoteFactory(factory.django.DjangoModelFactory):
 class LocatorFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Locator
+        skip_postgeneration_save = True
 
     author = factory.SubFactory(PersonFactory)
     url = factory.Sequence(lambda n: "https://example.com/%d" % n)
@@ -102,3 +105,4 @@ class LocatorFactory(factory.django.DjangoModelFactory):
             return
         if extracted:
             self.via = extracted
+            self.save()

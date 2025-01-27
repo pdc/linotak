@@ -36,6 +36,7 @@ class ReceiverFactory(factory.django.DjangoModelFactory):
 class OutgoingFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Outgoing
+        skip_postgeneration_save = True
 
     source = factory.SubFactory(NoteFactory)
     target = factory.SubFactory(LocatorFactory)
