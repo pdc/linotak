@@ -1,24 +1,23 @@
+import logging
+import time
+
+import requests
+import requests_oauthlib
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-import logging
-import requests
-import requests_oauthlib
-import time
 
 from ..images.size_spec import SizeSpec
-from ..notes.models import Series, Note
-
+from ..notes.models import Note, Series
 from .protocol import (
     authorize_path,
+    media_path,
+    necessary_scopes,
+    statuses_path,
     token_path,
     verify_credentials_path,
-    media_path,
-    statuses_path,
-    necessary_scopes,
 )
-
 
 logger = logging.getLogger(__name__)
 

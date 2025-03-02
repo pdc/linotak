@@ -1,14 +1,14 @@
 """Forms for WebMenion support."""
 
-from django.conf import settings
-from django import forms
-from django.urls import resolve, Resolver404
-from django.utils import timezone
 from urllib.parse import urlparse
 
-from ..notes.models import Locator, Note
-from ..notes.middleware import SubdomainSeriesMiddleware
+from django import forms
+from django.conf import settings
+from django.urls import Resolver404, resolve
+from django.utils import timezone
 
+from ..notes.middleware import SubdomainSeriesMiddleware
+from ..notes.models import Locator, Note
 from .models import Incoming
 
 

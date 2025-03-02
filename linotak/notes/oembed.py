@@ -1,17 +1,16 @@
 """Instead of scanning page, scan read its oEmbed profile."""
 
-from dataclasses import dataclass
 import logging
 import re
+from dataclasses import dataclass
 from urllib.parse import urlparse
 
+import requests
 from django.conf import settings
 from django.core.cache import cache
-import requests
 from uritemplate import URITemplate
 
 from .scanner import HCard, Img, Title
-
 
 LOG = logging.getLogger(__name__)
 

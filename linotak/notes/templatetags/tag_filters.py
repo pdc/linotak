@@ -1,10 +1,10 @@
 """Template tags for image representations."""
 
-from django import template
 from functools import wraps
 
-from ..tag_filter import TagFilter
+from django import template
 
+from ..tag_filter import TagFilter
 
 register = template.Library()
 

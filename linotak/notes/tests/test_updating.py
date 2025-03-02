@@ -1,21 +1,22 @@
 """Test updating."""
 
 from datetime import timedelta
-from django.test import TestCase
-from django.utils import timezone
-import httpretty
 from unittest.mock import patch
 
+import httpretty
+from django.test import TestCase
+from django.utils import timezone
+
 from ...images.models import Image
+from .. import updating
 from ..models import Locator, LocatorImage
+from ..scanner import HCard, HEntry, Img, Link, Title
+from ..signals import locator_post_scanned
 from ..updating import (
     fetch_page_update_locator,
-    update_locator_with_stuff,
     parse_link_header,
+    update_locator_with_stuff,
 )
-from ..scanner import Title, HCard, HEntry, Img, Link
-from ..signals import locator_post_scanned
-from .. import updating
 
 
 class TestFetchPageUpdateLocator(TestCase):

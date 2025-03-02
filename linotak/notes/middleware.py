@@ -1,7 +1,8 @@
 """MIddleware for the notes app."""
 
-from django.core.exceptions import MiddlewareNotUsed
 import re
+
+from django.core.exceptions import MiddlewareNotUsed
 
 
 class SubdomainSeriesMiddleware:

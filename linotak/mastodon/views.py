@@ -14,7 +14,7 @@ Making a conenction with OAuth2 requires the following views:
 """
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import redirect, render, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import DetailView
 from django.views.generic.edit import CreateView
 

@@ -1,16 +1,17 @@
 """Test for some views."""
 
-from datetime import datetime, timedelta, timezone
-from django.utils.timezone import now
-from django.test import Client, TestCase, override_settings
 import logging
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
+
+from django.test import Client, TestCase, override_settings
+from django.utils.timezone import now
 
 from ...images.models import Image, Representation
 from ..models import Locator, LocatorImage
 from ..tag_filter import TagFilter
-from ..views import Link, NoteListView, NoteDetailView
-from .factories import SeriesFactory, PersonFactory, NoteFactory, LocatorFactory
+from ..views import Link, NoteDetailView, NoteListView
+from .factories import LocatorFactory, NoteFactory, PersonFactory, SeriesFactory
 
 
 @override_settings(NOTES_DOMAIN="example.com", ALLOWED_HOSTS=[".example.com"])

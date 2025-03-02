@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from .models import Incoming, Outgoing, Receiver, LocatorReceiver
+from .models import Incoming, LocatorReceiver, Outgoing, Receiver
 
 
 def queue_fetch_source(model_admin, request, queryset):

@@ -6,7 +6,6 @@ from celery.utils.log import get_task_logger
 
 from .models import Outgoing, notify_webmention_receiver
 
-
 logger = get_task_logger(__name__)
 
 

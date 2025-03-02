@@ -3,8 +3,8 @@
 from django import template
 
 from linotak.utils import create_data_url
-from ..size_spec import SizeSpec
 
+from ..size_spec import SizeSpec
 
 register = template.Library()
 

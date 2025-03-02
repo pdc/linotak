@@ -3,8 +3,8 @@
 from django.contrib.auth.models import (
     AbstractBaseUser,
     PermissionsMixin,
-    UserManager,
     UnicodeUsernameValidator,
+    UserManager,
 )
 from django.core.mail import send_mail
 from django.db import models

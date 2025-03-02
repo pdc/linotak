@@ -1,15 +1,15 @@
 """Database models for app Linotak Mentions."""
 
+import requests
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-import requests
 
 from ..notes.models import Locator, Note
-from ..notes.scanner import Link, HEntry
+from ..notes.scanner import HEntry, Link
 
 
 class Receiver(models.Model):

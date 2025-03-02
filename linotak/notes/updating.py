@@ -1,18 +1,18 @@
 """ROutines for updating information about external resources."""
 
+import re
+from urllib.parse import urljoin
+
+import requests
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-import re
-import requests
-from urllib.parse import urljoin
 
 from ..images.models import Image
 from .models import Locator, LocatorImage
 from .oembed import fetch_oembed
-from .scanner import PageScanner, Title, HEntry, Img, Link
+from .scanner import HEntry, Img, Link, PageScanner, Title
 from .signals import locator_post_scanned
-
 
 # Images on the page smaller than this are ignored.
 MIN_IMAGE_SIZE = 80

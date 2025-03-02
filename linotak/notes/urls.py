@@ -1,7 +1,6 @@
-from django.urls import path, include
+from django.urls import include, path
 
-from . import views, feed
-
+from . import feed, views
 
 thing_or_list = [
     path("", views.NoteListView.as_view(), name="list"),

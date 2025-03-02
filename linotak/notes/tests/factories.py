@@ -1,9 +1,10 @@
 from datetime import timedelta
+
+import factory
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-import factory
 
-from ..models import Person, Series, Tag, Note, NoteSubject, Locator, wordify
+from ..models import Locator, Note, NoteSubject, Person, Series, Tag, wordify
 
 
 class PersonFactory(factory.django.DjangoModelFactory):

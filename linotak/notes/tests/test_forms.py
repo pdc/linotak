@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 from ..forms import NoteForm
-from .factories import PersonFactory, SeriesFactory, NoteFactory, LocatorFactory
+from .factories import LocatorFactory, NoteFactory, PersonFactory, SeriesFactory
 
 
 class TestNoteForm(TestCase):

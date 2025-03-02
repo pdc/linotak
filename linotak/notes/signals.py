@@ -2,7 +2,6 @@
 
 from django.dispatch import Signal
 
-
 # Signal sent when a locator is scanned.
 # Extra parameters –
 #     instance – the `Locator` instance in question

@@ -2,7 +2,6 @@
 
 import re
 
-
 G_RE = re.compile(r"^\s*(\d+)\s*x\s*(\d+)\s*")
 M_RE = re.compile(r"^(min|max)\s*(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)\s*")
 

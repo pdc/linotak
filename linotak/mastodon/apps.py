@@ -7,6 +7,7 @@ class MastodonConfig(AppConfig):
     def ready(self):
         """Wire up signals for this app."""
         from django.db.models.signals import post_save
+
         from ..notes.models import Note
         from .handlers import handle_note_post_save
 

@@ -1,9 +1,15 @@
 """Forms for use in the notes app."""
 
-from django.forms import Form, CharField, ModelChoiceField, HiddenInput, Textarea
-from django.forms import modelformset_factory
+from django.forms import (
+    CharField,
+    Form,
+    HiddenInput,
+    ModelChoiceField,
+    Textarea,
+    modelformset_factory,
+)
 
-from .models import Person, Series, Note, LocatorImage
+from .models import LocatorImage, Note, Person, Series
 
 
 class NoteForm(Form):

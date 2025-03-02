@@ -4,13 +4,14 @@ Necessary since JSON cannot encode datetimes.
 """
 
 
-from django.test import TestCase
-from django.utils import timezone
 from unittest.mock import patch
 
+from django.test import TestCase
+from django.utils import timezone
+
+from .. import tasks
 from ..models import Locator
 from ..tasks import fetch_locator_page
-from .. import tasks
 
 
 class TestFetchLocatorPage(TestCase):

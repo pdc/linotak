@@ -1,37 +1,38 @@
 """Tests for the Images app."""
 
+import pathlib
+import struct
 from base64 import b64encode
 from datetime import timedelta
+from unittest.mock import patch
+
+import httpretty
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.test import TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
-import httpretty
-import pathlib
-import struct
-from unittest.mock import patch
 
 from linotak.utils import create_data_url
+
 from ..matchers_for_mocks import DateTimeTimestampMatcher
+from . import models, signal_handlers, tasks  # For mocking
 from .models import (
+    CannotSniff,
     Image,
     Representation,
-    _sniff,
-    CannotSniff,
-    _sniff_svg,
-    suffix_from_media_type,
     _comb_imagemagick_verbose,
     _lab_from_imagemagick_verbose_bits,
+    _sniff,
+    _sniff_svg,
     sRGB_from_Lab,
+    suffix_from_media_type,
 )
 from .size_spec import SizeSpec
 from .templatetags.image_representations import (
-    _image_representation,
     _image_longdesc_attr,
+    _image_representation,
 )
-from . import models, signal_handlers, tasks  # For mocking
-
 
 # How we obtain real test files:
 data_dir = pathlib.Path(__file__).parent / "test-data"
