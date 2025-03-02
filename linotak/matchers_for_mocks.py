@@ -1,6 +1,5 @@
 """Matchers for use in mock functions’ argument lists."""
 
-
 from .utils import datetime_of_timestamp
 
 

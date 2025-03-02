@@ -7,7 +7,6 @@ A Linotak series optionally is linked to a user on a Mastodon instance.
 Notes publishe to the series become public status updates fopr the user.
 """
 
-
 necessary_scopes = [
     "read:accounts",
     "write:media",

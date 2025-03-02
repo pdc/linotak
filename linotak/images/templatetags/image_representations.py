@@ -101,11 +101,11 @@ def _image_representation(image, spec):
             "image": image,
             "representations": representations,
             "representation": representations and representations[0],
-            "srcset": ", ".join(
-                "%s %dw" % (r.content.url, r.width) for r in representations
-            )
-            if srcset_needed
-            else None,
+            "srcset": (
+                ", ".join("%s %dw" % (r.content.url, r.width) for r in representations)
+                if srcset_needed
+                else None
+            ),
             "sizes": (
                 "@media (max-width: %dpx) 100vh, %dpx"
                 % (representations[0].width, representations[0].width)

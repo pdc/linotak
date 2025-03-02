@@ -442,7 +442,7 @@ class TestNotCreateFormView(TestCase):
         SeriesFactory.create(name="smoo", editors=[author])
 
         r = self.client.get(
-            f"/new?u=https:%2F%2Fexample.net%2F1&t=Text+from+query+string",
+            "/new?u=https:%2F%2Fexample.net%2F1&t=Text+from+query+string",
             HTTP_HOST="smoo.example.com",
         )
 

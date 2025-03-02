@@ -73,8 +73,8 @@ class TestSeriesIconRepresentations(TestCase):
         with patch.object(
             image, "find_square_representation"
         ) as find_square_representation:
-            find_square_representation.side_effect = (
-                lambda size: "R(%s)" % size if size < 48 else None
+            find_square_representation.side_effect = lambda size: (
+                "R(%s)" % size if size < 48 else None
             )
 
             result = subject.icon_representations()

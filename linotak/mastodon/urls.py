@@ -1,6 +1,5 @@
 """URLconf for Mastodon."""
 
-
 from django.urls import path
 
 from . import views

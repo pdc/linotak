@@ -322,7 +322,7 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
         data_url = "data:image/gif;base64," + b64encode(self.data).decode("UTF-8")
         self.image = Image.objects.create(data_url=data_url)
 
-        with patch.object(models, "logger") as logger:
+        with patch.object(models, "logger"):
             self.image.retrieve_data(if_not_retrieved_since=None)
 
         self.then_retrieved_and_sniffed("image/gif", 1020, 100)

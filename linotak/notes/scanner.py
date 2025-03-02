@@ -779,5 +779,5 @@ class PageScanner(HTMLParser):
     def close(self):
         """Additional call at end of file."""
         while self.stack:
-            tag = self._pop_tag()
+            self._pop_tag()
         super().close()

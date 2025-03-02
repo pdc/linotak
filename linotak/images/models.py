@@ -521,9 +521,11 @@ def _sniff_svg(input=None, stdin=None):
     else:
         width, height = None, None
     return (
-        "image/svg+xml"
-        if root.tag in ["{http://www.w3.org/2000/svg}svg", "svg"]
-        else None,
+        (
+            "image/svg+xml"
+            if root.tag in ["{http://www.w3.org/2000/svg}svg", "svg"]
+            else None
+        ),
         width,
         height,
         "#AAA",

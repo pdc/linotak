@@ -10,6 +10,6 @@ class ConnectionAdmin(admin.ModelAdmin):
 
 
 @admin.register(Post)
-class ConnectionAdmin(admin.ModelAdmin):
+class PostAdmin(admin.ModelAdmin):
     search_fields = "connection__series__name", "connection__domain", "connection__name"
     readonly_fields = "created", "modified"

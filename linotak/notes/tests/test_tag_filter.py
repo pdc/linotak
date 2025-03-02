@@ -148,7 +148,7 @@ class TestTagFiltersWithIncluded(TestCase):
 
         self.assertEqual(result, TagFilter(["foo"], ["quux"]))
 
-    def test_removes_tag_from_filter(self):
+    def test_removes_tag_from_filter2(self):
         result = without_excluded(TagFilter(["foo"], ["quux", "quux2"]), "quux")
 
         self.assertEqual(result, TagFilter(["foo"], ["quux2"]))
