@@ -1,11 +1,12 @@
 """Test for TagFilter et al."""
 
-from django.test import TestCase, override_settings
 from unittest.mock import MagicMock
+
+from django.test import TestCase, override_settings
 
 from ..tag_filter import TagFilter
 from ..templatetags.note_lists import note_list_url, note_url, profile_url
-from .factories import SeriesFactory, NoteFactory, PersonFactory
+from .factories import NoteFactory, PersonFactory, SeriesFactory
 
 
 @override_settings(NOTES_DOMAIN="example.org")

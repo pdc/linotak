@@ -1,7 +1,8 @@
 from base64 import b64encode
 from datetime import datetime, timezone
-from django.utils.timezone import make_aware
 from urllib.parse import quote
+
+from django.utils.timezone import make_aware
 
 
 def datetime_of_timestamp(timestamp):

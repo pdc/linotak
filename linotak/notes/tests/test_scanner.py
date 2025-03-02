@@ -2,7 +2,7 @@ import datetime
 
 from django.test import TestCase
 
-from ..scanner import PageScanner, Title, Link, Img, Property, HCard, HEntry, HSomething
+from ..scanner import HCard, HEntry, HSomething, Img, Link, PageScanner, Property, Title
 
 
 class ScanMixin:

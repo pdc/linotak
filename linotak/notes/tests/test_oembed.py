@@ -3,16 +3,16 @@
 import json
 from unittest.mock import patch
 
-from django.test import TestCase
 import httpretty
+from django.test import TestCase
 
 from ..oembed import (
+    OEmbedEndpoint,
+    fetch_oembed,
     load_endpoints,
     re_from_url_globs,
-    template_from_oembed,
-    OEmbedEndpoint,
     stuffs_from_oembed,
-    fetch_oembed,
+    template_from_oembed,
 )
 from ..scanner import HCard, Img, Title
 

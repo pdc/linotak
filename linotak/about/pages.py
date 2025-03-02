@@ -1,15 +1,14 @@
 """Find pages in the content directory."""
 
-from django.apps import apps
-from django.conf import settings
-from django.template import engines
-from django.utils.safestring import mark_safe
-import markdown
-
 from email.parser import Parser
 from io import StringIO
 from pathlib import Path
 
+import markdown
+from django.apps import apps
+from django.conf import settings
+from django.template import engines
+from django.utils.safestring import mark_safe
 
 # This module assumes a local file system: shoukd I be using the generic storage API instead?
 

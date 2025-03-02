@@ -8,7 +8,6 @@ from ..utils import datetime_of_timestamp
 from .models import Image
 from .size_spec import SizeSpec
 
-
 logger = get_task_logger(__name__)
 
 

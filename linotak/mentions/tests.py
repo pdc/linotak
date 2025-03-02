@@ -1,29 +1,29 @@
 """Tests for the metnions app."""
 
 from datetime import timedelta
+from unittest.mock import patch
+
+import factory
+import httpretty
 from django.db import transaction
 from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
-import factory
-import httpretty
-from unittest.mock import patch
 
 from ..notes.models import Locator, Note
-from ..notes.tests.factories import SeriesFactory, LocatorFactory, NoteFactory
-from ..notes.scanner import Link, HEntry
-
+from ..notes.scanner import HEntry, Link
+from ..notes.tests.factories import LocatorFactory, NoteFactory, SeriesFactory
+from . import tasks
 from .forms import IncomingForm
 from .models import (
-    Receiver,
+    Incoming,
     LocatorReceiver,
     Outgoing,
-    Incoming,
-    handle_note_post_save,
+    Receiver,
     handle_locator_post_scanned,
+    handle_note_post_save,
     notify_webmention_receiver,
 )
-from . import tasks
 
 
 class ReceiverFactory(factory.django.DjangoModelFactory):

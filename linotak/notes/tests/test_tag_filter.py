@@ -1,14 +1,15 @@
 """Test for TagFilter et al."""
 
-from django.test import TestCase
 from unittest.mock import MagicMock
 
-from ..tag_filter import camel_from_words, canonicalize_tag_name, wordify, TagFilter
+from django.test import TestCase
+
+from ..tag_filter import TagFilter, camel_from_words, canonicalize_tag_name, wordify
 from ..templatetags.tag_filters import (
-    with_included,
-    without_included,
     with_excluded,
+    with_included,
     without_excluded,
+    without_included,
 )
 from .factories import TagFactory
 

@@ -9,8 +9,7 @@ from django.utils.translation import gettext_lazy as _
 
 from ..images.models import Image
 from ..images.size_spec import SizeSpec
-from .tag_filter import canonicalize_tag_name, wordify, camel_from_words
-
+from .tag_filter import camel_from_words, canonicalize_tag_name, wordify
 
 MAX_LENGTH = 4000
 

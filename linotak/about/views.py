@@ -1,7 +1,8 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404, render
+
+from linotak.notes.models import Series
 
 from .pages import Page
-from linotak.notes.models import Series
 
 
 def page_view(request, name=None):

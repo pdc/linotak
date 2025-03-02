@@ -1,13 +1,14 @@
 """Views fro notes."""
 
-from django.conf import settings
-from django.http import HttpResponse
-from django.views.generic.list import BaseListView
-from django.urls import reverse
 import io
 
+from django.conf import settings
+from django.http import HttpResponse
+from django.urls import reverse
+from django.views.generic.list import BaseListView
+
 from ..xml_writer import Document
-from .views import TaggedMixin, NotesMixin
+from .views import NotesMixin, TaggedMixin
 
 
 class NoteFeedView(TaggedMixin, NotesMixin, BaseListView):

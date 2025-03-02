@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('images', '0013_auto_image_crop'),
+        ("images", "0013_auto_image_crop"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='image',
-            name='description',
-            field=models.TextField(blank=True, help_text='Description of the image that might be used in a longdesc attribute or as the alt text for Mastodon et al.', max_length=4000, verbose_name='description'),
+            model_name="image",
+            name="description",
+            field=models.TextField(
+                blank=True,
+                help_text="Description of the image that might be used in a longdesc attribute or as the alt text for Mastodon et al.",
+                max_length=4000,
+                verbose_name="description",
+            ),
         ),
     ]

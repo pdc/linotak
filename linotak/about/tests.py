@@ -1,7 +1,8 @@
-from django.test import TestCase
-from pathlib import Path
 import shutil
 import tempfile
+from pathlib import Path
+
+from django.test import TestCase
 
 from .pages import Page
 

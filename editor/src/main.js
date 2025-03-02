@@ -12,7 +12,6 @@ const { width, height, placeholder } = JSON.parse(document.getElementById("image
 
 const handleFocusPointChange = (e) => {
     const { detail: { focusX, focusY } } = e;
-    console.log('focuschange', focusX, focusY);
     form.focus_x.value = focusX;
     form.focus_y.value = focusY;
 }

@@ -4,8 +4,8 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from .templatetags.image_representations import square_representation, representation
 from .models import Image, Representation
+from .templatetags.image_representations import representation, square_representation
 
 
 @admin.display(description=_("Queue retrieval of image data"))

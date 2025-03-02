@@ -18,7 +18,6 @@ import sys
 
 import environ
 
-
 env = environ.Env(
     DEBUG=(bool, False),
     STATIC_ROOT=(str, None),

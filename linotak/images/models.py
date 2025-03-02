@@ -10,26 +10,26 @@ Images have two main classes:
         cropped, scaled version of an image
 """
 
+import io
+import logging
+import re
+import subprocess
 from base64 import b64decode, urlsafe_b64encode
+from hashlib import md5
+from xml.etree import ElementTree
+
+import requests
 from django.conf import settings
 from django.core.files import File
 from django.core.files.base import ContentFile
-from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models, transaction
 from django.db.models import F
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from hashlib import md5
-import io
-import logging
-import re
-import requests
-import subprocess
-from xml.etree import ElementTree
 
 from .signals import wants_data, wants_representation
 from .size_spec import SizeSpec
-
 
 logger = logging.getLogger(__name__)
 

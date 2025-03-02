@@ -1,8 +1,9 @@
 """Tests for middleware."""
 
-from django.test import TestCase
-from django.http import HttpRequest
 from unittest.mock import MagicMock
+
+from django.http import HttpRequest
+from django.test import TestCase
 
 from ..middleware import SubdomainSeriesMiddleware
 

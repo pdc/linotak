@@ -1,18 +1,19 @@
+from unittest.mock import patch
+
 from django.db import transaction
 from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
-from unittest.mock import patch
 
-from ...matchers_for_mocks import DateTimeTimestampMatcher
 from ...images.models import Image, wants_data
-from ..models import Locator, LocatorImage, Tag, Note, effective_char_count
-from ..tag_filter import TagFilter
+from ...matchers_for_mocks import DateTimeTimestampMatcher
 from .. import tasks
+from ..models import Locator, LocatorImage, Note, Tag, effective_char_count
+from ..tag_filter import TagFilter
 from .factories import (
-    NoteFactory,
-    SeriesFactory,
     LocatorFactory,
+    NoteFactory,
     PersonFactory,
+    SeriesFactory,
     TagFactory,
 )
 

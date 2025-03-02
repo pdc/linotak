@@ -1,7 +1,7 @@
 """Views for notes."""
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin
+from django.contrib.auth.mixins import AccessMixin, LoginRequiredMixin
 from django.db.models import F, Prefetch
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -9,13 +9,12 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import ngettext
-from django.views.generic import DetailView, ListView, FormView
+from django.views.generic import DetailView, FormView, ListView
 from django.views.generic.edit import CreateView, UpdateView
 
 from ..images.models import Image
-
-from .forms import NoteForm, LocatorImageFormSet
-from .models import Person, Series, Note, Locator, LocatorImage
+from .forms import LocatorImageFormSet, NoteForm
+from .models import Locator, LocatorImage, Note, Person, Series
 from .tag_filter import TagFilter
 from .templatetags.note_lists import note_list_url
 

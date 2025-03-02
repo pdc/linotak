@@ -1,8 +1,8 @@
 from django.conf import settings
 from django.db import transaction
 
-from .models import Post
 from . import tasks
+from .models import Post
 
 
 def handle_note_post_save(sender, instance, created, raw, **kwargs):

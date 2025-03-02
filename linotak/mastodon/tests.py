@@ -1,24 +1,23 @@
+import json
+import logging
+import time
+from unittest.mock import ANY, MagicMock, call, patch
+
+import factory
+import httpretty
+import requests_oauthlib  # for mocking
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
-import factory
-import httpretty
-import json
-import logging
-import requests_oauthlib  # for mocking
-from unittest.mock import patch, MagicMock, ANY, call
-import time
 
 from ..images.models import Image, Representation
 from ..notes.models import LocatorImage
-from ..notes.tests.factories import SeriesFactory, NoteFactory, LocatorFactory
-
+from ..notes.tests.factories import LocatorFactory, NoteFactory, SeriesFactory
+from . import tasks
 from .models import Connection, Post
 from .protocol import necessary_scopes
-from . import tasks
-
 
 # class TestInstanceOrigin(TestCase):
 

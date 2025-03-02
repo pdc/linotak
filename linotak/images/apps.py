@@ -6,15 +6,16 @@ class ImagesConfig(AppConfig):
 
     def ready(self):
         from django.db.models.signals import post_save, pre_delete
+
         from .models import Image, Representation
-        from .signals import wants_data, wants_representation
         from .signal_handlers import (
             on_image_post_save,
+            on_image_pre_delete,
             on_image_wants_data,
             on_image_wants_representation,
-            on_image_pre_delete,
             on_representation_pre_delete,
         )
+        from .signals import wants_data, wants_representation
 
         post_save.connect(
             on_image_post_save, sender=Image, dispatch_uid="on_image_post_save"

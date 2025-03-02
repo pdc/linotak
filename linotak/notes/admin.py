@@ -3,14 +3,14 @@ from django.utils.html import format_html
 
 from ..images.templatetags.image_representations import square_representation
 from .models import (
+    Locator,
+    LocatorImage,
+    Note,
+    NoteSubject,
     Person,
     Profile,
     Series,
     Tag,
-    Note,
-    NoteSubject,
-    Locator,
-    LocatorImage,
 )
 
 

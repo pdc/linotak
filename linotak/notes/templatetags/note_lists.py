@@ -5,7 +5,6 @@ from django.urls import reverse
 
 from ..models import make_absolute_url
 
-
 register = template.Library()
 
 

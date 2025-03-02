@@ -7,7 +7,6 @@ from ..utils import datetime_of_timestamp
 from .models import Locator
 from .updating import fetch_page_update_locator
 
-
 logger = get_task_logger(__name__)
 
 

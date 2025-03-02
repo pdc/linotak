@@ -2,7 +2,6 @@
 
 import django.dispatch
 
-
 # Called when `Image.width` and `height` needed and not available.
 # Argument:
 #     `instance` – the `Image` instance

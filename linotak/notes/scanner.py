@@ -5,12 +5,13 @@ list of ’stuff’ (linkks, properties, and microforat2 structures like h-entrr
 instances).
 """
 
+import json
+import re
+from html.parser import HTMLParser
+from urllib.parse import urljoin
+
 from django.conf import settings
 from django.utils.dateparse import parse_date, parse_datetime
-import json
-from html.parser import HTMLParser
-import re
-from urllib.parse import urljoin
 
 
 class StuffHolderMixin:
