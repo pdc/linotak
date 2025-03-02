@@ -491,7 +491,7 @@ def normalize_whitespace(s):
 
 
 class BlockquoteRecognizer:
-    """Capture blockquites with h-cite references."""
+    """Capture blockquotes with h-cite references."""
 
     def __init__(self, *args, **kwargs):
         self.blockquotes = []

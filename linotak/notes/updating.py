@@ -1,5 +1,6 @@
 """ROutines for updating information about external resources."""
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 import re
@@ -8,6 +9,7 @@ from urllib.parse import urljoin
 
 from ..images.models import Image
 from .models import Locator, LocatorImage
+from .oembed import fetch_oembed
 from .scanner import PageScanner, Title, HEntry, Img, Link
 from .signals import locator_post_scanned
 
@@ -18,7 +20,9 @@ MIN_IMAGE_SIZE = 80
 
 @transaction.atomic
 def fetch_page_update_locator(locator, if_not_scanned_since):
-    """Download and scan the web page thus locator references and update it."
+    """Download and scan the web page referenced by this locator and update it.
+
+    If there is an oEmbed resource for this page, scan that instead.
 
     Arguments:
         locator: Locator instance to scan
@@ -35,17 +39,21 @@ def fetch_page_update_locator(locator, if_not_scanned_since):
         return
 
     locator.scanned = timezone.now()  # This is rolled back if the scan fails.
+    locator.save()
     # Setting it early should help prevent simultanous processing of the same page.
 
-    with requests.get(
-        locator.url, stream=True, headers={"User-Agent": "Linotak/0.1"}
-    ) as r:
-        stuff = parse_link_header(locator.url, r.headers.get("Link", ""))
-        scanner = PageScanner(locator.url)
-        for chunk in r.iter_content(10_000, decode_unicode=True):
-            scanner.feed(chunk)
-        scanner.close()
-        stuff += scanner.stuff
+    # See if we can aquire an oEmbed resource instead:
+    stuff = fetch_oembed(locator.url)
+    if stuff is None:
+        with requests.get(
+            locator.url, stream=True, headers={"User-Agent": settings.NOTES_FETCH_AGENT}
+        ) as r:
+            stuff = parse_link_header(locator.url, r.headers.get("Link", ""))
+            scanner = PageScanner(locator.url)
+            for chunk in r.iter_content(10_000, decode_unicode=True):
+                scanner.feed(chunk)
+            scanner.close()
+            stuff += scanner.stuff
 
     update_locator_with_stuff(locator, stuff)
     locator.save()

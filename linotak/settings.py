@@ -24,7 +24,10 @@ env = environ.Env(
     STATIC_ROOT=(str, None),
     STATIC_URL=(str, None),
     CELERY_BROKER_URL=(str, "pyamqp://localhost/"),
+    OEMBED_PROVIDERS_URL=(str, "https://oembed.com/providers.json"),
+    OEMBED_PROVIDERS_TTL=(int, 24 * 60 * 60),
     NOTES_FETCH_LOCATORS=(bool, False),
+    NOTES_FETCH_AGENT=(str, "Linotak/0.1.0 (thumbnailer)"),
     NOTES_DOMAIN=(str, None),
     NOTES_DOMAIN_INSECURE=(bool, False),
     IMAGES_FETCH_DATA=(bool, False),
@@ -190,9 +193,14 @@ else:
 CELERY_BROKER_URL = not TEST and env("CELERY_BROKER_URL")
 
 
+# How to find which web sites have oEmbed support.
+OEMBED_PROVIDERS_URL = not TEST and env("OEMBED_PROVIDERS_URL")
+OEMBED_PROVIDERS_TTL = env("OEMBED_PROVIDERS_TTL")
+
 # Whether we fetch pages for subjects when they are added to the database.
 # Suppressed during most tests to avoid network traffic during testing.
 NOTES_FETCH_LOCATORS = not TEST and env("NOTES_FETCH_LOCATORS")
+NOTES_FETCH_AGENT = env("NOTES_FETCH_AGENT")
 
 # Whether we downloaad images to ascertain their dimensions and create thumbnails.
 IMAGES_FETCH_DATA = not TEST and env("IMAGES_FETCH_DATA")
@@ -214,7 +222,7 @@ MASTODON_POST_STATUSES = not TEST and env("MASTODON_POST_STATUSES")
 
 
 # LOGGING if defined contains JSON-encoded logging configuration
-# LOG_LEVEL if defined specifies a logging level (WARNMING,. IONFO< DENUIG)
+# LOG_LEVEL if defined specifies a logging level (ERROR, WARNING, INFO or DEBUG)
 LOGGING = env("LOGGING")
 if LOGGING:
     import json
@@ -232,8 +240,13 @@ else:
         "loggers": {
             "django": {
                 "handlers": ["console"],
-                "level": "INFO" if TEST else env("LOG_LEVEL"),
+                "level": "WARNING" if TEST else env("LOG_LEVEL"),
                 "propagate": True,
+            },
+            "linotak": {
+                "handlers": ["console"],
+                "level": "WARNING" if TEST else env("LOG_LEVEL"),
+                "propagate": False,
             },
         },
     }

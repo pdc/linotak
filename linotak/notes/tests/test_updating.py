@@ -52,7 +52,10 @@ class TestFetchPageUpdateLocator(TestCase):
             updating, "update_locator_with_stuff"
         ) as mock_update, patch.object(
             locator_post_scanned, "send"
-        ) as locator_post_scanned_send:
+        ) as locator_post_scanned_send, patch.object(
+            updating, "fetch_oembed"
+        ) as fetch_oembed:
+            fetch_oembed.return_value = None
             page_scanner = cls.return_value
             page_scanner.stuff = ["**STUFF**"]
 
@@ -84,6 +87,34 @@ class TestFetchPageUpdateLocator(TestCase):
             updated = Locator.objects.get(pk=locator.pk)
             self.assertTrue(updated.scanned)
 
+    @httpretty.activate(allow_net_connect=False)
+    def test_doesnt_fetch_page_when_oembed_available(self):
+        # Given a locator that has never been scanned …
+        locator = Locator.objects.create(url="https://example.com/1")
+        # And an oembed resource exists for this URL …
+        with patch.object(updating, "PageScanner") as cls, patch.object(
+            updating, "update_locator_with_stuff"
+        ) as mock_update, patch.object(
+            locator_post_scanned, "send"
+        ) as locator_post_scanned_send, patch.object(
+            updating, "fetch_oembed"
+        ) as fetch_oembed:
+            fetch_oembed.return_value = ["**OEMBED*STUFF**"]
+
+            result = fetch_page_update_locator(locator, if_not_scanned_since=None)
+
+            self.assertTrue(result)
+            fetch_oembed.assert_called_once_with("https://example.com/1")
+            self.assertFalse(cls.called)  # Did not attempt page scanner
+
+            locator_post_scanned_send.assert_called_once_with(
+                Locator, locator=locator, stuff=["**OEMBED*STUFF**"]
+            )
+            mock_update.assert_called_once_with(locator, ["**OEMBED*STUFF**"])
+
+            locator.refresh_from_db()
+            self.assertTrue(locator.scanned)
+
     def assert_requests_data_when(self, locator_scanned, if_not_scanned_since):
         locator = Locator.objects.create(
             url="https://example.com/1", scanned=locator_scanned
@@ -92,7 +123,10 @@ class TestFetchPageUpdateLocator(TestCase):
             updating, "update_locator_with_stuff"
         ) as mock_update, patch.object(
             locator_post_scanned, "send"
-        ) as locator_post_scanned_send:
+        ) as locator_post_scanned_send, patch.object(
+            updating, "fetch_oembed"
+        ) as fetch_oembed:
+            fetch_oembed.return_value = None
             page_scanner = cls.return_value
             page_scanner.stuff = ["**STUFF**"]
             httpretty.register_uri(
@@ -122,7 +156,9 @@ class TestFetchPageUpdateLocator(TestCase):
         locator = Locator.objects.create(
             url="https://example.com/1", scanned=locator_scanned
         )
-        with patch.object(updating, "PageScanner") as cls:
+        with patch.object(updating, "PageScanner") as cls, patch.object(
+            updating, "fetch_oembed"
+        ) as fetch_oembed:
             # Httpretty should complain if any call is made because none is registered.
 
             result = fetch_page_update_locator(
@@ -130,6 +166,7 @@ class TestFetchPageUpdateLocator(TestCase):
             )
 
             self.assertFalse(result)
+            self.assertFalse(fetch_oembed.called)
             self.assertFalse(cls.called)
 
 
