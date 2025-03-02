@@ -11,6 +11,7 @@ Images have two main classes:
 """
 
 from base64 import b64decode, urlsafe_b64encode
+from django.conf import settings
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
@@ -229,7 +230,7 @@ class Image(models.Model):
             file = ContentFile(data)
         else:
             r = requests.get(
-                self.data_url, headers={"User-Agent": "Linotak/0.1 (thumbnailer)"}
+                self.data_url, headers={"User-Agent": settings.NOTES_FETCH_AGENT}
             )
             media_type = r.headers["Content-Type"]
             buf = io.BytesIO()
@@ -639,7 +640,7 @@ def sRGB_from_Lab(lab):
     X_n, Y_n, Z_n = (0.950489, 1.0, 1.088840)
 
     def f_minus_1(t):
-        return t ** 3 if t > delta else 3 * delta * delta * (t - 4 / 29)
+        return t**3 if t > delta else 3 * delta * delta * (t - 4 / 29)
 
     q = (L_star + 16) / 116
     X = X_n * f_minus_1(q + a_star / 500)
