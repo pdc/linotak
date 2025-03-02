@@ -55,7 +55,16 @@ Edit the following URL
     javascript:location.href='https://pdc.ooble.uk/new?u='+encodeURIComponent(location.href)+'&t='+encodeURIComponent(document.title)
 
 
+Setting up Rabbitmq
+-------------------
 
+```sh
+rabbitmqctl enable_feature_flag all
+rabbitmqctl add_user linotak correct-horse-battery-staple
+rabbitmqctl add_vhost linotak
+rabbitmqctl set_permissions -p linotak linotak ".*" ".*" ".*"
+echo CELERY_BROKER_URL=amqp://linotak:correct-horse-battery-staple@localhost/linotak >> .env
+```
 
   [pdc.ooble.uk]: https://pdc.ooble.uk/
   [rel-syndication]: http://microformats.org/wiki/rel-syndication
