@@ -186,6 +186,25 @@ class TestLinksMixin(ScanMixin, TestCase):
 
         self.assertEqual(stuff, [Img("https://example.com/img", width=120, height=60)])
 
+    def test_img_instagram_stylee(self):
+        # Instagram’s page includes images with data URLs and invalid width and height sttributes.
+        stuff = self.scan(
+            """
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==" width="80px" height="80px" alt="" />
+            """
+        )
+
+        self.assertEqual(
+            stuff,
+            [
+                Img(
+                    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==",
+                    width=80,
+                    height=80,
+                )
+            ],
+        )
+
     def test_respects_base_tag(self):
         stuff = self.scan(
             """

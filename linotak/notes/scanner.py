@@ -208,8 +208,8 @@ class Img(StuffBase):
         self.title = title
         self.text = text
         self.classes = classes or []
-        self.width = width and int(width)
-        self.height = height and int(height)
+        self.width = width and self.parse_dimen(width)
+        self.height = height and self.parse_dimen(height)
 
     def __str__(self):
         if self.width:
@@ -226,6 +226,15 @@ class Img(StuffBase):
             self.width,
             self.height,
         )
+
+    def parse_dimen(self, s):
+        if isinstance(s, str):
+            if s.endswith("px"):
+                # Instagram!
+                return int(s[:-2])
+            return int(s)
+        if isinstance(s, (int, float)):
+            return s
 
 
 class Title(StuffBase):

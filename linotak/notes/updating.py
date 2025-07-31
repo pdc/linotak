@@ -1,6 +1,8 @@
 """ROutines for updating information about external resources."""
 
 import re
+from base64 import b64decode, urlsafe_b64encode
+from hashlib import md5
 from urllib.parse import urljoin
 
 import requests
@@ -127,21 +129,4 @@ def update_locator_with_stuff(locator, stuff):
 
 
 def image_of_img(img):
-    """Find or create the Image instance corresponding to this Img."""
-    image, is_new = Image.objects.get_or_create(
-        data_url=img.src,
-        defaults={
-            "media_type": img.type,
-            "width": img.width,
-            "height": img.height,
-        },
-    )
-    if not is_new and img.type or img.width or img.height:
-        if img.type:
-            image.media_type = img.type
-        if img.width:
-            image.width = img.width
-        if img.height:
-            image.height = img.height
-        image.save()
-    return image
+    return Image.objects.get_from_img(img.src, img.type, img.width, img.height)

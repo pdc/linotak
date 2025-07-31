@@ -20,7 +20,6 @@ from xml.etree import ElementTree
 
 import requests
 from django.conf import settings
-from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models, transaction
@@ -44,8 +43,59 @@ class CannotSniff(Exception):
         return "ImageMagick identify returned status %d: %r" % (returncode, message)
 
 
+class ImageManager(models.Manager):
+    def get_from_img(self, img_src, img_type, img_width, img_height):
+        """Find or create the Image instance corresponding to this Img."""
+        if img_src.startswith("data:"):
+            # Some data URLs are longer than I care to store in my database, so let’s
+            # ‘download’ it immediately.
+            preamble, _, data = img_src.partition(",")
+            if preamble.endswith(";base64"):
+                media_type = preamble[5:-7]
+                data = b64decode(data)
+            else:
+                media_type = preamble[5:]
+            etag = md5(data).digest()
+            etag_base64 = urlsafe_b64encode(etag).decode("ascii")
+            tag_uri = "tag:alleged.org.uk,2025:etag:" + etag_base64
+            with transaction.atomic():
+                image, is_new = Image.objects.get_or_create(
+                    data_url=tag_uri,
+                    defaults={
+                        "media_type": media_type,
+                        "retrieved": timezone.now(),
+                        "width": img_width,
+                        "height": img_height,
+                    },
+                )
+                if is_new or not image.cached_data:
+                    image.retrieved = timezone.now()
+                    image.attach_data(data, etag, media_type)
+                return image
+
+        image, is_new = Image.objects.get_or_create(
+            data_url=img_src,
+            defaults={
+                "media_type": img_type,
+                "width": img_width,
+                "height": img_height,
+            },
+        )
+        if not is_new and (img_type or img_width or img_height):
+            if img_type:
+                image.media_type = img_type
+            if img_width:
+                image.width = img_width
+            if img_height:
+                image.height = img_height
+            image.save()
+        return image
+
+
 class Image(models.Model):
     """The source data for an image displayed in a note."""
+
+    etag_url_prefix = "tag:alleged.org.uk,2025:etag:"
 
     class NotSniffable(CannotSniff):
         """Raised if cannot sniff. Args are file_name and returncode & message from ImageMagick."""
@@ -160,10 +210,13 @@ class Image(models.Model):
 
     created = models.DateTimeField(_("created"), default=timezone.now)
     modified = models.DateTimeField(_("modified"), auto_now=True)
+    objects = ImageManager()
 
     class Meta:
         verbose_name = _("image")
         verbose_name_plural = _("images")
+
+    objects = ImageManager()
 
     def __str__(self):
         last_part = self.data_url.rsplit("/", 1)[-1]
@@ -222,12 +275,13 @@ class Image(models.Model):
         self.retrieved = timezone.now()
         self.save()  # This will be rolled back in case of error but setting it now avoids some race conditons.
 
-        if self.data_url.startswith("data:"):
+        if self.data_url.startswith(Image.etag_url_prefix):
+            return
+        elif self.data_url.startswith("data:"):
             media_type, rest = self.data_url.split(";", 1)
             if rest.startswith("base64,"):
                 data = b64decode(rest[7:])
-            self.etag = md5(data).digest()
-            file = ContentFile(data)
+            etag = md5(data).digest()
         else:
             r = requests.get(
                 self.data_url, headers={"User-Agent": settings.NOTES_FETCH_AGENT}
@@ -240,10 +294,15 @@ class Image(models.Model):
                 total_size += len(chunk)
                 buf.write(chunk)
                 hasher.update(chunk)
-            self.etag = hasher.digest()
+            etag = hasher.digest()
             data = buf.getvalue()
-            file = File(buf)
 
+        self.attach_data(data, etag, media_type, save)
+
+    def attach_data(self, data: bytes, etag: str, media_type: str | None, save=False):
+        """Called after retrieving image data."""
+        file = ContentFile(data)
+        self.etag = etag
         if media_type:
             self.media_type = media_type
         try:
@@ -362,6 +421,7 @@ class Image(models.Model):
             output = subprocess.run(
                 cmd, check=True, stdin=f.file, stdout=subprocess.PIPE
             ).stdout
+
         etag = md5(output).digest()
         output_file = ContentFile(output)
         rep = self.representations.create(
@@ -642,7 +702,7 @@ def sRGB_from_Lab(lab):
     X_n, Y_n, Z_n = (0.950489, 1.0, 1.088840)
 
     def f_minus_1(t):
-        return t**3 if t > delta else 3 * delta * delta * (t - 4 / 29)
+        return t ** 3 if t > delta else 3 * delta * delta * (t - 4 / 29)
 
     q = (L_star + 16) / 116
     X = X_n * f_minus_1(q + a_star / 500)

@@ -1,5 +1,6 @@
 """Test updating."""
 
+from base64 import b64encode
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -14,6 +15,7 @@ from ..scanner import HCard, HEntry, Img, Link, Title
 from ..signals import locator_post_scanned
 from ..updating import (
     fetch_page_update_locator,
+    image_of_img,
     parse_link_header,
     update_locator_with_stuff,
 )
@@ -49,13 +51,12 @@ class TestFetchPageUpdateLocator(TestCase):
     @httpretty.activate(allow_net_connect=False)
     def test_follows_redirects(self):
         locator = Locator.objects.create(url="https://example.com/1")
-        with patch.object(updating, "PageScanner") as cls, patch.object(
-            updating, "update_locator_with_stuff"
-        ) as mock_update, patch.object(
-            locator_post_scanned, "send"
-        ) as locator_post_scanned_send, patch.object(
-            updating, "fetch_oembed"
-        ) as fetch_oembed:
+        with (
+            patch.object(updating, "PageScanner") as cls,
+            patch.object(updating, "update_locator_with_stuff") as mock_update,
+            patch.object(locator_post_scanned, "send") as locator_post_scanned_send,
+            patch.object(updating, "fetch_oembed") as fetch_oembed,
+        ):
             fetch_oembed.return_value = None
             page_scanner = cls.return_value
             page_scanner.stuff = ["**STUFF**"]
@@ -93,13 +94,12 @@ class TestFetchPageUpdateLocator(TestCase):
         # Given a locator that has never been scanned …
         locator = Locator.objects.create(url="https://example.com/1")
         # And an oembed resource exists for this URL …
-        with patch.object(updating, "PageScanner") as cls, patch.object(
-            updating, "update_locator_with_stuff"
-        ) as mock_update, patch.object(
-            locator_post_scanned, "send"
-        ) as locator_post_scanned_send, patch.object(
-            updating, "fetch_oembed"
-        ) as fetch_oembed:
+        with (
+            patch.object(updating, "PageScanner") as cls,
+            patch.object(updating, "update_locator_with_stuff") as mock_update,
+            patch.object(locator_post_scanned, "send") as locator_post_scanned_send,
+            patch.object(updating, "fetch_oembed") as fetch_oembed,
+        ):
             fetch_oembed.return_value = ["**OEMBED*STUFF**"]
 
             result = fetch_page_update_locator(locator, if_not_scanned_since=None)
@@ -120,13 +120,12 @@ class TestFetchPageUpdateLocator(TestCase):
         locator = Locator.objects.create(
             url="https://example.com/1", scanned=locator_scanned
         )
-        with patch.object(updating, "PageScanner") as cls, patch.object(
-            updating, "update_locator_with_stuff"
-        ) as mock_update, patch.object(
-            locator_post_scanned, "send"
-        ) as locator_post_scanned_send, patch.object(
-            updating, "fetch_oembed"
-        ) as fetch_oembed:
+        with (
+            patch.object(updating, "PageScanner") as cls,
+            patch.object(updating, "update_locator_with_stuff") as mock_update,
+            patch.object(locator_post_scanned, "send") as locator_post_scanned_send,
+            patch.object(updating, "fetch_oembed") as fetch_oembed,
+        ):
             fetch_oembed.return_value = None
             page_scanner = cls.return_value
             page_scanner.stuff = ["**STUFF**"]
@@ -157,9 +156,10 @@ class TestFetchPageUpdateLocator(TestCase):
         locator = Locator.objects.create(
             url="https://example.com/1", scanned=locator_scanned
         )
-        with patch.object(updating, "PageScanner") as cls, patch.object(
-            updating, "fetch_oembed"
-        ) as fetch_oembed:
+        with (
+            patch.object(updating, "PageScanner") as cls,
+            patch.object(updating, "fetch_oembed") as fetch_oembed,
+        ):
             # Httpretty should complain if any call is made because none is registered.
 
             result = fetch_page_update_locator(
@@ -175,9 +175,10 @@ class TestFetchPageLinks(TestCase):
     @httpretty.activate(allow_net_connect=False)
     def test_returns_links_as_stuff(self):
         locator = Locator.objects.create(url="https://example.com/1")
-        with patch.object(updating, "PageScanner") as cls, patch.object(
-            updating, "update_locator_with_stuff"
-        ) as mock_update:
+        with (
+            patch.object(updating, "PageScanner") as cls,
+            patch.object(updating, "update_locator_with_stuff") as mock_update,
+        ):
             page_scanner = cls.return_value
             httpretty.register_uri(
                 httpretty.GET,
@@ -365,3 +366,38 @@ class TestUpdateLocatorWithStuff(TestCase):
 
         self.assertEqual(self.locator.author.native_name, "AUTHOR")
         self.assertEqual(self.locator.author.profile.url, "https://example.com/author")
+
+
+class TestImageOfImg(TestCase):
+    def test_usual_case(self):
+        img = Img("http://an.example/img.png", "image/png", width=1080, height=720)
+
+        result = image_of_img(img)
+
+        self.assertEqual(result.data_url, "http://an.example/img.png")
+        self.assertEqual(result.media_type, "image/png")
+        self.assertEqual(result.width, 1080)
+        self.assertEqual(result.height, 720)
+
+    def test_unpacks_data_url(self):
+        img = Img(
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==",
+            width=80,
+            height=80,
+        )
+
+        result = image_of_img(img)
+
+        # Then it immediately uses the data from the URL as the cached data …
+        self.assertTrue(result.cached_data)
+        self.assertTrue(result.retrieved)
+        self.assertTrue(result.etag)
+        self.assertEqual(result.media_type, "image/png")
+        # And creates an etag URL …
+        self.assertEqual(
+            result.data_url,
+            "tag:alleged.org.uk,2025:etag:" + b64encode(result.etag).decode(),
+        )
+        # Gets width from real image.
+        self.assertEqual(result.width, 5)
+        self.assertEqual(result.height, 5)
