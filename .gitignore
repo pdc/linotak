@@ -1,7 +1,7 @@
+.env
 db.sqlite3
 *.pyc
 __pycache__
-linotak/.env
 media
 *.mo
 editor/src/stories/
@@ -19,5 +19,5 @@ samples/tumblr-photo-page.html
 samples/twitter-with-video.html
 samples/twitter.html
 samples/Webmention.html
-samples/webmention.rocks-test-2.html
 samples/webmention.rocks-test-5.html
+samples/webmention.rocks-test-2.html

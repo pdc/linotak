@@ -16,7 +16,7 @@ Stack:
 Use Poetry:
 
     poetry run -- ./manage.py test
-    poetry run -- celery -A linotak.celery worker --loglevel=info
+    poetry run -- celery -A ooblesite.celery worker --loglevel=info
     poetry run -- ./manage.py runserver 0:8004
 
 Or use `poetry shell` to avoid typing `poetry run` all the time.
