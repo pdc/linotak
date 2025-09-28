@@ -204,9 +204,12 @@ class TestHandleLocatorScannedTriggersNotification(TransactionTestCase):
             source=NoteFactory(published=timezone.now()), target=LocatorFactory()
         )
 
-        with self.settings(MENTIONS_POST_NOTIFICATIONS=True), patch.object(
-            tasks, "notify_outgoing_webmention_receiver"
-        ) as notify_outgoing_webmention_receiver:
+        with (
+            self.settings(MENTIONS_POST_NOTIFICATIONS=True),
+            patch.object(
+                tasks, "notify_outgoing_webmention_receiver"
+            ) as notify_outgoing_webmention_receiver,
+        ):
             with transaction.atomic():
                 handle_locator_post_scanned(
                     Outgoing,
@@ -233,9 +236,12 @@ class TestHandleLocatorScannedTriggersNotification(TransactionTestCase):
             locator=target, receiver=ReceiverFactory()
         )  # Simulate relevant part of scanning
 
-        with self.settings(MENTIONS_POST_NOTIFICATIONS=True), patch.object(
-            tasks, "notify_outgoing_webmention_receiver"
-        ) as notify_outgoing_webmention_receiver:
+        with (
+            self.settings(MENTIONS_POST_NOTIFICATIONS=True),
+            patch.object(
+                tasks, "notify_outgoing_webmention_receiver"
+            ) as notify_outgoing_webmention_receiver,
+        ):
             with transaction.atomic():
                 source.published = timezone.now()
                 source.save()
@@ -398,8 +404,9 @@ class TestIncomingForm(TestCase):
         self.assertTrue(form.is_valid())
 
         now = timezone.now()
-        with self.settings(NOTES_DOMAIN="notes.example.org"), patch.object(
-            timezone, "now", return_value=now
+        with (
+            self.settings(NOTES_DOMAIN="notes.example.org"),
+            patch.object(timezone, "now", return_value=now),
         ):
             result = form.save(http_user_agent="Agent/69")
 

@@ -1,8 +1,6 @@
 """ROutines for updating information about external resources."""
 
 import re
-from base64 import b64decode, urlsafe_b64encode
-from hashlib import md5
 from urllib.parse import urljoin
 
 import requests

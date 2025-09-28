@@ -108,12 +108,10 @@ class TestViews(TestCase):
     def test_create_view_redirects_to_authentication_url(self):
         series = SeriesFactory(name="slug")
 
-        with patch.object(
-            requests_oauthlib, "OAuth2Session"
-        ) as OAuth2Session, patch.object(
-            Connection.objects, "create_connection"
-        ) as create_connection, self.settings(
-            NOTES_DOMAIN="notes.example.org"
+        with (
+            patch.object(requests_oauthlib, "OAuth2Session") as OAuth2Session,
+            patch.object(Connection.objects, "create_connection") as create_connection,
+            self.settings(NOTES_DOMAIN="notes.example.org"),
         ):
             create_connection.side_effect = lambda s, d: ConnectionFactory(
                 series=s, domain=d, client_id="id-of-client", client_secret="*SECRET*"
@@ -155,12 +153,10 @@ class TestViews(TestCase):
         )
         now = time.time()
 
-        with patch.object(
-            requests_oauthlib, "OAuth2Session"
-        ) as OAuth2Session, self.settings(
-            NOTES_DOMAIN="notes.example.net"
-        ), patch.object(
-            time, "time", return_value=now
+        with (
+            patch.object(requests_oauthlib, "OAuth2Session") as OAuth2Session,
+            self.settings(NOTES_DOMAIN="notes.example.net"),
+            patch.object(time, "time", return_value=now),
         ):
             oauth = OAuth2Session.return_value
             oauth.fetch_token.return_value = {
@@ -205,9 +201,10 @@ class TestViews(TestCase):
         series = SeriesFactory(name="slug")
         connection = Connection.objects.create(series=series, domain="mast.example.com")
 
-        with patch.object(
-            requests_oauthlib, "OAuth2Session"
-        ) as OAuth2Session, self.settings(NOTES_DOMAIN="notes.example.net"):
+        with (
+            patch.object(requests_oauthlib, "OAuth2Session") as OAuth2Session,
+            self.settings(NOTES_DOMAIN="notes.example.net"),
+        ):
             oauth = OAuth2Session.return_value
             oauth.fetch_token.return_value = {
                 "access_token": "*ACCESS*TOKEN*",
@@ -231,9 +228,10 @@ class TestConnection(TestCase):
     def test_uses_token_to_create_oauth_client(self):
         subject = ConnectionFactory(access_token="*ACCESS*TOKEN*")
 
-        with patch.object(
-            requests_oauthlib, "OAuth2Session"
-        ) as OAuth2Session, self.settings(NOTES_DOMAIN="example.com"):
+        with (
+            patch.object(requests_oauthlib, "OAuth2Session") as OAuth2Session,
+            self.settings(NOTES_DOMAIN="example.com"),
+        ):
             oauth = OAuth2Session.return_value
             result = subject.make_oauth()
 
@@ -268,9 +266,10 @@ class TestPost(TestCase):
     def test_posts_text_of_note_to_mastodon(self):
         self.create_note_with_locator()
 
-        with patch.object(
-            requests_oauthlib, "OAuth2Session"
-        ) as OAuth2Session, self.settings(NOTES_DOMAIN="example.com"):
+        with (
+            patch.object(requests_oauthlib, "OAuth2Session") as OAuth2Session,
+            self.settings(NOTES_DOMAIN="example.com"),
+        ):
             oauth = OAuth2Session.return_value
             oauth.post.return_value = mock_json_response(
                 {"id": "134269", "url": "https://mast.example.com/@spoo/134269"}
@@ -303,9 +302,10 @@ class TestPost(TestCase):
         self.create_note_with_locator()
         self.with_image_with_representation()
 
-        with patch.object(
-            requests_oauthlib, "OAuth2Session"
-        ) as OAuth2Session, self.settings(NOTES_DOMAIN="example.com"):
+        with (
+            patch.object(requests_oauthlib, "OAuth2Session") as OAuth2Session,
+            self.settings(NOTES_DOMAIN="example.com"),
+        ):
             oauth = OAuth2Session.return_value
             oauth.post.side_effect = [
                 mock_json_response({"id": "100001"}),  # Response when creating media.
@@ -335,9 +335,10 @@ class TestPost(TestCase):
         self.create_note_with_locator()
         self.with_image_with_representation(focus_x=0.5, focus_y=0.75)
 
-        with patch.object(
-            requests_oauthlib, "OAuth2Session"
-        ) as OAuth2Session, self.settings(NOTES_DOMAIN="example.com"):
+        with (
+            patch.object(requests_oauthlib, "OAuth2Session") as OAuth2Session,
+            self.settings(NOTES_DOMAIN="example.com"),
+        ):
             oauth = OAuth2Session.return_value
             oauth.post.side_effect = [
                 mock_json_response({"id": "100001"}),  # Response when creating media.
@@ -372,9 +373,10 @@ class TestPost(TestCase):
         self.create_note_with_locator()
         self.with_image_with_representation(description="Text of description")
 
-        with patch.object(
-            requests_oauthlib, "OAuth2Session"
-        ) as OAuth2Session, self.settings(NOTES_DOMAIN="example.com"):
+        with (
+            patch.object(requests_oauthlib, "OAuth2Session") as OAuth2Session,
+            self.settings(NOTES_DOMAIN="example.com"),
+        ):
             oauth = OAuth2Session.return_value
             oauth.post.side_effect = [
                 mock_json_response({"id": "100001"}),  # Response when creating media.
@@ -407,9 +409,10 @@ class TestPost(TestCase):
         self.create_note_with_locator(sensitive=True)
         self.with_image_with_representation()
 
-        with patch.object(
-            requests_oauthlib, "OAuth2Session"
-        ) as OAuth2Session, self.settings(NOTES_DOMAIN="example.com"):
+        with (
+            patch.object(requests_oauthlib, "OAuth2Session") as OAuth2Session,
+            self.settings(NOTES_DOMAIN="example.com"),
+        ):
             oauth = OAuth2Session.return_value
             oauth.post.side_effect = [
                 mock_json_response({"id": "100001"}),  # Response when creating media.
@@ -493,9 +496,10 @@ class TestHandleNotePostSave(TransactionTestCase):
     # Take care not to create entities outside of a transaction in tests in this class!
 
     def test_does_nothing_if_unpublished(self):
-        with self.settings(MASTODON_POST_STATUSES=True), patch.object(
-            tasks, "post_post_to_mastodon"
-        ) as post_post_to_mastodon:
+        with (
+            self.settings(MASTODON_POST_STATUSES=True),
+            patch.object(tasks, "post_post_to_mastodon") as post_post_to_mastodon,
+        ):
             with transaction.atomic():
                 connection = ConnectionFactory(access_token="X")
                 note = NoteFactory(series=connection.series)
@@ -506,9 +510,10 @@ class TestHandleNotePostSave(TransactionTestCase):
             )
 
     def test_queues_post_if_published(self):
-        with self.settings(MASTODON_POST_STATUSES=True), patch.object(
-            tasks, "post_post_to_mastodon"
-        ) as post_post_to_mastodon:
+        with (
+            self.settings(MASTODON_POST_STATUSES=True),
+            patch.object(tasks, "post_post_to_mastodon") as post_post_to_mastodon,
+        ):
             with transaction.atomic():
                 connection = ConnectionFactory(access_token="X")
                 note = NoteFactory(series=connection.series)

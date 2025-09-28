@@ -534,9 +534,10 @@ class TestLocatorFetchPageUpdate(TransactionTestCase):
 
     def test_queues_fetch_when_locator_created(self):
         """Test locator_fetch_page_update queues fetch when locator created."""
-        with self.settings(NOTES_FETCH_LOCATORS=True), patch.object(
-            tasks, "fetch_locator_page"
-        ) as fetch_locator_page:
+        with (
+            self.settings(NOTES_FETCH_LOCATORS=True),
+            patch.object(tasks, "fetch_locator_page") as fetch_locator_page,
+        ):
             with transaction.atomic():
                 locator = Locator.objects.create(url="https://example.com/1")
 
@@ -549,18 +550,20 @@ class TestLocatorFetchPageUpdate(TransactionTestCase):
 
     def test_doesnt_queue_if_settings_not_set(self):
         """Test locator_fetch_page_update doesnt queue if settings not set."""
-        with self.settings(NOTES_FETCH_LOCATORS=False), patch.object(
-            tasks, "fetch_locator_page"
-        ) as fetch_locator_page:
+        with (
+            self.settings(NOTES_FETCH_LOCATORS=False),
+            patch.object(tasks, "fetch_locator_page") as fetch_locator_page,
+        ):
             Locator.objects.create(url="https://example.com/1")
 
             self.assertFalse(fetch_locator_page.delay.called)
 
     def test_doesnt_queue_if_not_newly_created(self):
         """Test locator_fetch_page_update doesnt queue if not newly created"""
-        with self.settings(NOTES_FETCH_LOCATORS=True), patch.object(
-            tasks, "fetch_locator_page"
-        ) as fetch_locator_page:
+        with (
+            self.settings(NOTES_FETCH_LOCATORS=True),
+            patch.object(tasks, "fetch_locator_page") as fetch_locator_page,
+        ):
             locator = Locator.objects.create(url="https://example.com/1")
             locator.title = "FOO"
             locator.save()

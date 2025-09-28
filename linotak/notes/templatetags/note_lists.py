@@ -66,7 +66,7 @@ def note_url(
     tag_filter=None,
     drafts=None,
     with_host=False,
-    **kwargs
+    **kwargs,
 ):
     """Like url tag except specialized for links to note lists.
 

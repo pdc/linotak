@@ -2,8 +2,6 @@ from base64 import b64encode
 from datetime import datetime, timezone
 from urllib.parse import quote
 
-from django.utils.timezone import make_aware
-
 
 def datetime_of_timestamp(timestamp):
     """Given seconds since the epoch, return a timezone-aware datetime instance."""

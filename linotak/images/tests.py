@@ -713,13 +713,13 @@ class TestImageFindSquareRepresentation(ImageTestMixin, TestCase):
     def test_queues_retrieval_if_no_cached_data(self):
         self.image = Image.objects.create(data_url="http://example.com/69")  # No data
 
-        with patch.object(
-            tasks, "create_image_representation"
-        ) as create_image_representation, patch.object(
-            tasks, "retrieve_image_data"
-        ) as retrieve_image_data, patch.object(
-            signal_handlers, "chain"
-        ) as chain:
+        with (
+            patch.object(
+                tasks, "create_image_representation"
+            ) as create_image_representation,
+            patch.object(tasks, "retrieve_image_data") as retrieve_image_data,
+            patch.object(signal_handlers, "chain") as chain,
+        ):
             result = self.image.find_square_representation(150)
 
         self.assertFalse(result)
@@ -1020,7 +1020,9 @@ class TestDataURL(TestCase):
         )
 
     def test_can_base64_encode_text(self):
-        result = create_data_url("text/plain;charset=UTF-8", "ハローワールド！", base64=True)
+        result = create_data_url(
+            "text/plain;charset=UTF-8", "ハローワールド！", base64=True
+        )
 
         self.assertEqual(
             result,
