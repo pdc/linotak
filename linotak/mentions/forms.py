@@ -20,9 +20,11 @@ class IncomingForm(forms.Form):
 
     source = forms.URLField(
         max_length=4000,
+        assume_scheme="https",
     )
     target = forms.URLField(
         max_length=4000,
+        assume_scheme="https",
     )
 
     def save(self, http_user_agent):
