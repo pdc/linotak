@@ -405,7 +405,7 @@ class Image(models.Model):
                 rep.content.save(file_name_from_etag(rep.etag, rep.media_type), f)
             return
 
-        cmd = ["convert", "-", "-resize", "%dx%d>" % scaled, "-"]
+        cmd = ["magick", "-", "-resize", "%dx%d>" % scaled, "-"]
         if has_crop:
             x_c = int(round(self.width * self.crop_left))
             y_c = int(round(self.height * self.crop_top))
@@ -702,7 +702,7 @@ def sRGB_from_Lab(lab):
     X_n, Y_n, Z_n = (0.950489, 1.0, 1.088840)
 
     def f_minus_1(t):
-        return t ** 3 if t > delta else 3 * delta * delta * (t - 4 / 29)
+        return t**3 if t > delta else 3 * delta * delta * (t - 4 / 29)
 
     q = (L_star + 16) / 116
     X = X_n * f_minus_1(q + a_star / 500)
