@@ -113,7 +113,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "linotak.wsgi.application"
+WSGI_APPLICATION = "ooblesite.wsgi.application"
 
 
 # Database
