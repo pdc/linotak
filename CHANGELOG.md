@@ -1,5 +1,13 @@
 # Change log
 
+## 0.3.1 (2025-10-19)
+
+Deletions:
+
+- Remove `requirements.txt`.
+  - This was no longer being updated to match `poetry.lock`.
+  - Deployment will use Poetry instead.
+
 ## 0.3.0 (2025-10-19)
 
 Changes:
