@@ -19,6 +19,12 @@ dependencies = [
     "uritemplate>=4.1.1,<5.0",
 ]
 
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
 [tool.poetry]
 
 [tool.poetry.dependencies]
@@ -32,9 +38,9 @@ black = "^25.9.0"
 isort = "^6.0.1"
 responses = "^0.25.8"
 
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
+
+
 [tool.isort]
 profile = "black"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
