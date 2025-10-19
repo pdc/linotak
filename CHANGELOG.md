@@ -1,6 +1,13 @@
 # Change log
 
-## Develop
+## 0.3.0 (2025-10-19)
+
+Changes:
+
+- Upgrade to Django 5.2, Celery 5.5, and ImageMagick 7
+  - Requires Python 3.10 and PostgreSQL 14
+- Rename the site directory to `ooblesite`
+- Replace HTTPretty with Responses in tests
 
 ## 0.2.0 (2025-10-19)
 

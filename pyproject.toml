@@ -1,7 +1,7 @@
 
 [project]
 name = "linotak"
-version = "0.3.0-dev"
+version = "0.3.0"
 description = "Link Note Taker (a microblog app that emphasizes short notes linking to other sites)."
 license = "MIT"
 readme = "README.md"
