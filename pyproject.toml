@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "linotak"
-version = "0.2.0"
+version = "0.3.0-dev"
 description = "Link Note Taker (a microblog app that emphasizes short notes linking to other sites)."
 authors = ["Damian Cugley <pdc@alleged.org.uk>"]
 license = "MIT"
