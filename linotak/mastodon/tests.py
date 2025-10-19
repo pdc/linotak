@@ -1,16 +1,16 @@
-import json
 import logging
 import time
 from unittest.mock import ANY, MagicMock, call, patch
 
 import factory
-import httpretty
 import requests_oauthlib  # for mocking
+import responses
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
+from responses import matchers
 
 from ..images.models import Image, Representation
 from ..notes.models import LocatorImage
@@ -44,51 +44,32 @@ class PostFactory(factory.django.DjangoModelFactory):
 
 
 class TestConnectionManager(TestCase):
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_requests_client_id_and_secret(self):
         series = SeriesFactory(name="name-of-series")
-        requests = []
-
-        def request_callback(request, uri, response_headers):
-            requests.append(request)
-            return (
-                200,
-                response_headers,
-                json.dumps(
-                    {
-                        "client_id": "id-of-client",
-                        "client_secret": "*SECRET*",
-                    }
-                ),
-            )
-
-        httpretty.register_uri(
-            httpretty.POST,
+        endpoint = responses.post(
             "https://masto.example.net/api/v1/apps",
-            body=request_callback,
-            add_headers={
-                "Content-Type": "application/json",
+            json={
+                "client_id": "id-of-client",
+                "client_secret": "*SECRET*",
             },
+            content_type="application/json",
+            match=[
+                matchers.urlencoded_params_matcher(
+                    {
+                        "client_name": "name-of-series.example.com",
+                        "redirect_uris": "https://name-of-series.example.com/mastodon/callback",
+                        "scopes": " ".join(necessary_scopes),
+                        "website": "https://name-of-series.example.com/",
+                    }
+                )
+            ],
         )
 
         with self.settings(NOTES_DOMAIN="example.com"):
             result = Connection.objects.create_connection(series, "masto.example.net")
 
-        (request,) = requests
-        self.assertEqual(
-            request.parsed_body.get("client_name"), ["name-of-series.example.com"]
-        )
-        self.assertEqual(
-            request.parsed_body.get("redirect_uris"),
-            ["https://name-of-series.example.com/mastodon/callback"],
-        )
-        self.assertEqual(
-            request.parsed_body.get("scopes"), [" ".join(necessary_scopes)]
-        )
-        self.assertEqual(
-            request.parsed_body.get("website"), ["https://name-of-series.example.com/"]
-        )
-
+        self.assertEqual(endpoint.call_count, 1)
         self.assertEqual(result.series, series)
         self.assertEqual(result.domain, "masto.example.net")
         self.assertEqual(result.client_id, "id-of-client")
@@ -475,14 +456,14 @@ class TestPost(TestCase):
 
     def expected_post_call_with_json(self, text=None, **kwargs):
         """Returns a unittest.mock.Call instance."""
-        json = {
+        obj = {
             "status": text
             or "Hello, world!\n\n#greeting #planet\n\nhttps://other.example.com/1",
         }
-        json.update(kwargs)
+        obj.update(kwargs)
         return call(
             "https://mast.example.com/api/v1/statuses",
-            json=json,
+            json=obj,
             headers={
                 "Accept": "application/json",
                 "Idempotency-Key": f"https://slug.example.com/{self.note.pk}",

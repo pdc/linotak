@@ -4,7 +4,7 @@ from base64 import b64encode
 from datetime import timedelta
 from unittest.mock import patch
 
-import httpretty
+import responses
 from django.test import TestCase
 from django.utils import timezone
 
@@ -24,16 +24,16 @@ from ..updating import (
 class TestFetchPageUpdateLocator(TestCase):
     """Test fetch_page_update_locator."""
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_requests_data_and_scans_when_new(self):
         self.assert_requests_data_when(locator_scanned=None, if_not_scanned_since=None)
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_requests_data_and_scans_when_scanned_in_past(self):
         then = timezone.now() - timedelta(days=8)
         self.assert_requests_data_when(locator_scanned=then, if_not_scanned_since=then)
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_doesnt_request_data_when_scanned_more_recently(self):
         then = timezone.now() - timedelta(days=8)
         more_recently = timezone.now() - timedelta(days=1)
@@ -41,14 +41,14 @@ class TestFetchPageUpdateLocator(TestCase):
             locator_scanned=more_recently, if_not_scanned_since=then
         )
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_doesnt_request_data_when_scanned_since_new(self):
         then = timezone.now() - timedelta(days=8)
         self.assert_doesnt_request_data_when(
             locator_scanned=then, if_not_scanned_since=None
         )
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_follows_redirects(self):
         locator = Locator.objects.create(url="https://example.com/1")
         with (
@@ -61,15 +61,13 @@ class TestFetchPageUpdateLocator(TestCase):
             page_scanner = cls.return_value
             page_scanner.stuff = ["**STUFF**"]
 
-            httpretty.register_uri(
-                httpretty.GET,
+            responses.get(
                 "https://example.com/1",
                 body="REDIRECT",
                 status=302,
-                adding_headers={"Location": "https://example.com/2"},
+                headers={"Location": "https://example.com/2"},
             )
-            httpretty.register_uri(
-                httpretty.GET,
+            responses.get(
                 "https://example.com/2",
                 body="CONTENT OF PAGE",
             )
@@ -89,7 +87,7 @@ class TestFetchPageUpdateLocator(TestCase):
             updated = Locator.objects.get(pk=locator.pk)
             self.assertTrue(updated.scanned)
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_doesnt_fetch_page_when_oembed_available(self):
         # Given a locator that has never been scanned …
         locator = Locator.objects.create(url="https://example.com/1")
@@ -129,8 +127,7 @@ class TestFetchPageUpdateLocator(TestCase):
             fetch_oembed.return_value = None
             page_scanner = cls.return_value
             page_scanner.stuff = ["**STUFF**"]
-            httpretty.register_uri(
-                httpretty.GET,
+            responses.get(
                 "https://example.com/1",
                 body="CONTENT OF PAGE",
             )
@@ -172,7 +169,7 @@ class TestFetchPageUpdateLocator(TestCase):
 
 
 class TestFetchPageLinks(TestCase):
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_returns_links_as_stuff(self):
         locator = Locator.objects.create(url="https://example.com/1")
         with (
@@ -180,10 +177,9 @@ class TestFetchPageLinks(TestCase):
             patch.object(updating, "update_locator_with_stuff") as mock_update,
         ):
             page_scanner = cls.return_value
-            httpretty.register_uri(
-                httpretty.GET,
+            responses.get(
                 "https://example.com/1",
-                adding_headers={
+                headers={
                     "Link": '</test/1/webmention>; rel=webmention, </2>; rel=next, </>; rel="top"; hreflang="en"'
                 },
             )

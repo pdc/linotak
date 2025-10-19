@@ -1,9 +1,8 @@
 """Tests for fetching oEmbed resourecs."""
 
-import json
 from unittest.mock import patch
 
-import httpretty
+import responses
 from django.test import TestCase
 
 from ..oembed import (
@@ -221,14 +220,13 @@ class TestStuffFromOEmbed(TestCase):
 
 
 class TestFetchOEmbed(TestCase):
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_fetches_oembed_when_matches(self):
         # Given Flickr provides an oEmbed resource…
-        httpretty.register_uri(
-            httpretty.GET,
+        responses.get(
             "https://www.flickr.com/services/oembed/?url=http%3A%2F%2Fflickr.com%2Fphotos%2Fbees%2F2362225867%2F&format=json",
             match_querystring=True,
-            body=json.dumps(FLICKR_OEMBED),
+            json=FLICKR_OEMBED,
         )
 
         # When we request information about a Flickr URL …
@@ -251,7 +249,7 @@ class TestFetchOEmbed(TestCase):
             result,
         )
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_returns_false_when_no_oembed(self):
         # When we request information about a non-matching URL …
         with patch("linotak.notes.oembed.get_endpoints") as get_endpoints:
@@ -267,27 +265,24 @@ class TestFetchOEmbed(TestCase):
 
 
 class TestLoadEndpoints(TestCase):
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_fetches_from_url_and_parses(self):
         # Given an online JSON resource containing the provider definition for Flickr …
-        httpretty.register_uri(
-            httpretty.GET,
+        responses.get(
             "http://oembed.example/providers.json",
-            body=json.dumps(
-                [
-                    FLICKR_PROVIDER,
-                    {
-                        "provider_name": "Beautiful.AI",
-                        "provider_url": "https://www.beautiful.ai/",
-                        "endpoints": [
-                            {
-                                "url": "https://www.beautiful.ai/api/oembed",
-                                "discovery": True,
-                            }
-                        ],
-                    },
-                ]
-            ),
+            json=[
+                FLICKR_PROVIDER,
+                {
+                    "provider_name": "Beautiful.AI",
+                    "provider_url": "https://www.beautiful.ai/",
+                    "endpoints": [
+                        {
+                            "url": "https://www.beautiful.ai/api/oembed",
+                            "discovery": True,
+                        }
+                    ],
+                },
+            ],
         )
 
         # When loading those endpoints …

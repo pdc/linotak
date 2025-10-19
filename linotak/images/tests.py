@@ -6,7 +6,7 @@ from base64 import b64encode
 from datetime import timedelta
 from unittest.mock import patch
 
-import httpretty
+import responses
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
@@ -67,14 +67,7 @@ class ImageTestMixin:
         )
         img_src = "http://example.com/2"
         self.image = Image.objects.create(data_url=img_src, **kwargs)
-        httpretty.register_uri(
-            httpretty.GET,
-            img_src,
-            body=self.data,
-            add_headers={
-                "Content-Type": media_type,
-            },
-        )
+        responses.get(img_src, body=self.data, content_type=media_type)
 
     def then_retrieved_and_sniffed(self, media_type="image/png", width=234, height=123):
         self.assertEqual(self.image.media_type.split(";", 1)[0], media_type)
@@ -268,7 +261,7 @@ class TestDeleteIfSmall(ImageTestMixin, TestCase):
 class TestImageRetrieve(ImageTestMixin, TestCase):
     """Test Image.retrieve."""
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_can_retrive_image_and_sniff(self):
         self.given_downloadable_image()
 
@@ -276,7 +269,7 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
 
         self.then_retrieved_and_sniffed()
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_does_not_retrieve_if_retrieved(self):
         then = timezone.now() - timedelta(hours=1)
         self.image = Image.objects.create(
@@ -284,9 +277,9 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
         )
 
         self.image.retrieve_data(if_not_retrieved_since=None)
-        # Attempting to download will cause HTTPretty to complain.
+        # Attempting to download will cause Responses to complain.
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_will_retrieve_if_retrieved_in_the_past(self):
         then = timezone.now() - timedelta(days=30)
         self.given_downloadable_image(retrieved=then)
@@ -295,7 +288,7 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
 
         self.then_retrieved_and_sniffed()
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_does_not_retrieve_if_retrieved_later(self):
         then = timezone.now() - timedelta(hours=1)
         earlier = timezone.now() - timedelta(hours=2)
@@ -304,9 +297,9 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
         )
 
         self.image.retrieve_data(if_not_retrieved_since=earlier)
-        # Attempting to download will cause HTTPretty to complain.
+        # Attempting to download will cause Responses to complain.
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_does_not_explode_if_data_isnt_image(self):
         self.given_downloadable_image(b"LOLWAT", media_type="text/plain")
 
@@ -316,7 +309,7 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
         self.then_retrieved_and_sniffed("text/plain", None, None)
         self.assertTrue(logger.warning.called)
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_gets_data_from_data_url(self):
         self.data = (data_dir / "smol.gif").read_bytes()
         data_url = "data:image/gif;base64," + b64encode(self.data).decode("UTF-8")
@@ -345,7 +338,7 @@ class TestSuffixFromMediaType(TestCase):
 
 
 class TestRetrieveImageDate(ImageTestMixin, TestCase):
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_retrieves_and_sniffs(self):
         self.given_downloadable_image((data_dir / "234x123.png").read_bytes())
 
@@ -354,7 +347,7 @@ class TestRetrieveImageDate(ImageTestMixin, TestCase):
         self.image.refresh_from_db()
         self.then_retrieved_and_sniffed()
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_retrieves_and_deletes_if_small(self):
         self.given_downloadable_image((data_dir / "im-32sq.png").read_bytes())
 

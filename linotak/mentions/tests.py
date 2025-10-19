@@ -4,11 +4,12 @@ from datetime import timedelta
 from unittest.mock import patch
 
 import factory
-import httpretty
+import responses
 from django.db import transaction
 from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
+from responses import matchers
 
 from ..notes.models import Locator, Note
 from ..notes.scanner import HEntry, Link
@@ -259,7 +260,7 @@ class TestNotifyReceiver(TestCase):
     def setUp(self):
         self.calls = []
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_does_nothing_when_already_notified(self):
         then = timezone.now() + timedelta(days=-1)
         mention = OutgoingFactory(notified=then)
@@ -270,7 +271,7 @@ class TestNotifyReceiver(TestCase):
         self.assertEqual(mention.notified, then)
         # Will complain if we try to make HTTP request.
 
-    @httpretty.activate(allow_net_connect=False)
+    @responses.activate
     def test_calls_webmention_endpoints_on_outgoing_mentions(self):
         mention = OutgoingFactory(
             source__series__name="alpha",
@@ -278,48 +279,44 @@ class TestNotifyReceiver(TestCase):
             target__url="https://blog.example.com/2019/10/16",
             receiver__url="https://example.com/webmention-endpoint",
         )
-        httpretty.register_uri(
-            httpretty.POST,
+        resp1 = responses.post(
             "https://example.com/webmention-endpoint",
-            body=self.response_callback,
+            status=202,
+            match=[
+                matchers.query_param_matcher({}),
+                matchers.urlencoded_params_matcher(
+                    {
+                        "source": "https://alpha.notes.example.com/%s"
+                        % (mention.source.pk,),
+                        "target": "https://blog.example.com/2019/10/16",
+                    }
+                ),
+            ],
         )
 
         with self.settings(NOTES_DOMAIN="notes.example.com"):
             notify_webmention_receiver(mention)
 
-        self.assertEqual(len(self.calls), 1)
-        query_params, parsed_body = self.calls[0]
-        self.assertFalse(query_params)
-        self.assertEqual(
-            parsed_body["source"],
-            ["https://alpha.notes.example.com/%s" % (mention.source.pk,)],
-        )
-        self.assertEqual(parsed_body["target"], ["https://blog.example.com/2019/10/16"])
+        self.assertEqual(resp1.call_count, 1)
         mention.refresh_from_db()
         self.assertTrue(mention.notified)
         self.assertEqual(mention.response_status, 202)
 
-    @httpretty.activate(allow_net_connect=False)
-    def test_includes_querey_string_params_of_endpoint(self):
+    @responses.activate
+    def test_includes_query_string_params_of_endpoint(self):
         mention = OutgoingFactory(
             receiver__url="https://example.com/webmention-endpoint?this=that",
         )
-        httpretty.register_uri(
-            httpretty.POST,
+        resp1 = responses.post(
             "https://example.com/webmention-endpoint",
-            body=self.response_callback,
+            status=202,
+            match=[matchers.query_param_matcher({"this": "that"})],
         )
 
         with self.settings(NOTES_DOMAIN="notes.example.com"):
             notify_webmention_receiver(mention)
 
-        self.assertEqual(len(self.calls), 1)
-        query_string, _ = self.calls[0]
-        self.assertEqual(query_string, {"this": ["that"]})
-
-    def response_callback(self, request, uri, response_headers):
-        self.calls.append((dict(request.querystring), request.parsed_body))
-        return 202, response_headers, ""
+        self.assertEqual(resp1.call_count, 1)
 
 
 class TestIncomingForm(TestCase):
