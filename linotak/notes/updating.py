@@ -1,6 +1,8 @@
 """ROutines for updating information about external resources."""
 
+import codecs
 import re
+from collections.abc import Callable
 from urllib.parse import urljoin
 
 import requests
@@ -11,6 +13,7 @@ from django.utils import timezone
 from ..images.models import Image
 from .models import Locator, LocatorImage
 from .oembed import fetch_oembed
+from .prescan import determine_encoding
 from .scanner import HEntry, Img, Link, PageScanner, Title
 from .signals import locator_post_scanned
 
@@ -50,8 +53,9 @@ def fetch_page_update_locator(locator, if_not_scanned_since):
         ) as r:
             stuff = parse_link_header(locator.url, r.headers.get("Link", ""))
             scanner = PageScanner(locator.url)
-            for chunk in r.iter_content(10_000, decode_unicode=True):
-                scanner.feed(chunk)
+
+            feed_response_to_parser(r, scanner.feed)
+
             scanner.close()
             stuff += scanner.stuff
 
@@ -59,6 +63,60 @@ def fetch_page_update_locator(locator, if_not_scanned_since):
     locator.save()
     locator_post_scanned.send(Locator, locator=locator, stuff=stuff)
     return True
+
+
+def feed_response_to_parser(
+    response: requests.Response, feed_func: Callable[[str], None]
+):
+    """Pump character data in to the feed function from this response.
+
+    This function attempts to do the right thing with characeter encodings etc.
+    """
+
+    # If content-type does not have a charset, Requests will guess the
+    # encoding based on vibes, unless the content-type contains `text`
+    # in which case it says `ISO-8859-1`. I would prefer to do the HTML5
+    # thing in this case, which is examine the first part of the document
+    # to find a META tag that gives the charset.
+
+    encoding_unspecified = (
+        not response.encoding
+        or "text" in (content_type := response.headers.get("content-type"))
+        and "charset" not in content_type
+    )
+    # TODO Anlyse the MIME type peoperly and skip processing for not-HTML.
+
+    if encoding_unspecified:
+        # Encoding not specified in headers, so we look for <meta charset> in the data.
+        # But we can’t read the stream twice so we need to do some buffering.
+
+        decode = None
+        buf = b""
+        for chunk in response.iter_content(None, decode_unicode=False):
+            if decode:
+                feed_func(decode(chunk))
+            else:
+                # We are scanning the first 1024 bytes to find `<meta charset=xxx>`.
+                buf += chunk
+                if len(buf) >= 1024:
+                    encoding, certainty = determine_encoding(buf)
+                    # We need an incremental decoder in case multibyte characters
+                    # span the chunk boundaries.
+                    codec_info = codecs.lookup(encoding)
+                    decode = codec_info.incrementaldecoder().decode
+                    feed_func(decode(buf))
+                    buf = None
+        if decode:
+            feed_func(decode(b"", final=True))
+        else:
+            # Looks like the entire document was less than 1024 bytes.
+            # Might still have a <meta charset> though.
+            encoding, certainty = determine_encoding(buf)
+            feed_func(buf.decode(encoding))
+    else:
+        # The builtin decoding by Requeists is probably fine.
+        for chunk in response.iter_content(None, decode_unicode=True):
+            feed_func(chunk)
 
 
 COMMA = re.compile(r"\s*,\s*")

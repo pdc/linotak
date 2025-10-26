@@ -2,11 +2,12 @@
 
 from base64 import b64encode
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import Mock, call, patch
 
 import responses
 from django.test import TestCase
 from django.utils import timezone
+from requests import Response
 
 from ...images.models import Image
 from .. import updating
@@ -14,6 +15,7 @@ from ..models import Locator, LocatorImage
 from ..scanner import HCard, HEntry, Img, Link, Title
 from ..signals import locator_post_scanned
 from ..updating import (
+    feed_response_to_parser,
     fetch_page_update_locator,
     image_of_img,
     parse_link_header,
@@ -166,6 +168,82 @@ class TestFetchPageUpdateLocator(TestCase):
             self.assertFalse(result)
             self.assertFalse(fetch_oembed.called)
             self.assertFalse(cls.called)
+
+
+class TestFeedResponseToParser(TestCase):
+    """Test fetch_page_update_locator."""
+
+    def setUp(self):
+        self.locator = Locator.objects.create(url="https://example.com/1")
+
+    @responses.activate
+    def test_uses_encoding_from_header_to_decode(self):
+        # Given the remote server returns content type with correct header but wrong embedded charset …
+        text_with_unicode = "<!DOCTYPE html><html><head><meta charset=ascii><title>“Omaha” the Cat Dancer</title>"
+        responses.get(
+            "https://example.com/1",
+            body=text_with_unicode.encode("UTF-8"),
+            content_type="text/html; charset=UTF-8",
+        )
+
+        self.assert_decodes_text_as([text_with_unicode])
+
+    @responses.activate
+    def test_gets_encoding_from_meta_charset_when_not_in_header_and_document_short(
+        self,
+    ):
+        # Given the remote server returns content type without charset but the body specifies UTF-8 …
+        text_with_unicode = "<!DOCTYPE html><html><head><meta charset=UTF-8><title>“Omaha” the Cat Dancer</title>"
+        responses.get(
+            "https://example.com/1",
+            body=text_with_unicode.encode("UTF-8"),
+            content_type="text/html",
+        )
+
+        self.assert_decodes_text_as([text_with_unicode])
+
+    def test_gets_encoding_from_meta_charset_when_buffered(self):
+        # Given a document with Unicode characters that is a bit more than 2000 characters …
+        text_with_unicode = "<!DOCTYPE html><html><head><meta charset=UTF-8><title>“Omaha” the Cat Dancer</title>\n</head><body>"
+        text_with_unicode += "<section>‘Hello’, world?</section>\n" * (2035 // 36)
+        text_with_unicode += "</body></html>\n"
+        # And the text is supplied in 500-character chunks (converted to bytes) …
+        response = Mock(
+            Response, encoding="ISO-8859-1", headers={"content-type": "text/html"}
+        )
+        chunks = [
+            text_with_unicode[k : k + 500].encode("UTF-8")
+            for k in range(0, len(text_with_unicode) + 1, 500)
+        ]
+        response.iter_content.return_value = chunks
+
+        # When feeding the response to a parser …
+        feed_func = Mock()
+        feed_response_to_parser(response, feed_func)
+
+        # Then the text fed to the parser is properly decoded.
+        actual_text = "".join(c[0][0] for c in feed_func.call_args_list)
+        self.assertEqual(actual_text, text_with_unicode)
+
+    def assert_decodes_text_as(self, text_chunks: list[str]):
+
+        # When retrieving and scanning the resource …
+        with (
+            patch.object(updating, "PageScanner") as cls,
+            patch.object(updating, "update_locator_with_stuff"),
+            patch.object(locator_post_scanned, "send"),
+            patch.object(updating, "fetch_oembed") as fetch_oembed,
+        ):
+            fetch_oembed.return_value = None
+            page_scanner = cls.return_value
+            fetch_page_update_locator(self.locator, if_not_scanned_since=None)
+
+        # Then the text is decoded according to the header.
+        self.assertEqual(
+            page_scanner.feed.call_args_list,
+            [call(text_chunk) for text_chunk in text_chunks],
+        )
+        page_scanner.close.assert_called_with()
 
 
 class TestFetchPageLinks(TestCase):
