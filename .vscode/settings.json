@@ -1,5 +1,10 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:poetry",
     "python-envs.defaultPackageManager": "ms-python.python:poetry",
-    "python-envs.pythonProjects": []
+    "python-envs.pythonProjects": [],
+    "python.testing.unittestArgs": [
+        "--keep"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true
 }
