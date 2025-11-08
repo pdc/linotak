@@ -7,6 +7,10 @@ Added:
 - Use encoding specified in meta tag of HTML document when server does not
   specify encoding. [#52]
 
+Changes:
+
+- Use `psycopg` 3.x instead of `psycopg2`
+
 [#52]: https://github.com/pdc/linotak/issues/52
 
 ## 0.3.1 (2025-10-19)
