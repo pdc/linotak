@@ -70,7 +70,6 @@ class NoteFactory(factory.django.DjangoModelFactory):
     series = factory.SubFactory(SeriesFactory)
     text = factory.Sequence(lambda n: "text of note %d" % n)
     author = factory.LazyAttribute(lambda x: x.series.editors.all()[0])
-    published = None
 
     @factory.post_generation
     def tags(self, create, extracted, **kwargs):

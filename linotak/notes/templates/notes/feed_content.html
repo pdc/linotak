@@ -1,0 +1,12 @@
+<div>
+    <p>
+        {{text}}
+    </p>{% if tags %}
+    <div style="margin-top: 0.5lh">{% for tag in tags %}
+        <a href="{{ tag.href }}">#{{ tag.camel_case }}</a>{% endfor %}
+    </div>{% endif %}{% if subjects %}
+    <div style="margin-top: 1lh">{% for subject in subjects %}{% if not forloop.first %}
+        <br/>{% endif %}
+        <a href="{{ subject.href }}">{{ subject.href }}</a>{% endfor %}
+    </div>{% endif %}
+</div>

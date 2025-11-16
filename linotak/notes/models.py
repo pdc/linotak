@@ -401,7 +401,7 @@ class Tag(models.Model):
 
 
 class Note(models.Model):
-    """Short text with optionalk links written by an editor, possibly published on the site.
+    """Short text with optional links written by an editor, possibly published on the site.
 
     Editor enters text, hashtags, and subject URLs as one text.
     This is parsed in to text content, Tag and Subject instances.

@@ -9,6 +9,7 @@ Added:
 
 Changes:
 
+- Make the Atom feed have HTML content rather than plain text.
 - Use `psycopg` 3.x instead of `psycopg2`
 
 [#52]: https://github.com/pdc/linotak/issues/52

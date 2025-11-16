@@ -183,45 +183,71 @@ class TestNoteFeedView(TestCase):
             pk=9,
             tags=["qux", "foo", "bar"],
             text="Note 3 text",
+            subjects=[LocatorFactory.create(url="https://other.example/blah.html")],
             published=latest - timedelta(days=2),
         )
 
-        r = self.client.get("/tagged/foo+bar/atom/", HTTP_HOST="alpha.example.com")
-
-        self.assertEqual(
-            r.content.decode("UTF-8"),
-            '<?xml version="1.0" encoding="UTF-8"?>\n'
-            '<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en-GB">\n'
-            "    <id>https://alpha.example.com/tagged/bar+foo/</id>\n"
-            "    <title>Series Title</title>\n"
-            # TODO category
-            '    <link href="https://alpha.example.com/tagged/bar+foo/atom/" rel="self"/>\n'
-            '    <link href="https://alpha.example.com/tagged/bar+foo/"/>\n'
-            "    <updated>2019-02-21T22:19:45Z</updated>\n"
-            "    <entry>\n"
-            "        <id>https://alpha.example.com/13</id>\n"
-            "        <title>13</title>\n"
-            "        <author>\n"
-            "            <name>Alice de Winter</name>\n"
-            "        </author>\n"
-            "        <content>Note 1 text\n\n#bar #baz #foo</content>\n"
-            "        <published>2019-02-21T22:19:45Z</published>\n"
-            "        <updated>2019-02-21T22:19:45Z</updated>\n"
-            '        <link href="https://alpha.example.com/tagged/bar+foo/13"/>\n'
-            "    </entry>\n"
-            "    <entry>\n"
-            "        <id>https://alpha.example.com/9</id>\n"
-            "        <title>9</title>\n"
-            "        <author>\n"
-            "            <name>Alice de Winter</name>\n"
-            "        </author>\n"
-            "        <content>Note 3 text\n\n#bar #foo #qux</content>\n"
-            "        <published>2019-02-19T22:19:45Z</published>\n"
-            "        <updated>2019-02-19T22:19:45Z</updated>\n"
-            '        <link href="https://alpha.example.com/tagged/bar+foo/9"/>\n'
-            "    </entry>\n"
-            "</feed>",
+        r = self.client.get(
+            "/tagged/foo+bar/atom/", HTTP_HOST="alpha.example.com", secure=True
         )
+
+        self.assertXMLEqual(r.content.decode("UTF-8"), sample_feed)
+
+
+sample_feed = """<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en-GB">
+    <id>https://alpha.example.com/tagged/bar+foo/</id>
+    <title>Series Title</title>
+    <link href="https://alpha.example.com/tagged/bar+foo/atom/" rel="self"/>
+    <link href="https://alpha.example.com/tagged/bar+foo/"/>
+    <updated>2019-02-21T22:19:45Z</updated>
+    <entry>
+        <id>https://alpha.example.com/13</id>
+        <title>13</title>
+        <author>
+            <name>Alice de Winter</name>
+        </author>
+        <content type="html">&lt;div&gt;
+    &lt;p&gt;
+        Note 1 text
+    &lt;/p&gt;
+    &lt;div style="margin-top: 0.5lh"&gt;
+        &lt;a href="https://alpha.example.com/tagged/bar/"&gt;#bar&lt;/a&gt;
+        &lt;a href="https://alpha.example.com/tagged/baz/"&gt;#baz&lt;/a&gt;
+        &lt;a href="https://alpha.example.com/tagged/foo/"&gt;#foo&lt;/a&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+</content>
+        <published>2019-02-21T22:19:45Z</published>
+        <updated>2019-02-21T22:19:45Z</updated>
+        <link href="https://alpha.example.com/tagged/bar+foo/13"/>
+    </entry>
+    <entry>
+        <id>https://alpha.example.com/9</id>
+        <title>9</title>
+        <author>
+            <name>Alice de Winter</name>
+        </author>
+        <content type="html">&lt;div&gt;
+    &lt;p&gt;
+        Note 3 text
+    &lt;/p&gt;
+    &lt;div style="margin-top: 0.5lh"&gt;
+        &lt;a href="https://alpha.example.com/tagged/bar/"&gt;#bar&lt;/a&gt;
+        &lt;a href="https://alpha.example.com/tagged/foo/"&gt;#foo&lt;/a&gt;
+        &lt;a href="https://alpha.example.com/tagged/qux/"&gt;#qux&lt;/a&gt;
+    &lt;/div&gt;
+    &lt;div style="margin-top: 1lh"&gt;
+        &lt;a href="https://other.example/blah.html"&gt;https://other.example/blah.html&lt;/a&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+</content>
+        <published>2019-02-19T22:19:45Z</published>
+        <updated>2019-02-19T22:19:45Z</updated>
+        <link href="https://alpha.example.com/tagged/bar+foo/9"/>
+    </entry>
+</feed>
+"""
 
 
 @override_settings(NOTES_DOMAIN="example.com", ALLOWED_HOSTS=[".example.com"])

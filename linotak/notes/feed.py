@@ -3,9 +3,12 @@
 import io
 
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
+from django.template.loader import get_template
 from django.urls import reverse
 from django.views.generic.list import BaseListView
+
+from .models import Note
 
 from ..xml_writer import Document
 from .views import NotesMixin, TaggedMixin
@@ -51,7 +54,9 @@ class NoteFeedView(TaggedMixin, NotesMixin, BaseListView):
                 ee = e.add_child("author")
                 for k, v in author.items():
                     ee.add_child(k, {}, v)
-            e.add_child("content", {}, self.get_entry_content(note))
+            e.add_child(
+                "content", {"type": "html"}, self.get_entry_content(note, request)
+            )
             e.add_child("published", {}, atom_datetime(self.get_entry_published(note)))
             e.add_child("updated", {}, atom_datetime(self.get_entry_updated(note)))
             e.add_child("link", {"href": self.get_entry_link(note)})
@@ -68,13 +73,10 @@ class NoteFeedView(TaggedMixin, NotesMixin, BaseListView):
 
     def get_feed_url(self, view):
         tag_filter = self.tag_filter
+        tags = tag_filter.unparse() if tag_filter else ""
         path = reverse(
             "notes:%s" % view,
-            kwargs={
-                "tags": tag_filter.unparse() if tag_filter else "",
-                "drafts": False,
-                "page": 1,
-            },
+            kwargs={"tags": tags, "drafts": False, "page": 1},
         )
         return "https://%s.%s%s" % (self.series.name, settings.NOTES_DOMAIN, path)
 
@@ -86,9 +88,27 @@ class NoteFeedView(TaggedMixin, NotesMixin, BaseListView):
         """Return title of note."""
         return str(entry.pk)  # We use the note number as the title for now.
 
-    def get_entry_content(self, entry):
+    def get_entry_content(self, entry: Note, request: HttpRequest):
         """Return content of note."""
-        return entry.text_with_links()
+        template = get_template("notes/feed_content.html")
+        context = {
+            "text": entry.text,
+            "tags": [
+                {
+                    "tabel": tag.label,
+                    "camel_case": tag.as_camel_case(),
+                    "href": request.build_absolute_uri(
+                        reverse(
+                            "notes:list",
+                            kwargs={"tags": tag.name, "drafts": False, "page": 1},
+                        )
+                    ),
+                }
+                for tag in entry.tags.all()
+            ],
+            "subjects": [{"href": subject.url} for subject in entry.subjects.all()],
+        }
+        return template.render(context, request)
 
     def get_entry_author(self, entry):
         """Return author of entry, or None.
