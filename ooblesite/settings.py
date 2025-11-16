@@ -35,6 +35,7 @@ env = environ.Env(
     MASTODON_POST_STATUSES=(bool, False),
     LOGGING=(str, None),
     LOG_LEVEL=(str, "INFO"),
+    ALLOWED_HOSTS=(list, []),
 )
 
 # Build paths inside the project like this: BASE_DIR / 'foo.txt'
@@ -58,12 +59,6 @@ if TEST:
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "secret-key-value" if DEBUG else env("SECRET_KEY")
-
-ALLOWED_HOSTS = [
-    "localhost",
-    "mustardseed.local",
-    "ooble.uk",
-]
 
 
 # Application definition
@@ -209,8 +204,15 @@ MENTIONS_POST_NOTIFICATIONS = not TEST and env("MENTIONS_POST_NOTIFICATIONS")
 
 # Common parent domain to all series. Series domain is $SERIES_NAMAE.$NOTES_DOMAIN.
 NOTES_DOMAIN = env("NOTES_DOMAIN")
+
+# Permitted values of the Host header.
+# It normally OK to leave ALLOWED_HOSTS unset and depend on NOTES_DOMAIN.
+# We can set ALLOWED_HOSTS if we want to allow access from localhost in testing.
+ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 if NOTES_DOMAIN:
-    ALLOWED_HOSTS.append("." + NOTES_DOMAIN.split(":", 1)[0])
+    host_part, _, _ = NOTES_DOMAIN.partition(":")
+    # Leasding dot means allow all subdomains of NOTES_DOMAIN.
+    ALLOWED_HOSTS += ["." + host_part]
 
 # Whether to use `http` instead of `https` in series & note URLs.
 # NOT used in production: only used for the development web site.
