@@ -9,6 +9,7 @@ Added:
 
 Changes:
 
+- Make the `ALLOWED_HOSTS` setting default to the same host as `NOTES_DOMAIN`.
 - Make the Atom feed have HTML content rather than plain text.
 - Use `psycopg` 3.x instead of `psycopg2`
 
