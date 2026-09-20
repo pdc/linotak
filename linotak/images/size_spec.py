@@ -32,7 +32,7 @@ class SizeSpec:
 
     @classmethod
     def parse(cls, string):
-        """Create instance from a summary in our little spec languag."""
+        """Create instance from a summary in our little spec language."""
         width = height = None
         min_ratio = max_ratio = None
         m = G_RE.search(string)

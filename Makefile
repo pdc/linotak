@@ -20,6 +20,6 @@ manage=$(prefix) envdir /service/$(SITE)/env ./manage.py
 tests:
 	$(PYTHON) manage.py test --keep --fail
 
-$(JS_BUNDLE): editor/src/FocusPoint.svelte editor/src/main.js editor/src/pannable.js editor/yarn.lock
-	cd editor && yarn && yarn build
-	cp -p editor/public/build/bundle.* linotak/notes/static/notes/
+$(JS_BUNDLE): editor.next/src/main.ts editor.next/src/naked.ts
+	cd editor.next && npm install && npm run build
+	cp -p editor.next/dist/assets/index*.js linotak/notes/static/notes/bundle.js

@@ -33,7 +33,7 @@ created through Django’s admin pages:
 
 To set up a series for Marcus Valerius Martialis to publish epigrams:
 
-1. In the admin site Customuser section, create a login  with username `martial`.
+1. In the admin site CustomUser section, create a login  with username `martial`.
 2. In the Notes section, create a person whose login is `martial` and native name is `Marcus Valerius Martialis`.
 3. Also under Notes, create a series with name `epigrams` and title `Martial’s Epigrams`.
 4. Outside of Linotak, set up the domain name `epigrams.notes.example` and its TLS certificate (More details below).
@@ -47,8 +47,6 @@ For small-scale deployments, it is easier to use [Let’s Encrypt] with an expli
 
 We need to start by creating fake domains to support the series middleware. On
 most Unix-like systems (like macOS and GNU/Linux) we do this by editing `/etc/hosts`.
-
-
 
 We are using Poetry to organize the dependencies.
 
@@ -66,9 +64,24 @@ Running tests
 
 Server settings are controlled by environment variables; for development we can
 add them to a file `.env`, which is *not* added to source-code control.
+It can start with some settings sutable for a development environment:
 
 ```sh
-echo >>.emv DEBUG=y
+echo >>.env <<END
+DEBUG=y
+NOTES_FETCH_LOCATORS=y
+IMAGES_FETCH_DATA=y
+MENTIONS_POST_NOTIFICATIONS=n
+MASTODON_POST_STATUSES=n
+NOTES_DOMAIN=cobweb.local:8004
+NOTES_DOMAIN_INSECURE=y
+SECRET_KEY=$(pwgen 40)
+MEDIA_URL=/media/
+MEDIA_ROOT=media
+LOG_LEVEL=INFO
+OAUTHLIB_INSECURE_TRANSPORT=1
+MANAGE_PY_PATH=manage.py
+END
 ```
 
 Celery needs a message broker. I use RabbitMQ
