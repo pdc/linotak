@@ -282,6 +282,11 @@ export default function wireUp(
           }),
         );
       };
+      const stopListening = () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+        window.removeEventListener("keydown", handleKeyDown);
+      };
       const handleMouseUp = (e: MouseEvent) => {
         const next = nextDynamic(currentState, {
           dx: e.clientX - x,
@@ -294,13 +299,19 @@ export default function wireUp(
           focus.set(next.focus);
         }
         dynamic.set(undefined);
-
-        window.removeEventListener("mousemove", handleMouseMove);
-        window.removeEventListener("mouseup", handleMouseUp);
+        stopListening();
+      };
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          // Cancel the in-progress movement
+          dynamic.set(undefined);
+          stopListening();
+        }
       };
 
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener("keydown", handleKeyDown);
     };
     /// Event handler for dragging circle with finger.
     const handleTouchStart = (event: TouchEvent) => {

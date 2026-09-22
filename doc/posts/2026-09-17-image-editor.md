@@ -11,25 +11,27 @@ automatically is not great because it probably ruins the composition and might
 crop out the important part of the image.
 
 To try to mitigate this Linotak enables the editor to choose a _focus point_ for
-the image. This is used select which part of the image is used, hopefully allowing
+the image. This is used to select which part of the image is used, hopefully allowing
 it to create a better thumbnail.
 
 
 ## Crop and focus point
 
 The information required is a *crop* and a *focus point*. Both are specified
-as fractions of the width or height of the image. The default focus point
-is at (50% 50%). The default crop starts at top left (0% 0%) and extends
-the full width and height (100% 100%).
+as fractions of the width or height of the image. This means they are always
+in the range 0.0 to 1.0.
 
-The focus point controls how the thumbnail is extracted. The algorithm Linotak
-uses is to extract a square such that the focus point has the same
-relative position. For example, given an image and a focus point at (33% 67%),
-the thumbnail will have the same part of the image at its position (33% 67%).
+The focus point controls how the thumbnail is extracted. It defaults to (0.5, 0.5).
+Linotak extracts the largest square such that the focus point has the same
+relative position. For example, given an image and a focus point at (0.333, 0.667),
+the thumbnail will have the same part of the image at its position (0.333, 0.667).
 
-This is different from the Mastodon algorithm. This extracts a 16:9 proportioned
+This is different from the Mastodon algorithm, which is to extract a 16:9 proportioned
 area that is as close to centred on the focus point as possible while staying
 inside the image boundaries.
+
+The user interface shows outlines of the thumbnail areas superimposed on the image.
+These adjust automatically as the user drags the control points around.
 
 The thumbnail section will extend from left to right edge of the image when the
 image is taller than it is wide, and from top to bottom otherwise. This is usually
@@ -41,8 +43,8 @@ the thumbnail is extracted.
 ## Interfacing with Django
 
 The interface with
-the backend code is the Django form itself: the JavaScript updates form items
-corresponding to the point that the user has dragged in the UI. This means
+the backend code is the Django form itself: as the user manipulates the control
+points, the JavaScript code updates the corresponding form items. This means
 
 - No need for additional UI elements to tell user the coordinates, since they
   will be visible in the form;

@@ -208,15 +208,6 @@ valid state for the crop and focus point. They have no display code.
 The `addEventListener` calls are done as part of the rendering step.
 
 
-
-
-
-To do
-
-- Cancel
-
-
-
 ## Tests
 
 Ahem.
@@ -231,9 +222,6 @@ and the changes from the user’s mouse or touch interaction is broken out in to
 its own function, which allows for testing that dragging outside the UI still
 results in a valid new state.
 
-To do
-
-- Tests for calculating Mastodon and Linotak frame coordinates
 
 
 [Signals]: https://github.com/tc39/proposal-signals
