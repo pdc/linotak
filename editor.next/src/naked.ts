@@ -415,12 +415,71 @@ export default function wireUp(
         window.addEventListener("touchcancel", handleTouchCancel);
       }
     };
-
+    const handleInputChange = (event: Event) => {
+      const node = event.target as HTMLInputElement;
+      const value: number = +node.value;
+      const prevCrop = crop.get();
+      let nextCrop = prevCrop;
+      const prevFocus = focus.get();
+      let nextFocus = prevFocus;
+      switch (node.name) {
+        case "crop_left":
+          nextCrop = { ...prevCrop, left: value };
+          break;
+        case "crop_top":
+          nextCrop = { ...prevCrop, top: value };
+          break;
+        case "crop_width":
+          nextCrop = { ...prevCrop, width: value };
+          break;
+        case "crop_height":
+          nextCrop = { ...prevCrop, height: value };
+          break;
+        case "focus_x":
+          nextFocus = { ...prevFocus, x: value };
+          break;
+        case "focus_y":
+          nextFocus = { ...prevFocus, y: value };
+          break;
+      }
+      // Do not update if the new value is not valid
+      if (
+        prevFocus != nextFocus
+        && 0 <= nextFocus.x
+        && nextFocus.x <= 1
+        && 0 <= nextFocus.y
+        && nextFocus.y <= 1
+      ) {
+        focus.set(nextFocus);
+      }
+      if (
+        prevCrop != nextCrop
+        && 0 <= nextCrop.left
+        && 0 < nextCrop.width
+        && nextCrop.left + nextCrop.width <= 1
+        && 0 <= nextCrop.top
+        && 0 < nextCrop.height
+        && nextCrop.top + nextCrop.height <= 1
+      ) {
+        crop.set(nextCrop);
+      }
+    };
     // Add event handlers.
     for (const which of ["cropTopLeft", "cropBottomRight", "focus"]) {
       const node = document.getElementById(which);
       node?.addEventListener("mousedown", handleMouseDown);
       node?.addEventListener("touchstart", handleTouchStart);
+    }
+    for (const which of [
+      "crop_left",
+      "crop_width",
+      "crop_top",
+      "crop_height",
+      "focus_x",
+      "focus_y",
+    ]) {
+      const node = formElt.elements.namedItem(which) as HTMLInputElement;
+      node?.addEventListener("change", handleInputChange);
     }
 
     // Return the destructor.
@@ -429,6 +488,17 @@ export default function wireUp(
         const node = document.getElementById(which);
         node?.removeEventListener("mousedown", handleMouseDown);
         node?.removeEventListener("touchstart", handleTouchStart);
+      }
+      for (const which of [
+        "crop_left",
+        "crop_width",
+        "crop_top",
+        "crop_height",
+        "focus_x",
+        "focus_y",
+      ]) {
+        const node = formElt.elements.namedItem(which) as HTMLInputElement;
+        node?.removeEventListener("change", handleInputChange);
       }
     };
   }

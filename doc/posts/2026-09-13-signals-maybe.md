@@ -1,49 +1,76 @@
+---
 title: Naked signals?
 author: Damian Cugley
 tags:
 - JavaScript
+---
 
 Do I want to rewrite the picture editor using naked Signals?
 
+
 ## Why rewrite?
 
-The picture editor does two things: it lets the editor drag points
-about to set the crop and focus point of an image, and it updates
-a form that can be submitted to the Django backend to use this data.
-
-The current code was written in [Svelte] but in an old version of the
-language. Svelte has changed unrecognizably since then and so
-I started rewriting it. Now I have returned and I have forgotten
-how to write in Svelte again so the partially rewritten code is
-more or less illegible and I am effectively starting over.
+The old code was written years ago in [Svelte].
+Svelte has changed unrecognizably since then. So when it stopped working after
+I moved the my site to a new server I thought the first step before debugging
+it would be to port it to the new version. But after I came back from another
+break I discovered UI had forgotten the syntax of both old and new Svelte
+enough that I couldn’t even work out how far I had got with the porting.
 
 The problem is that I do not use Svelte in my daily work, so I am not
-keeping up with the incremental changes to the framework over time, and
-also the framework has a lot of internal lore that I do not retain.
+keeping up with the Svelte-specific lore needed to keep track of my code.
+Rewriting it in React (the webdev framework used in my day job) does not
+solve this, since we have our own special way of using React that would
+not work for this itty bitty project.
 
-Perhaps the solution is to write in plain JavaScript (or TypeScript),
+The solution I am attempting is to write in plain JavaScript (or TypeScript),
 avoiding using a framework at all. It’s a simple enough widget that
 it might not be so bad, and the advantage will be that the code
-will still be reasonably comprehensible to future me.
+will still be reasonably comprehensible to future me using just my JavaScript
+knowledge.
 
 
-## What is Signals
+## What is Signals?
 
-[Signals] is an emergent JavaScript API to handle dependent, reactive
-state in web frameworks. Frameworks like Vue and Svelt and the rest
-need a mechanism where you set a value for some state in one
-place and it knows which bits of the DOM to update in response;
-Signals is an
-attempt to create a common API for this sort of thing.
+Modern JavaScript frameworks emphasize a convention that information moves
+in one direction. Changes to application state flow out to the user interface
+(represented by the DOM). Messages are triggered by user actions, and flow
+inwards to change the state.
 
-So the gist of my plan for the editor is that the mouse handler
-events update state signals. The position of the control points on the page
-is calculated in computed signals. The writing of the coordinates
-in to the SVG elements happens in an ‘effect’ function, which is
-automatically rerun when the signals it depends on are updated.
+```
+[State] → [Computed] → (Update DOM) → [DOM]
+                     ↘︎
+   ↑                   (Update form) → [Form]
+
+  (Update state) ← [Event] ← (User action)
+```
+
+The React framework works by having a function re-generate (a copy of) the entire DOM
+each time the state changes. Frameworks like Vue and Svelte have compiled
+templates that track which state affects which bits of the DOM, so they can
+react to state changes by making only the necessary changes. This is important
+when changes to the DOM of an HTML document are relatively slow.
+
+[Signals] is an emergent JavaScript API for the underlying mechanism required
+to track ‘reactive’ state. One day frameworks might be reengineered to use
+it as a common foundation, making them faster and perhaps allowing sharing of
+components. The API is not intended to be used directly by application developers.
+
+So my plan is to use Signals directly to develop my application.
 
 
 ## Building with naked signals
+
+The brief outline is as follows:
+
+1. Create `Signal.State` instances for the user’s current _crop_ and _focus_
+1. Render the HTML + SVG for the user interface in its neutral state
+1. Create effects that update the SVG when the state changes
+1. Add event handlers tracking the user’s dragging of the control points
+  and updating the `Signal.State` instances with new values
+
+
+### Creating state
 
 To start with we create `Signal.State` instances for the things that
 the user can edit, and supply starting values. For example,
@@ -66,47 +93,13 @@ const focus = new Signal.State<Point>({
 Where the function `acquire` wraps access to the text
 items in the form.
 
-We supply an `effect` function which executes a function to update some part
-of the page, and then watches the signals it depends on so it can rerun it
-when they are updated.
-
-```TypeScript
-effect(() => {
-  const { left, top, width, height } = crop.get();
-  assign("crop_left", left);
-  assign("crop_top", top);
-  assign("crop_width", width);
-  assign("crop_height", height);
-});
-effect(() => {
-  const { x, y } = focus.get();
-  assign("focus_x", x);
-  assign("focus_y", y);
-});
-```
-
-Similar functions the translucent grey rectangle (with `id` value `cropTop`) that masks
-out some of the cropped image:
-
-```TypeScript
-effect(() => {
-  const { height } = sizePixels.get();
-  const { top: cropTop } = crop.get();
-  const rectElt = document.getElementById("cropTop");
-  if (!rectElt) {
-    return;
-  }
-  rectElt.setAttribute("height", cropTop * height);
-});
-```
+We have a separate state for the dynamically changing representation while the
+user is dragging a control point. When this is defined it replaces the static
+values. When the user operation ends, the dynamic value is copied in to the
+static state.
 
 
-## Rendering the UI
-
-With Vue and Svelte the programmer supplies an HTML template and the compiler
-splits in to a skeleton that can be rendered once and the mutable parts that
-are updated in response to changes in state. For this app we are doing this
-division by hand.
+### Initial rendering
 
 The user interface consists of an SVG element with the source image (or part of it)
 and the control points and two frames superimposed on it. Our interaction does
@@ -138,58 +131,90 @@ function render() {
 ```
 
 The dimensions of the UI are acquired from a signal `sizePixels`. This allows it to change
-automatically when the window is resized. This creates a fresh UI
-each time, but we expect this to be rare. In normal usage this function is called
-exactly once.
+automatically when the window is resized.
 
-The function intentionally does not depend on any other signals. The control points
-here have their default positions.
-We do not want to be rerunning the whole render function continually
+The function intentionally does not depend on any other signals:
+we do not want to be rerunning the whole render function continually
 while the user drags a crop corner.
 
 
-## Interaction
+### Effects
+
+In this context an _effect_ is a mechanism for executing a function that depends
+on one or more signals, re-executing it when the signals are updated.
+This uses a cunning watch mechanism that means we can just write the function
+and assume it magically gets re-run when necessary.
+
+For example, given a function `assign` that updates a form item (inverse of the
+`aquire` helper function above) the effects for updating the form as the state
+changes looks like this
+
+```TypeScript
+effect(() => {
+  const { left, top, width, height } = crop.get();
+
+  assign("crop_left", left);
+  assign("crop_top", top);
+  assign("crop_width", width);
+  assign("crop_height", height);
+});
+
+effect(() => {
+  const { x, y } = focus.get();
+
+  assign("focus_x", x);
+  assign("focus_y", y);
+});
+```
+
+We are careful to read all the signals that this function uses at the top of the
+function so that the dependency-tracking mechanism has the information it needs.
+
+The cropped-out areas are obscured with four translucent grey rectangles.
+In an attempt to avoid making the code too clever, there is one effect for each
+element. The simples is the top rectangle; its `x`, `y`, and `width` attributes
+never change, only its height:
+
+```TypeScript
+effect(() => {
+  const { height } = sizePixels.get();
+  const { top: cropTop } = crop.get();
+
+  const rectElt = document.getElementById("cropTop");
+  rectElt.setAttribute("height", cropTop * height);
+});
+```
+
+There is one of these little functions for each of the rects and for the three
+control points and the preview frames.
+
+Event functions can return a function that is called to undo the effect. This will
+also be called immediately before re-running the effect function. In our app
+it is only used in the render effect.
+
+
+## Event handlers
 
 The convention of direct-manipulation user interfaces is that the user sees a
 preview of the outcome while they drag the control points, but it can be cancelled,
-reverting back to how it was before. We will do this by having an ‘active’ crop
+reverting back to how it was before. We will do this by having an _dynamic_ crop
 value that is set only while the points are being moved. When the mouse button
-is released, the active value is copied in to the `crop` state.
+is released (or the touching finger lifted off the screen), the active value
+is copied in to the static state.
 
 In this simple app this means the event handlers have one job: calculating a new
 valid state for the crop and focus point. They have no display code.
 
-We already have code for draggable control points in the old implementation.
-That version raised custom events; we just need to change it to instead set state
-signals.
+The `addEventListener` calls are done as part of the rendering step.
+
+
+
+
 
 To do
 
-- Port across the touch-event handlers
-- Add change-event handlers to form items
 - Cancel
 
-
-## Interface with Django
-
-Most web frameworks expect to be the whole app—the enclosing HTML page is
-little more than a shell for loading the JavaScript and rendering the `App`
-component.
-
-We are doing something like this but a little different. The page starts with the
-source image and a Django form where the crop and focus point dimensions can
-be edited. This way if the JavaScript fails to load the form is still usable.
-The code in `main.ts` will find the HTML elements and create the UI, replacing
-the image with the SVG element. As the user manipulates the control points in
-the UI, the form is updated with the new coordinates.
-
-As a result when the user clicks the Submit button the values are uploaded to the
-server and processed as a normal Django form. No need for separate API!
-
-To do
-
-- Deployment
-- Test on real server
 
 
 ## Tests
@@ -198,17 +223,16 @@ Ahem.
 
 Without a framework we don’t really have components that can be used by Storybook.
 So the UI testing consists of the `index.html` which is faked up to be like the
-locator-image-edit form of the main site. Luckily we only have the one ‘component‘.
+locator-image-edit form of the main site. Luckily we only have the one ‘component‘
+so we can get by without Storybook.
 
-The code that calculates new valid crop / focus status given a change in one of
-the control points is probably the most in need of unit testing. It is currently
-buried several layers deep in functions within functions, but it could be factored
-out in to a testable pure function.
+The code that calculates a new value value of crop/focus given the start state
+and the changes from the user’s mouse or touch interaction is broken out in to
+its own function, which allows for testing that dragging outside the UI still
+results in a valid new state.
 
 To do
 
-- Spin out a geometry-calculating module that can be unit tested
-- Tests for calculating the next crop+focus
 - Tests for calculating Mastodon and Linotak frame coordinates
 
 
