@@ -1,6 +1,8 @@
 import { Signal } from "signal-polyfill";
 import effect from "./fw/effect";
 
+const r = 32; // Size of the circles showing control points
+
 /**
  * Extra information about the image not stored in the form.
  */
@@ -29,6 +31,76 @@ interface Rect {
   height: number;
 }
 
+export interface CurrentState {
+  width: number;
+  height: number;
+  crop: Rect;
+  focus: Point;
+  which: string;
+}
+export interface DragEvent {
+  dx: number;
+  dy: number;
+}
+
+interface DynamicState {
+  crop?: Rect;
+  focus?: Point;
+}
+
+/// Calculate the dynamic crop + focus based on having moved a given control point.
+// Used in event handlers to calculate the new value for the `dynamic` signal.
+export const nextDynamic = (
+  { width, height, crop: prevCrop, focus: prevFocus, which }: CurrentState,
+  { dx, dy }: DragEvent,
+) => {
+  const right = prevCrop.left + prevCrop.width;
+  const bottom = prevCrop.top + prevCrop.height;
+
+  if (which == "focus") {
+    return {
+      focus: {
+        x: Math.max(
+          Math.min(1, prevFocus.x + dx / (prevCrop.width * width)),
+          0,
+        ),
+        y: Math.max(
+          Math.min(1, prevFocus.y + dy / (prevCrop.height * height)),
+          0,
+        ),
+      },
+    };
+  } else if (which === "cropTopLeft") {
+    // Maintain at least 32 screen pixels between the two control points.
+    const maxLeft = right - r / width;
+    const maxTop = bottom - r / height;
+    const newLeft = Math.max(
+      Math.min(maxLeft, prevCrop.left + dx / width),
+      0.0,
+    );
+    const newTop = Math.max(Math.min(maxTop, prevCrop.top + dy / height), 0.0);
+    return {
+      crop: {
+        ...prevCrop,
+        left: newLeft,
+        top: newTop,
+        width: right - newLeft,
+        height: bottom - newTop,
+      },
+    };
+  } else if (which == "cropBottomRight") {
+    const newWidth = prevCrop.width + dx / width;
+    const newHeight = prevCrop.height + dy / height;
+    return {
+      crop: {
+        ...prevCrop,
+        width: Math.max(Math.min(1.0 - prevCrop.left, newWidth), r / width),
+        height: Math.max(Math.min(1.0 - prevCrop.top, newHeight), r / height),
+      },
+    };
+  }
+};
+
 export default function wireUp(
   imageElt: HTMLImageElement,
   formElt: HTMLFormElement,
@@ -43,10 +115,8 @@ export default function wireUp(
     return;
   }
 
-  const r = 32;
-
-  // Image elt can have data-* attributes,
-  // used when the image has been resized or cropped.
+  // Dimensions in the imageData are of the source image.
+  // If it isn’t specified all we can do is hope the image passed in is unscaled.
   const naturalWidth = imageData.width ?? imageElt.width;
   const naturalHeight = imageData.height ?? imageElt.height;
 
@@ -55,7 +125,7 @@ export default function wireUp(
   const placeholder: string = imageData.placeholder ?? "#888";
   const src = imageElt.src;
 
-  // Get a number out of the form.
+  /// Function to get a number out of the form.
   const acquire = (name: string, defaultValue: number): number => {
     const itemElt = formElt.elements.namedItem(name);
     if (itemElt && "value" in itemElt) {
@@ -64,7 +134,7 @@ export default function wireUp(
     return defaultValue;
   };
 
-  // Copy this number in to the form.
+  /// Function to copy this number in to the form.
   const assign = (name: string, value: string | number) => {
     const itemElt = formElt.elements.namedItem(name);
     if (itemElt && "value" in itemElt) {
@@ -127,9 +197,7 @@ export default function wireUp(
   });
 
   // This is set while the user is dragging one of the points about.
-  const dynamic = new Signal.State<{ crop?: Rect; focus?: Point } | undefined>(
-    undefined,
-  );
+  const dynamic = new Signal.State<DynamicState | undefined>(undefined);
 
   // The crop that is currently being displayed.
   const displayedCrop = new Signal.Computed(() => {
@@ -156,12 +224,10 @@ export default function wireUp(
   // Don’t add dependencies on other signals; we don’t want to be
   // continually re-rendering the UI.
   function render() {
-    // Don’t forget to reference any signals we depend on.
     const { width, height } = sizePixels.get();
 
     const outerElt = document.getElementById("focusPoint") || imageElt;
 
-    // The SVG has to be wrapped in DIV otherwise we don’t seem to get the image element bound.
     outerElt.outerHTML = `
       <div class="focus-point" id="focusPoint">
         <svg class="im" width=${width} height=${height} viewBox="0 0 ${width} ${height}" style="display: block">
@@ -192,77 +258,35 @@ export default function wireUp(
       </div>
     `;
 
-    // Event handler for dragging circle.
+    /// Event handler for dragging circle with mouse.
     const handleMouseDown = (event: MouseEvent) => {
       const node = event.currentTarget as SVGCircleElement;
       const x = event.clientX;
       const y = event.clientY;
       const which = node?.id;
-      let dx: number = 0;
-      let dy: number = 0;
-
-      const nextDynamic = () => {
-        const prevCrop = crop.get();
-        const prevFocus = focus.get();
-
-        const right = prevCrop.left + prevCrop.width;
-        const bottom = prevCrop.top + prevCrop.height;
-
-        if (which == "focus") {
-          return {
-            focus: {
-              x: Math.max(
-                Math.min(1, prevFocus.x + dx / (prevCrop.width * width)),
-                0,
-              ),
-              y: Math.max(
-                Math.min(1, prevFocus.y + dy / (prevCrop.height * height)),
-                0,
-              ),
-            },
-          };
-        } else if (which === "cropTopLeft") {
-          const newLeft = prevCrop.left + dx / width;
-          const newTop = prevCrop.top + dy / height;
-          return {
-            crop: {
-              ...prevCrop,
-              left: Math.max(Math.min(1.0 - r / width, newLeft), 0.0),
-              top: Math.max(Math.min(1.0 - r / height, newTop), 0.0),
-              width: Math.max(right - newLeft, r / width),
-              height: Math.max(bottom - newTop, r / height),
-            },
-          };
-        } else if (which == "cropBottomRight") {
-          const newWidth = prevCrop.width + dx / width;
-          const newHeight = prevCrop.height + dy / height;
-          return {
-            crop: {
-              ...prevCrop,
-              width: Math.max(
-                Math.min(1.0 - prevCrop.left, newWidth),
-                r / width,
-              ),
-              height: Math.max(
-                Math.min(1.0 - prevCrop.top, newHeight),
-                r / height,
-              ),
-            },
-          };
-        }
+      const currentState: CurrentState = {
+        width,
+        height,
+        crop: crop.get(),
+        focus: focus.get(),
+        which,
       };
 
-      dynamic.set(nextDynamic());
+      dynamic.set(nextDynamic(currentState, { dx: 0, dy: 0 }));
 
       const handleMouseMove = (e: MouseEvent) => {
-        dx = e.clientX - x;
-        dy = e.clientY - y;
-        dynamic.set(nextDynamic());
+        dynamic.set(
+          nextDynamic(currentState, {
+            dx: e.clientX - x,
+            dy: e.clientY - y,
+          }),
+        );
       };
       const handleMouseUp = (e: MouseEvent) => {
-        dx = e.clientX - x;
-        dy = e.clientY - y;
-        const next = nextDynamic();
+        const next = nextDynamic(currentState, {
+          dx: e.clientX - x,
+          dy: e.clientY - y,
+        });
         if (next?.crop) {
           crop.set(next.crop);
         }
@@ -278,7 +302,119 @@ export default function wireUp(
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     };
-    const handleTouchStart = e => {};
+    /// Event handler for dragging circle with finger.
+    const handleTouchStart = (event: TouchEvent) => {
+      // State held during touching.
+      interface TouchInfo {
+        clientX: number;
+        clientY: number;
+        identifier: number;
+      }
+      const touches: TouchInfo[] = [];
+
+      const copyTouch = ({
+        clientX,
+        clientY,
+        identifier,
+      }: Touch): TouchInfo => {
+        return { clientX, clientY, identifier };
+      };
+      const findTouch = (identifier: number): number => {
+        for (let i = 0; i < touches.length; ++i) {
+          if (touches[i].identifier === identifier) {
+            return i;
+          }
+        }
+        return -1;
+      };
+
+      dynamic.set(undefined); // In case we are interrupting an existing drag sequence.
+      for (const touch of event.changedTouches) {
+        touches.push(copyTouch(touch));
+      }
+      console.log("handleTouchStart", { touches });
+      if (touches.length === 1) {
+        event.preventDefault();
+
+        // Set up for tracking touch sequence.
+        const node = event.currentTarget as SVGCircleElement;
+        const currentState: CurrentState = {
+          width,
+          height,
+          crop: crop.get(),
+          focus: focus.get(),
+          which: node?.id,
+        };
+        const { clientX: x, clientY: y } = touches[0];
+        dynamic.set(nextDynamic(currentState, { dx: 0, dy: 0 }));
+
+        // Add event handlers for tracking the touch sequence.
+        const handleTouchMove = (event: TouchEvent) => {
+          for (const touch of event.changedTouches) {
+            const i = findTouch(touch.identifier);
+            if (i >= 0) {
+              touches[i] = copyTouch(touch);
+            }
+          }
+          if (touches.length === 1) {
+            event.preventDefault();
+            const { clientX, clientY } = touches[0];
+            dynamic.set(
+              nextDynamic(currentState, {
+                dx: clientX - x,
+                dy: clientY - y,
+              }),
+            );
+          }
+        };
+
+        const handleTouchEnd = (event: TouchEvent) => {
+          if (
+            touches.length === 1
+            && event.changedTouches.length >= 1
+            && event.changedTouches[0].identifier === touches[0].identifier
+          ) {
+            event.preventDefault();
+
+            const { clientX, clientY } = event.changedTouches[0];
+            const next = nextDynamic(currentState, {
+              dx: clientX - x,
+              dy: clientY - y,
+            });
+            if (next?.crop) {
+              crop.set(next.crop);
+            }
+            if (next?.focus) {
+              focus.set(next.focus);
+            }
+
+            window.removeEventListener("touchmove", handleTouchMove);
+            window.removeEventListener("touchend", handleTouchEnd);
+            window.removeEventListener("touchcancel", handleTouchCancel);
+          }
+
+          for (const touch of event.changedTouches) {
+            const i = findTouch(touch.identifier);
+            if (i >= 0) {
+              touches.splice(i, 1);
+            }
+          }
+        };
+
+        const handleTouchCancel = (event: TouchEvent) => {
+          // Abandon the in-progress touch-tracking.
+          dynamic.set(undefined);
+
+          window.addEventListener("touchmove", handleTouchMove);
+          window.addEventListener("touchend", handleTouchEnd);
+          window.addEventListener("touchcancel", handleTouchCancel);
+        };
+
+        window.addEventListener("touchmove", handleTouchMove);
+        window.addEventListener("touchend", handleTouchEnd);
+        window.addEventListener("touchcancel", handleTouchCancel);
+      }
+    };
 
     // Add event handlers.
     for (const which of ["cropTopLeft", "cropBottomRight", "focus"]) {
