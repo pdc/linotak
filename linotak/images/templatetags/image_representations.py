@@ -2,6 +2,7 @@
 
 from django import template
 
+from linotak.images.models import Image
 from linotak.utils import create_data_url
 
 from ..size_spec import SizeSpec
@@ -9,34 +10,29 @@ from ..size_spec import SizeSpec
 register = template.Library()
 
 
-IMAGE_TEMPLATE = template.Template(
-    """{% spaceless %}
+IMAGE_TEMPLATE = template.Template("""{% spaceless %}
     {% if image.placeholder %}<div style="background: {{ image.placeholder }}">{% endif %}
     {% if representation %}
-        <img src="{{ representation.content.url }}" {% if srcset %}srcset="{{srcset}}" sizes="{{sizes}}"{% endif %}
-            {% if image.with_class %}class="{{ image.with_class }}" {% endif %}width="{{ representation.width }}" height="{{ representation.height }}"
-            alt="" aria-label="thumbnail"{% if longdesc %}longdesc="{{ longdesc }}"{% endif %}>
+        <img {% if image.with_id %}id="{{ image.with_id }}" {% endif %}src="{{ representation.content.url }}"
+            {% if srcset %}srcset="{{srcset}}" sizes="{{sizes}}"
+            {% endif %}{% if image.with_class %}class="{{ image.with_class }}" {% endif %}width="{{ representation.width }}" height="{{ representation.height }}" alt=""
+            aria-label="thumbnail"{% if longdesc %}longdesc="{{ longdesc }}"{% endif %}>
     {% endif %}
     {% if image.placeholder %}</div>{% endif %}
-{% endspaceless %}"""
-)
+{% endspaceless %}""")
 
-SVG_TEMPLATE = template.Template(
-    """{% spaceless %}
-    <svg {% if image.with_class %}class="{{ image.with_class }}" {% endif %}width="{{ width }}px" height="{{ height }}px" viewBox="0 0 {{ image_width }} {{ image_height }}"{% if preserve_aspect_ratio %} preserveAspectRatio="{{ preserve_aspect_ratio }}"{% endif %}>
+SVG_TEMPLATE = template.Template("""{% spaceless %}
+    <svg {% if image.with_id %}id="{{ image.with_id }}" {% endif %}{% if image.with_class %}class="{{ image.with_class }}" {% endif %}width="{{ width }}px" height="{{ height }}px" viewBox="0 0 {{ image_width }} {{ image_height }}"{% if preserve_aspect_ratio %} preserveAspectRatio="{{ preserve_aspect_ratio }}"{% endif %}>
         <image width="{{ image_width }}" height="{{ image_height }}" xlink:href="{{ image.data_url }}"/>
     </svg>
-{% endspaceless %}"""
-)
+{% endspaceless %}""")
 
 
-LONGDESC_TEMPLATE = template.Template(
-    """<?DOCTYPE html>
+LONGDESC_TEMPLATE = template.Template("""<?DOCTYPE html>
 <html>
   <head><meta charset="UTF-8"></head>
   <body>{{ text|linebreaks }}</body>
-</html>"""
-)
+</html>""")
 
 
 @register.filter
@@ -61,7 +57,7 @@ def representation(value, arg):
     return _image_representation(value, SizeSpec.parse(arg))
 
 
-def _image_representation(image, spec):
+def _image_representation(image: Image, spec: SizeSpec) -> str:
     if image and image.media_type in ("image/svg+xml", "image/svg"):
         if image.width and image.height:
             scaled, cropped = spec.scale_and_crop_to_match(
@@ -119,6 +115,19 @@ def _image_representation(image, spec):
 
 
 @register.filter
+def with_id(value, arg):
+    """Tag filter that adds a id to an image entity.
+
+    Value is am Image instance or None. Arg is the HTML id.
+
+    Usage: {{ someimage|with_id:"heroImage" }}
+    """
+    if value and arg:
+        value.with_id = arg
+    return value
+
+
+@register.filter
 def with_class(value, arg):
     """Tag filter that adds a class to an image entity.
 
@@ -126,7 +135,7 @@ def with_class(value, arg):
 
     Usage: {{ someimage|with_class:"loc-fine" }}
     """
-    if value:
+    if value and arg:
         value.with_class = arg
     return value
 

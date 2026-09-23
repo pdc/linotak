@@ -1,0 +1,28 @@
+{
+  "name": "linotak-editor",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "@vitest/browser-playwright": "^4.1.5",
+    "@vitest/coverage-v8": "^4.1.5",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.10",
+    "vitest": "^4.1.5"
+  },
+  "prettier": {
+    "experimentalTernaries": true,
+    "experimentalOperatorPosition": "start",
+    "arrowParens": "avoid"
+  },
+  "dependencies": {
+    "signal-polyfill": "^0.2.2"
+  }
+}

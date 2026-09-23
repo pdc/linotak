@@ -405,6 +405,13 @@ class Image(models.Model):
                 rep.content.save(file_name_from_etag(rep.etag, rep.media_type), f)
             return
 
+        # Generate an ImageMagick command to do the following
+        # 1. Crop as defined in the image properties (user-defined crop).
+        # 2. Scale the cropped image to cover the thumbnail area.
+        # 3. Extract the thumbnail from the scaled image using focus point x,y
+        #
+        # The focus point is expressed in the coordinates of the cropped area.
+
         cmd = ["magick", "-", "-resize", "%dx%d>" % scaled, "-"]
         if has_crop:
             x_c = int(round(self.width * self.crop_left))
@@ -673,14 +680,35 @@ def _comb_imagemagick_verbose(specs, data):
 # writes (the values are mapped from (0..255, -128..127, -182..127) to (0..1,
 # 0..1, 0..1) by scaling and adding 0.5) back to sRGB.
 
-COORD_RE = re.compile(r"\d*(?:.\d+)? \((0|1|0\.\d+)\)")
+COORD_RE = re.compile(
+    r"""
+    -? \d*(?:\.\d+)?(?:e-?\d+)?
+    \s+
+    \(
+    (
+        -?
+        (?: \d+
+        |    \d+\.\d*
+        |    \.\d+
+        )
+        (?:e-?\d+)?
+    )
+    \)""",
+    re.VERBOSE,
+)
 
 
 def _lab_from_imagemagick_verbose_bits(bits):
     """Extract L*a*b* coordinates from the format output by `identify -verbose`."""
-    scaled_l, scaled_a, scaled_b = tuple(
-        float(m[1]) for bit in bits if bit and (m := COORD_RE.match(bit))
-    )
+    coords = []
+    for letter, bit in zip("Lab", bits, strict=True):
+        if not bit:
+            raise ValueError(f"No value given for scaled_{letter}")
+        m = COORD_RE.match(bit)
+        if not m:
+            raise ValueError(f"{bit=}: Could not parse value for scaled_{letter}")
+        coords.append(float(m[1]))
+    scaled_l, scaled_a, scaled_b = coords
     return scaled_l * 100.0, scaled_a * 255.0 - 128.0, scaled_b * 255.0 - 128.0
 
 

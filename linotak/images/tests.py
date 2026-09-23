@@ -738,7 +738,6 @@ class TestImageWantsSize(TestCase):
 
 class TestImageRepresentationTag(TestCase):
 
-    maxDiff = None
 
     def test_given_svg_generates_svg(self):
         image = Image.objects.create(
@@ -808,6 +807,10 @@ class TestImageRepresentationTag(TestCase):
             '<image width="900" height="600" xlink:href="http://example.com/foo.svg"/>'
             "</svg>",
         )
+
+    def test_resizes_image_to_render_tag(self):
+
+
 
 
 # identify -colorspace Lab -verbose linotak/images/test-data/234x123.png
@@ -960,6 +963,15 @@ class TestExtractStats(TestCase):
         self.assertAlmostEqual(l_star, 64.542, 3)
         self.assertAlmostEqual(a_star, 48.387, 3)
         self.assertAlmostEqual(b_star, -33.629, 3)
+
+    def test_extracts_Lab_from_verbose_bits_with_exponents(self):
+        l_star, a_star, b_star = _lab_from_imagemagick_verbose_bits(
+            ("-1.45517e-13 (-2.22045e-18)", "32767.5 (0.5)", "32767.5 (0.5)")
+        )
+
+        self.assertAlmostEqual(l_star, 0, 3)
+        self.assertAlmostEqual(a_star, -0.5, 3)
+        self.assertAlmostEqual(b_star, -0.5, 3)
 
     def test_Lab_from_bits_white(self):
         l_star, a_star, b_star = _lab_from_imagemagick_verbose_bits(

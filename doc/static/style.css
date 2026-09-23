@@ -1,0 +1,49 @@
+@media (prefers-color-scheme: light) {
+    :root {
+        /** Reasonable colors blue-4, indigo-5 */
+        --link: #006DCA;
+        --visited: #00328A;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Reasonable colors blue-3, indigo-2 */
+        --link: #0089FC;
+        --visited: #008FDB;
+    }
+}
+
+body>header {
+
+    & a:link,
+    & a:visited {
+        color: inherit;
+        text-decoration: inherit;
+    }
+
+    & a:hover,
+    & a:active {
+        color: var(--link);
+        text-decoration: underline;
+    }
+}
+
+.text,
+.main,
+main,
+nav,
+aside {
+    a:link {
+        color: var(--link);
+    }
+
+    a:visited {
+        color: var(--visited);
+    }
+
+    a:hover,
+    a:active {
+        color: var(--link);
+    }
+}
