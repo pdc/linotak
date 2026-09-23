@@ -56,7 +56,7 @@
 
     <main>
         <div class="focus-frm-focus" id="focus-ui">
-            {{ object|with_class:"focus-frm-img"|representation:"640x640" }}
+            {{ object|with_id:"focusImage"|with_class:"focus-frm-img"|representation:"640x640" }}
         </div>
         <form method="POST" class="focus-frm" id="focus-ui-form">
             {% csrf_token %}
@@ -93,6 +93,5 @@
 
 {% block scripts %}
     {{ image.to_json|json_script:"imageData"}}
-    <link rel="stylesheet" href="{% static 'notes/bundle.css' %}" type="text/css"/>
     <script defer src="{% static 'notes/bundle.js' %}"></script>
 {% endblock %}

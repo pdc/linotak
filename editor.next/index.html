@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>linotak-editor</title>
+
+    <style>
+      :root {
+        --text-fam:
+          "Iowan Old Style", "Palatino Linotype", "URW Palladio L", P052, serif;
+        --ui-fam: system-ui, sans-serif;
+
+        font-family: var(--text-fam);
+        font-weight: normal;
+        font-size: 16px;
+        line-height: 1.5;
+        color-scheme: light dark;
+      }
+      form {
+        margin: 1lh 0;
+
+        & .btns {
+          text-align: end;
+        }
+      }
+      @media (min-width: 40em) {
+        form {
+          display: grid;
+          width: fit-content;
+          grid-template-columns: max-content 1fr;
+          gap: 0.5lh 0;
+
+          & .btns {
+            grid-column: 2;
+          }
+        }
+      }
+      fieldset.focus {
+        width: fit-content;
+        display: grid;
+        grid-template-columns: max-content max-content max-content;
+        gap: 0.5em 1em;
+      }
+      fieldset.desc {
+        width: fit-content;
+        display: grid;
+        grid-template-columns: minmax(24em, 36em);
+      }
+      input[type="number"],
+      textarea {
+        font-size: 1em;
+        font-family: var(--ui-fam);
+      }
+      button {
+        padding: 0.5em 1em;
+        font-size: 1em;
+        font-family: var(--ui-fam);
+        background-color: color(rgb 128 128 128 / 0.05);
+        border: 1px solid color(from CanvasText srgb r g b / 0.5);
+        border-radius: 4px;
+
+        &:active {
+          box-shadow: inset black 1px 1px 1px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div>
+        <img
+          id="focusImage"
+          src="/src/assets/coffee.640.jpeg"
+          width="640"
+          height="480"
+          alt="Image being edited"
+        />
+      </div>
+      <script id="imageData" type="application/json">
+        {
+          "width": 960,
+          "height": 450,
+          "palceholder": "#0AB"
+        }
+      </script>
+      <form>
+        <fieldset class="focus">
+          <legend>Thumbnail</legend>
+          <label for="cropLeft">Crop left top</label>
+          <input
+            id="cropLeft"
+            name="crop_left"
+            type="number"
+            size="4"
+            step="0.001"
+            min="0.0"
+            max="1.0"
+            value="0"
+          />
+          <input
+            name="crop_top"
+            type="number"
+            size="4"
+            step="0.001"
+            min="0.0"
+            max="1.0"
+            value="0"
+          />
+          <label for="cropWidth">Crop width height</label>
+          <input
+            id="cropWidth"
+            name="crop_width"
+            type="number"
+            size="4"
+            step="0.001"
+            min="0.0"
+            max="1.0"
+            value="1"
+          />
+          <input
+            name="crop_height"
+            type="number"
+            size="4"
+            step="0.001"
+            min="0.0"
+            max="1.0"
+            value="1"
+          />
+          <label for="focusX">Focus <i>x</i> <i>y</i></label>
+          <input
+            id="cropWidgh"
+            name="focus_x"
+            type="number"
+            size="4"
+            step="0.001"
+            min="0.0"
+            max="1.0"
+            value="0.5"
+          />
+          <input
+            name="focus_y"
+            type="number"
+            size="4"
+            step="0.001"
+            min="0.0"
+            max="1.0"
+            value="0.5"
+          />
+        </fieldset>
+        <fieldset class="desc">
+          <legend><label for="desc">Description</label></legend>
+          <textarea id="desc" name="description" rows="4"></textarea>
+        </fieldset>
+        <div class="btns"><button>Submitt</button></div>
+      </form>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

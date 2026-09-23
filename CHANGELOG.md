@@ -4,11 +4,15 @@
 
 Added:
 
+- Added `doc` directory to contain a build log.
 - Use encoding specified in meta tag of HTML document when server does not
   specify encoding. [#52]
 
 Changes:
 
+- Overhaul the JavaScript code used in the edit form, replacing Svelte framework
+  with a no-framework based on the current Signals draft.
+- Make the `ALLOWED_HOSTS` setting default to the same host as `NOTES_DOMAIN`.
 - Make the Atom feed have HTML content rather than plain text.
 - Use `psycopg` 3.x instead of `psycopg2`
 
