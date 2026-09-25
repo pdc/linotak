@@ -50,12 +50,15 @@ describe("nextDynamic", () => {
 
   it("requires at least 32 screen pixels between control points when dragging top left", () => {
     // Given dragging top left corner …
-    // And screen top left is 64, 256 …
-    // And screen bottom right is 320, 896 …
     const currentState: CurrentState = {
       width: 512,
       height: 1024,
-      crop: { left: 0.125, top: 0.25, width: 0.5, height: 0.625 },
+      crop: {
+        left: 64 / 512,
+        top: 256 / 1024,
+        width: (320 - 64) / 512,
+        height: (768 - 256) / 1024,
+      },
       focus: { x: 0.3, y: 0.4 },
       which: "cropTopLeft",
     };
@@ -67,10 +70,10 @@ describe("nextDynamic", () => {
     // Then the crop width & height clipped to stay within image.
     // (Left is 288 / 512 which is 0.5625; top is 864 / 1024 = 0.84375 )
     expect(result?.crop).toEqual({
-      left: 0.5625,
-      top: 0.84375,
-      width: 0.625 - 0.5625,
-      height: 0.875 - 0.84375,
+      left: (320 - 32) / 512,
+      top: (768 - 32) / 1024,
+      width: 32 / 512,
+      height: 32 / 1024,
     });
     expect(result?.focus).toBeUndefined();
   });

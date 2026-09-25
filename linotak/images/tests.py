@@ -738,7 +738,6 @@ class TestImageWantsSize(TestCase):
 
 class TestImageRepresentationTag(TestCase):
 
-
     def test_given_svg_generates_svg(self):
         image = Image.objects.create(
             data_url="http://example.com/foo.svg", media_type="image/svg+xml"
@@ -807,10 +806,6 @@ class TestImageRepresentationTag(TestCase):
             '<image width="900" height="600" xlink:href="http://example.com/foo.svg"/>'
             "</svg>",
         )
-
-    def test_resizes_image_to_render_tag(self):
-
-
 
 
 # identify -colorspace Lab -verbose linotak/images/test-data/234x123.png
