@@ -8,9 +8,8 @@ from django.template.loader import get_template
 from django.urls import reverse
 from django.views.generic.list import BaseListView
 
-from .models import Note
-
 from ..xml_writer import Document
+from .models import Note
 from .views import NotesMixin, TaggedMixin
 
 

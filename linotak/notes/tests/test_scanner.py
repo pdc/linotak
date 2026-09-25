@@ -27,14 +27,12 @@ class TestLinksMixin(ScanMixin, TestCase):
         self.assertFalse(stuff)
 
     def test_grabs_links_in_html(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <head>
                 <link rel=webmention href="https://webmention.io/indiewebcamp/webmention">
                 <link rel="stylesheet" href="https://media.example.com/style.css" type="text/css"/>
                 <link rel="next" title="More"  href=https://example.com/2>
-        """
-        )
+        """)
 
         self.assertEqual(
             stuff,
@@ -46,11 +44,9 @@ class TestLinksMixin(ScanMixin, TestCase):
         )
 
     def test_resolves_relative_to_document(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <link rel="next" href="2"/>
-        """
-        )
+        """)
 
         self.assertEqual(
             stuff,
@@ -60,22 +56,18 @@ class TestLinksMixin(ScanMixin, TestCase):
         )
 
     def test_spots_a_tags_as_well(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <a href="https://webmention.net/draft/">Webmention</a>
-        """
-        )
+        """)
 
         self.assertEqual(
             stuff, [Link(set(), "https://webmention.net/draft/", text="Webmention")]
         )
 
     def test_records_classes_as_well(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <a class="external text" href="https://webmention.net/draft/">Webmention</a>
-        """
-        )
+        """)
 
         self.assertEqual(
             stuff,
@@ -90,46 +82,37 @@ class TestLinksMixin(ScanMixin, TestCase):
         )
 
     def test_ignores_internal_anchor(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
                 <a id="top"></a>
-        """
-        )
+        """)
 
         self.assertFalse(stuff)
 
     def test_handles_self_link(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
                 <a href="" class="u-url"></a>
-        """
-        )
+        """)
 
         self.assertEqual(stuff, [Link([], "https://example.com/1", classes=["u-url"])])
 
     def test_ignores_internal_link(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
                 <a href="#mw-head">navigation</a>
-        """
-        )
+        """)
 
         self.assertFalse(stuff)
 
     def test_title(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <html>
                 <head>
                     <title>This is the title</title>
-        """
-        )
+        """)
 
         self.assertEqual(stuff, [Title("This is the title")])
 
     def test_not_svg_title(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <html>
                 <head>
                     <title>This is the title</title>
@@ -140,18 +123,15 @@ class TestLinksMixin(ScanMixin, TestCase):
                     </svg>
                 </body>
             </head>
-        """
-        )
+        """)
 
         self.assertEqual(stuff, [Title("This is the title")])
 
     def test_a_with_text(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <a href="/User:Jeena.net"
                 title="User:Jeena.net">Jeena Paradies</a>
-        """
-        )
+        """)
 
         self.assertEqual(
             stuff,
@@ -166,33 +146,27 @@ class TestLinksMixin(ScanMixin, TestCase):
         )
 
     def test_img(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <img src="https://jeena.net/avatar.jpg" class="u-photo"
                 style="height:1.1em;vertical-align:-.1em" alt="" />
-        """
-        )
+        """)
 
         self.assertEqual(
             stuff, [Img("https://jeena.net/avatar.jpg", classes=["u-photo"])]
         )
 
     def test_img_2(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <img src="https://example.com/img" width="120" height="60" alt="" />
-        """
-        )
+        """)
 
         self.assertEqual(stuff, [Img("https://example.com/img", width=120, height=60)])
 
     def test_img_instagram_stylee(self):
         # Instagram’s page includes images with data URLs and invalid width and height sttributes.
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==" width="80px" height="80px" alt="" />
-            """
-        )
+            """)
 
         self.assertEqual(
             stuff,
@@ -206,13 +180,11 @@ class TestLinksMixin(ScanMixin, TestCase):
         )
 
     def test_respects_base_tag(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <html>
                 <head><base href="http://example.com/foo/"></head>
                 <body><a href="bar" class="u-syndication">Booble wooble</a></body>
-            """
-        )
+            """)
 
         self.assertEqual(
             stuff,
@@ -227,12 +199,10 @@ class TestLinksMixin(ScanMixin, TestCase):
         )
 
     def test_makes_link_from_u_url_property(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <input class="u-url url u-uid uid bookmark" type="url" size="70" style="max-width:100%"
                 value="http://tantek.com/2013/073/b1/silos-vs-open-social-web" />
-        """
-        )
+        """)
 
         self.assertEqual(
             stuff,
@@ -295,15 +265,13 @@ class TestHSomethingCapture(ScanMixin, TestCase):
     """Test HSomething capture."""
 
     def test_encapsulates_properties_and_links(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <li class="h-event">
                 In person, at <a class="p-name u-url" href="http://indiewebcamp.com/2013">IndieWebCamp 2013</a>,
                 <time class="dt-start" datetime="2013-06-22">June 22</time>-<time class="dt-end" datetime="2013-06-23">23</time>
                 in <span class="p-location h-adr"><span class="p-locality">Portland</span>, <span class="p-region">Oregon</span></span>
             </li>
-        """
-        )
+        """)
 
         self.assertEqual(
             stuff,
@@ -344,14 +312,12 @@ class TestHSomethingCapture(ScanMixin, TestCase):
 
 class TestHCardMixin(ScanMixin, TestCase):
     def test_spots_person(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <h4><span class="mw-headline" id="Jeena_with_jeena.net">Jeena with jeena.net</span></h4>
             <ul><li> <span class="h-card"><img src="https://jeena.net/avatar.jpg" class="u-photo"
                 style="height:1.1em;vertical-align:-.1em" alt="" /> <a href="/User:Jeena.net"
                 title="User:Jeena.net">Jeena Paradies</a></span>
-        """
-        )
+        """)
 
         self.assertEqual(
             stuff,
@@ -370,13 +336,11 @@ class TestHCardMixin(ScanMixin, TestCase):
         )
 
     def test_understands_explcit_p_name_field(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <span class="h-card">
                 <span class="p-name">Jet Mac Das</span>
             </span>
-        """
-        )
+        """)
 
         self.assertEqual(stuff, [HCard(name="Jet Mac Das")])
 
@@ -390,13 +354,11 @@ class TestHCardMixin(ScanMixin, TestCase):
         )
 
     def test_understands_tantek_çelic(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <a href="../" class="p-author h-card author-icon" rel="author" title="Tantek Çelik">
                 <img src="../logo.jpg" alt="Tantek Çelik" />
             </a>
-        """
-        )
+        """)
 
         self.assertEqual(
             stuff,
@@ -419,14 +381,12 @@ class TestHCardMixin(ScanMixin, TestCase):
 
 class TestHCiteMixin(ScanMixin, TestCase):
     def test_encloses_author_in_link(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <blockquote>
                 ”… an @ mention that works across websites; so that you don't feel immovable from Twitter or Fb.”
                 <cite class="h-cite">— <a class="external text" href="https://twitter.com/rngala/status/852354426983591937"><span class="p-author">Rony Ngala</span></a></cite>
             </blockquote>
-        """
-        )
+        """)
 
         self.assertEqual(
             stuff,
@@ -443,8 +403,7 @@ class TestHCiteMixin(ScanMixin, TestCase):
         )
 
     def test_citation_with_date_and_archived_version(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <span class="h-cite">
                 <span class="dt-published">2018-05-09</span>
                 <span class="p-author">
@@ -458,8 +417,7 @@ class TestHCiteMixin(ScanMixin, TestCase):
                 </cite>
                 (<a href="https://web.archive.org/web/20180509210136/https://seblog.nl/2018/05/09/5/de-magie-van-webmentions" class="external u-url">archived</a>)
             </span>
-        """
-        )
+        """)
 
         self.assertIn(
             Link(
@@ -483,11 +441,9 @@ class TestHCiteMixin(ScanMixin, TestCase):
         )
 
     def test_citation_from_tantek_çelik(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <cite class="h-cite"><a class="u-url p-name" href="http://tantek.com/2013/073/b1/silos-vs-open-social-web">On Silos vs an Open Social Web [#indieweb]</a> (<abbr class="p-author h-card" title="Tantek Çelik">Çelik</abbr> <time class="dt-published">2013-03-14</time>)</cite>)
-        """
-        )
+        """)
 
         self.assertIn(
             Link(
@@ -506,8 +462,7 @@ class TestHEntryMixin(ScanMixin, TestCase):
     """Want to recognize pages that ARE entries and pages containing entries."""
 
     def test_encloses_author_in_link(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <div id="content" class="mw-body h-entry" role="main">
                     <a id="top"></a>
                     <a href="" class="u-url"></a>
@@ -520,8 +475,7 @@ class TestHEntryMixin(ScanMixin, TestCase):
                         <a href="/like" title="like">likes</a>, <a href="/repost" title="repost">reposts</a>,
                         and other rich interactions across the decentralized social web.
                     </span></p>
-        """
-        )
+        """)
 
         self.assertIn(
             HEntry(
@@ -540,12 +494,10 @@ class TestHEntryMixin(ScanMixin, TestCase):
         )
 
     def test_includes_image(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <div id="content" class="gallery-entry h-entry">
                     <img src="https://example.com/im" width=960 height=720>
-        """
-        )
+        """)
 
         self.assertIn(
             HEntry(
@@ -557,15 +509,13 @@ class TestHEntryMixin(ScanMixin, TestCase):
         )
 
     def test_includes_wewbmention_link(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <div class="post-container h-entry">
                 <div class="post-main has-responses">
                 <div class="right">
                   <h1 class="p-name"><a href="/test/5">Discovery Test #5</a></h1>
                   <div class="e-content">This post advertises its <a rel="webmention" href="/test/5/webmention">Webmention endpoint</a> with an HTML <code>&lt;a&gt;</code> tag in the body. The URL is relative, so this will also test whether your discovery code properly resolves the relative URL.</div>
-        """
-        )
+        """)
 
         self.assertIn(
             HEntry(
@@ -584,12 +534,10 @@ class TestHEntryMixin(ScanMixin, TestCase):
         )
 
     def test_includes_like_of_link(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <div class="h-entry">
                 <a class="u-like-of" href="https://pdc.ooble.uk/395"></a>
-        """
-        )
+        """)
 
         self.assertIn(
             HEntry(
@@ -601,12 +549,10 @@ class TestHEntryMixin(ScanMixin, TestCase):
 
     def test_includes_link_with_notes_domain(self):
         with self.settings(NOTES_DOMAIN="ooble.uk"):
-            stuff = self.scan(
-                """
+            stuff = self.scan("""
                 <div class="h-entry">
                     <a href="https://pdc.ooble.uk/395">Woo</a>
-            """
-            )
+            """)
 
             self.assertIn(
                 HEntry(
@@ -620,8 +566,7 @@ class TestHEntryMixin(ScanMixin, TestCase):
 class TestOGEntryCapture(ScanMixin, TestCase):
     def test_captures_og_properties(self):
         # Inspired by https://twitter.com/Rainmaker1973/status/69
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <html>
                 <head>
                     <meta  property="og:type" content="video">
@@ -633,8 +578,7 @@ class TestOGEntryCapture(ScanMixin, TestCase):
                 </head>
                 <body>…</body>
             </html>
-        """
-        )
+        """)
 
         self.assertIn(
             HEntry(
@@ -650,16 +594,14 @@ class TestOGEntryCapture(ScanMixin, TestCase):
 
     def test_captures_image_if_no_title_or_descruiption(self):
         # Inspired by https://twitter.com/Rainmaker1973/status/69
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <html>
                 <head>
                    <meta  property="og:image" content="https://pbs.twimg.com/ext_tw_video_thumb/42/pu/img/69.jpg">
                 </head>
                 <body>…</body>
             </html>
-        """
-        )
+        """)
 
         self.assertIn(
             Img("https://pbs.twimg.com/ext_tw_video_thumb/42/pu/img/69.jpg"), stuff
@@ -667,8 +609,7 @@ class TestOGEntryCapture(ScanMixin, TestCase):
 
     def test_resolves_image_URL(self):
         # Inspired by https://99spokes.com/bicycle-geometry-terms
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <html>
                 <head>
                     <meta property="og:title" content="Bicycle Geometry Terms – 99 Spokes"/>
@@ -677,8 +618,7 @@ class TestOGEntryCapture(ScanMixin, TestCase):
                 </head>
                 <body>…</body>
             </html>
-        """
-        )
+        """)
 
         self.assertIn(
             HEntry(
@@ -696,8 +636,7 @@ class TestOGEntryCapture(ScanMixin, TestCase):
 
     def test_also_recognizes_twitter_URLs(self):
         # Inspired by https://99spokes.com/bicycle-geometry-terms
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <html>
                 <head>
                     <meta name="twitter:title" content="Bicycle Geometry Terms – 99 Spokes"/>
@@ -707,8 +646,7 @@ class TestOGEntryCapture(ScanMixin, TestCase):
                 </head>
                 <body>…</body>
             </html>
-        """
-        )
+        """)
 
         self.assertIn(
             HEntry(
@@ -738,11 +676,9 @@ class TestTwitterRecognizer(ScanMixin, TestCase):
 
 class TestMastodonMediaGalleryRecognizer(ScanMixin, TestCase):
     def test_extracts_from_json(self):
-        stuff = self.scan(
-            """
+        stuff = self.scan("""
             <div data-component='MediaGallery' data-props='{&quot;height&quot;:380,&quot;sensitive&quot;:false,&quot;standalone&quot;:true,&quot;autoPlayGif&quot;:null,&quot;reduceMotion&quot;:null,&quot;media&quot;:[{&quot;id&quot;:&quot;272718&quot;,&quot;type&quot;:&quot;image&quot;,&quot;url&quot;:&quot;https://mstdn.tokyocameraclub.com/system/media_attachments/files/000/272/718/original/05a26230216d5521.jpg&quot;,&quot;preview_url&quot;:&quot;https://mstdn.tokyocameraclub.com/system/media_attachments/files/000/272/718/small/05a26230216d5521.jpg&quot;,&quot;remote_url&quot;:null,&quot;text_url&quot;:&quot;https://mstdn.tokyocameraclub.com/media/LI97NA7geN3KCrZupXQ&quot;,&quot;meta&quot;:{&quot;original&quot;:{&quot;width&quot;:1024,&quot;height&quot;:1280,&quot;size&quot;:&quot;1024x1280&quot;,&quot;aspect&quot;:0.8},&quot;small&quot;:{&quot;width&quot;:320,&quot;height&quot;:400,&quot;size&quot;:&quot;320x400&quot;,&quot;aspect&quot;:0.8}},&quot;description&quot;:null}]}'>
-        """
-        )
+        """)
 
         self.assertIn(
             Img(
