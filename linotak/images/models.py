@@ -18,8 +18,6 @@ from base64 import b64decode, urlsafe_b64encode
 from hashlib import md5
 from xml.etree import ElementTree
 
-import requests
-from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models, transaction
@@ -27,6 +25,7 @@ from django.db.models import F
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from ..fetching import fetch
 from .signals import wants_data, wants_representation
 from .size_spec import SizeSpec
 
@@ -283,9 +282,7 @@ class Image(models.Model):
                 data = b64decode(rest[7:])
             etag = md5(data).digest()
         else:
-            r = requests.get(
-                self.data_url, headers={"User-Agent": settings.NOTES_FETCH_AGENT}
-            )
+            r = fetch(self.data_url)
             media_type = r.headers["Content-Type"]
             buf = io.BytesIO()
             total_size = 0

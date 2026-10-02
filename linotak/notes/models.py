@@ -579,7 +579,7 @@ class Note(models.Model):
     )
 
     def extract_subject(self):
-        """Anlyse the text of the note for URLs of subject(s) of the note."""
+        """Parse the text of the note for URLs of subject(s) of the note."""
         m = Note.subject_re.search(self.text)
         excess_urls = set(
             x.url for x in self.subjects.all()

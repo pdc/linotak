@@ -6,9 +6,10 @@ from collections.abc import Callable
 from urllib.parse import urljoin
 
 import requests
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+
+from ..fetching import fetch
 
 from ..images.models import Image
 from .models import Locator, LocatorImage
@@ -48,9 +49,7 @@ def fetch_page_update_locator(locator, if_not_scanned_since):
     # See if we can aquire an oEmbed resource instead:
     stuff = fetch_oembed(locator.url)
     if stuff is None:
-        with requests.get(
-            locator.url, stream=True, headers={"User-Agent": settings.NOTES_FETCH_AGENT}
-        ) as r:
+        with fetch(locator.url, stream=True) as r:
             stuff = parse_link_header(locator.url, r.headers.get("Link", ""))
             scanner = PageScanner(locator.url)
 

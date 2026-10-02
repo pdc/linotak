@@ -5,11 +5,11 @@ import re
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-import requests
 from django.conf import settings
 from django.core.cache import cache
 from uritemplate import URITemplate
 
+from ..fetching import fetch
 from .scanner import HCard, Img, Title
 
 LOG = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ def get_endpoints() -> list[OEmbedEndpoint]:
 
 def load_endpoints() -> list[OEmbedEndpoint]:
     """Load the providers using the OEMBED_PROVIDERS_URL setting."""
-    r = requests.get(settings.OEMBED_PROVIDERS_URL)
+    r = fetch(settings.OEMBED_PROVIDERS_URL)
     if r.ok:
         specs = r.json()
         result = [
@@ -87,13 +87,7 @@ def fetch_oembed(url: str) -> list | None:
     for endpoint in get_endpoints():
         if oembed_url := endpoint.url_for(url):
             LOG.info("Fetching oEmbed %s", oembed_url)
-            r = requests.get(
-                oembed_url,
-                headers={
-                    "accept": "application/json",
-                    "User-Agent": settings.NOTES_FETCH_AGENT,
-                },
-            )
+            r = fetch(oembed_url, headers={"accept": "application/json"})
             if r.ok:
                 return stuffs_from_oembed(r.json())
             LOG.warning(f"Fetching oEmbed failed: {r.status_code} getting {oembed_url}")

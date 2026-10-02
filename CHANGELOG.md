@@ -4,6 +4,7 @@
 
 Added:
 
+- [Add URL validation when fetching linked pages to mitigate SSRF risks.](doc/posts/2026-09-26-ssrf.md)
 - Added `doc` directory to contain a build log.
 - Use encoding specified in meta tag of HTML document when server does not
   specify encoding. [#52]
