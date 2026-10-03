@@ -392,6 +392,7 @@ class TestUpdateLocatorWithStuff(TestCase):
         self.assertEqual(actual.height, 997)
 
     def test_doesnt_clobber_existing_metadata(self):
+        # Given the image has already been scanned and has a size …
         LocatorImage.objects.create(
             locator=self.locator,
             image=Image.objects.create(
@@ -401,13 +402,20 @@ class TestUpdateLocatorWithStuff(TestCase):
                 height=960,
             ),
         )
+        # And it is discovered again in the scanned document with a different reported size …
         update_locator_with_stuff(
             self.locator,
             [
-                Img("https://images.example.com/69", type="image/jpeg"),
+                Img(
+                    "https://images.example.com/69",
+                    type="image/jpeg",
+                    width=640,
+                    height=480,
+                ),
             ],
         )
 
+        # Then the pre-existing size information takes priority.
         actual = self.locator.images.all()[0]
         self.assertEqual(actual.media_type, "image/jpeg")
         self.assertEqual(actual.width, 1280)

@@ -179,6 +179,17 @@ class TestLinksMixin(ScanMixin, TestCase):
             ],
         )
 
+    def test_ignores_bogus_css_lengths_in_attributes(self):
+        # Instagram’s page includes images with data URLs and invalid width and height sttributes.
+        stuff = self.scan("""
+            <img src="https://image.example/foo.gif" width="100%" height="auto" alt="" />
+            """)
+
+        self.assertEqual(
+            stuff,
+            [Img("https://image.example/foo.gif")],
+        )
+
     def test_respects_base_tag(self):
         stuff = self.scan("""
             <html>

@@ -229,10 +229,13 @@ class Img(StuffBase):
 
     def parse_dimen(self, s):
         if isinstance(s, str):
-            if s.endswith("px"):
-                # Instagram!
-                return int(s[:-2])
-            return int(s)
+            try:
+                if s.endswith("px"):
+                    # Instagram!
+                    return int(s[:-2])
+                return int(s)
+            except ValueError:
+                return None
         if isinstance(s, (int, float)):
             return s
 

@@ -270,6 +270,14 @@ class TestImageRetrieve(ImageTestMixin, TestCase):
         self.then_retrieved_and_sniffed()
 
     @responses.activate
+    def test_dimens_from_image_data_trump_dimens_from_html(self):
+        self.given_downloadable_image(width=167, height=61)
+
+        self.image.retrieve_data(if_not_retrieved_since=None)
+
+        self.then_retrieved_and_sniffed(width=234, height=123)
+
+    @responses.activate
     def test_does_not_retrieve_if_retrieved(self):
         then = timezone.now() - timedelta(hours=1)
         self.image = Image.objects.create(

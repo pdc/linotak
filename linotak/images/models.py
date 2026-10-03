@@ -80,12 +80,16 @@ class ImageManager(models.Manager):
                 "height": img_height,
             },
         )
-        if not is_new and (img_type or img_width or img_height):
+        if not is_new and (
+            img_type
+            or (img_width and not image.width)
+            or (img_height and not image.height)
+        ):
             if img_type:
                 image.media_type = img_type
-            if img_width:
+            if img_width and not image.width:
                 image.width = img_width
-            if img_height:
+            if img_height and not image.height:
                 image.height = img_height
             image.save()
         return image

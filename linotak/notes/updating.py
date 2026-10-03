@@ -10,7 +10,6 @@ from django.db import transaction
 from django.utils import timezone
 
 from ..fetching import fetch
-
 from ..images.models import Image
 from .models import Locator, LocatorImage
 from .oembed import fetch_oembed

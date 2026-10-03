@@ -5,6 +5,7 @@ from unittest.mock import patch
 import responses
 from django.test import TestCase
 
+from ... import fetching  # For mock
 from ..oembed import (
     OEmbedEndpoint,
     fetch_oembed,
@@ -268,26 +269,29 @@ class TestLoadEndpoints(TestCase):
     @responses.activate
     def test_fetches_from_url_and_parses(self):
         # Given an online JSON resource containing the provider definition for Flickr …
-        responses.get(
-            "http://oembed.example/providers.json",
-            json=[
-                FLICKR_PROVIDER,
-                {
-                    "provider_name": "Beautiful.AI",
-                    "provider_url": "https://www.beautiful.ai/",
-                    "endpoints": [
-                        {
-                            "url": "https://www.beautiful.ai/api/oembed",
-                            "discovery": True,
-                        }
-                    ],
-                },
-            ],
-        )
+        with patch.object(fetching, "clean_url", lambda u: u):
+            responses.get(
+                "http://oembed.example/providers.json",
+                json=[
+                    FLICKR_PROVIDER,
+                    {
+                        "provider_name": "Beautiful.AI",
+                        "provider_url": "https://www.beautiful.ai/",
+                        "endpoints": [
+                            {
+                                "url": "https://www.beautiful.ai/api/oembed",
+                                "discovery": True,
+                            }
+                        ],
+                    },
+                ],
+            )
 
-        # When loading those endpoints …
-        with self.settings(OEMBED_PROVIDERS_URL="http://oembed.example/providers.json"):
-            result = load_endpoints()
+            # When loading those endpoints …
+            with self.settings(
+                OEMBED_PROVIDERS_URL="http://oembed.example/providers.json"
+            ):
+                result = load_endpoints()
 
         # Then the flickr endpoint is recognized and the broken one skipped.
         self.assertCountEqual(result, [OEmbedEndpoint.from_json(FLICKR_ENDPOINT)])
